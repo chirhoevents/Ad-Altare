@@ -6,6 +6,8 @@ import {
   boolean,
   timestamp,
   date,
+  jsonb,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -70,35 +72,109 @@ export const donations = pgTable('donations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
-// Relations
+export const events = pgTable('events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  priestId: uuid('priest_id')
+    .references(() => priests.id, { onDelete: 'cascade' })
+    .notNull(),
+  name: text('name').notNull(),
+  date: timestamp('date', { withTimezone: true }).notNull(),
+  location: text('location').notNull(),
+  rsvpEnabled: boolean('rsvp_enabled').default(false).notNull(),
+  rsvpDeadline: date('rsvp_deadline'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const eventQuestions = pgTable('event_questions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventId: uuid('event_id')
+    .references(() => events.id, { onDelete: 'cascade' })
+    .notNull(),
+  questionText: text('question_text').notNull(),
+  questionType: text('question_type').notNull(), // 'text' | 'yes_no' | 'select'
+  options: text('options').array(), // for 'select' type
+  isRequired: boolean('is_required').default(false).notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+});
+
+export const guestList = pgTable('guest_list', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  priestId: uuid('priest_id')
+    .references(() => priests.id, { onDelete: 'cascade' })
+    .notNull(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  inviteCount: integer('invite_count').default(1).notNull(),
+  address: text('address'),
+  phone: text('phone'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const rsvps = pgTable('rsvps', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  guestId: uuid('guest_id')
+    .references(() => guestList.id, { onDelete: 'cascade' })
+    .notNull(),
+  eventId: uuid('event_id')
+    .references(() => events.id, { onDelete: 'cascade' })
+    .notNull(),
+  attending: boolean('attending').notNull(),
+  partySize: integer('party_size').notNull(),
+  questionResponses: jsonb('question_responses'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+}, (table) => ({
+  uniqueGuestEvent: uniqueIndex('unique_guest_event_idx').on(table.guestId, table.eventId),
+}));
+
+// ─── Relations ───────────────────────────────────────────────────────────────
+
 export const priestsRelations = relations(priests, ({ many }) => ({
   registryItems: many(registryItems),
   donations: many(donations),
+  events: many(events),
+  guestList: many(guestList),
 }));
 
 export const registryItemsRelations = relations(registryItems, ({ one, many }) => ({
-  priest: one(priests, {
-    fields: [registryItems.priestId],
-    references: [priests.id],
-  }),
+  priest: one(priests, { fields: [registryItems.priestId], references: [priests.id] }),
   donations: many(donations),
 }));
 
 export const donationsRelations = relations(donations, ({ one }) => ({
-  priest: one(priests, {
-    fields: [donations.priestId],
-    references: [priests.id],
-  }),
-  registryItem: one(registryItems, {
-    fields: [donations.registryItemId],
-    references: [registryItems.id],
-  }),
+  priest: one(priests, { fields: [donations.priestId], references: [priests.id] }),
+  registryItem: one(registryItems, { fields: [donations.registryItemId], references: [registryItems.id] }),
 }));
 
-// Types
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  priest: one(priests, { fields: [events.priestId], references: [priests.id] }),
+  questions: many(eventQuestions),
+  rsvps: many(rsvps),
+}));
+
+export const eventQuestionsRelations = relations(eventQuestions, ({ one }) => ({
+  event: one(events, { fields: [eventQuestions.eventId], references: [events.id] }),
+}));
+
+export const guestListRelations = relations(guestList, ({ one, many }) => ({
+  priest: one(priests, { fields: [guestList.priestId], references: [priests.id] }),
+  rsvps: many(rsvps),
+}));
+
+export const rsvpsRelations = relations(rsvps, ({ one }) => ({
+  guest: one(guestList, { fields: [rsvps.guestId], references: [guestList.id] }),
+  event: one(events, { fields: [rsvps.eventId], references: [events.id] }),
+}));
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
 export type Priest = typeof priests.$inferSelect;
 export type NewPriest = typeof priests.$inferInsert;
 export type RegistryItem = typeof registryItems.$inferSelect;
 export type NewRegistryItem = typeof registryItems.$inferInsert;
 export type Donation = typeof donations.$inferSelect;
 export type NewDonation = typeof donations.$inferInsert;
+export type Event = typeof events.$inferSelect;
+export type NewEvent = typeof events.$inferInsert;
+export type EventQuestion = typeof eventQuestions.$inferSelect;
+export type GuestListEntry = typeof guestList.$inferSelect;
+export type Rsvp = typeof rsvps.$inferSelect;

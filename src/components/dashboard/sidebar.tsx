@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
-import { LayoutDashboard, BookOpen, Users, Settings, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, Settings, ExternalLink, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/registry', label: 'Registry', icon: BookOpen },
   { href: '/dashboard/donors', label: 'Donors', icon: Users },
+  { href: '/dashboard/rsvp', label: 'RSVP', icon: CalendarDays },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
