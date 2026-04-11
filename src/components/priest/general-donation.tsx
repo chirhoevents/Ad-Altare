@@ -8,9 +8,10 @@ const PRESET_AMOUNTS = [25, 50, 100, 200];
 interface GeneralDonationProps {
   onDonate: (amount: number) => void;
   stripeReady: boolean;
+  priestName: string;
 }
 
-export function GeneralDonation({ onDonate, stripeReady }: GeneralDonationProps) {
+export function GeneralDonation({ onDonate, stripeReady, priestName }: GeneralDonationProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
 
@@ -28,7 +29,7 @@ export function GeneralDonation({ onDonate, stripeReady }: GeneralDonationProps)
         General Fund
       </h3>
       <p className="font-inter text-sm text-near-black/60">
-        Support Fr. Smith's ordination with a general contribution.
+        Support Fr. {priestName}'s ordination with a general contribution.
       </p>
       <div className="grid grid-cols-4 gap-2">
         {PRESET_AMOUNTS.map((amt) => (

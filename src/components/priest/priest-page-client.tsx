@@ -99,6 +99,7 @@ export function PriestPageClient({ priest, registryItems }: PriestPageClientProp
                   <GeneralDonation
                     onDonate={(amount) => handleDonate(null, amount)}
                     stripeReady={stripeReady}
+                    priestName={priestName}
                   />
                 </div>
               </>
