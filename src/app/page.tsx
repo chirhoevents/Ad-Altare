@@ -16,6 +16,12 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-6">
             <Link
+              href="/directory"
+              className="font-inter text-sm text-cream/70 hover:text-cream transition-colors"
+            >
+              Find a Priest
+            </Link>
+            <Link
               href="/sign-in"
               className="font-inter text-sm text-cream/70 hover:text-cream transition-colors"
             >

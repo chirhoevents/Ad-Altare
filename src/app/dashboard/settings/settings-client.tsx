@@ -23,6 +23,7 @@ interface PriestSettings {
   profilePhotoUrl: string | null;
   backgroundPhotoUrl: string | null;
   thankYouTemplate: string | null;
+  profileVisible: boolean;
   slug: string;
   stripeAccountId: string | null;
   stripeOnboardingComplete: boolean;
@@ -61,6 +62,10 @@ export function SettingsClient() {
     setSettings((prev) => prev ? { ...prev, [e.target.name]: e.target.value } : prev);
   }
 
+  function handleToggleVisible() {
+    setSettings((prev) => prev ? { ...prev, profileVisible: !prev.profileVisible } : prev);
+  }
+
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!settings) return;
@@ -70,7 +75,7 @@ export function SettingsClient() {
     const res = await fetch('/api/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings),
+      body: JSON.stringify({ ...settings, profileVisible: settings.profileVisible }),
     });
 
     if (res.ok) {
@@ -238,6 +243,31 @@ export function SettingsClient() {
           <p className="font-inter text-xs text-near-black/30 mt-2">
             Your URL slug is set automatically and cannot be changed.
           </p>
+
+          {/* Directory visibility */}
+          <div className="mt-5 pt-5 border-t border-near-black/10 flex items-start justify-between gap-4">
+            <div>
+              <p className="font-inter text-sm font-medium text-near-black">Show in public directory</p>
+              <p className="font-inter text-xs text-near-black/40 mt-0.5">
+                Appear on the <a href="/directory" target="_blank" className="underline hover:text-near-black/70">/directory</a> page so donors can discover your registry. Your page is always accessible via direct link regardless of this setting.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.profileVisible}
+              onClick={handleToggleVisible}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-burgundy-800 focus:ring-offset-2 ${
+                settings.profileVisible ? 'bg-burgundy-800' : 'bg-near-black/20'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+                  settings.profileVisible ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
         </section>
 
         {/* Save */}

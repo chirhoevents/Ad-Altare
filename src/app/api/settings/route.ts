@@ -18,6 +18,7 @@ const patchSchema = z.object({
   profilePhotoUrl: z.string().url().optional().or(z.literal('')),
   backgroundPhotoUrl: z.string().url().optional().or(z.literal('')),
   thankYouTemplate: z.string().max(3000).optional(),
+  profileVisible: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -62,6 +63,7 @@ export async function PATCH(req: Request) {
   if (data.profilePhotoUrl !== undefined) updates.profilePhotoUrl = data.profilePhotoUrl || null;
   if (data.backgroundPhotoUrl !== undefined) updates.backgroundPhotoUrl = data.backgroundPhotoUrl || null;
   if (data.thankYouTemplate !== undefined) updates.thankYouTemplate = data.thankYouTemplate;
+  if (data.profileVisible !== undefined) (updates as Record<string, unknown>).profileVisible = data.profileVisible;
 
   const [updated] = await db
     .update(priests)
