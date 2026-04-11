@@ -9,6 +9,7 @@ import { z } from 'zod';
 const schema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
+  phone: z.string().max(30).optional().default(''),
   seminary: z.string().max(200).optional().default(''),
   diocese: z.string().max(200).optional().default(''),
   parish: z.string().max(200).optional().default(''),
@@ -34,7 +35,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { firstName, lastName, seminary, diocese, parish, ordinationDate, firstMassDate } =
+  const { firstName, lastName, phone, seminary, diocese, parish, ordinationDate, firstMassDate } =
     parsed.data;
 
   const user = await currentUser();
@@ -47,6 +48,7 @@ export async function POST(req: Request) {
     firstName,
     lastName,
     email,
+    phone: phone || null,
     seminary: seminary || null,
     diocese: diocese || null,
     parish: parish || null,

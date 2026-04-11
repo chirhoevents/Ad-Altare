@@ -9,20 +9,32 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function OnboardingPage() {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
-    firstName: user?.firstName ?? '',
-    lastName: user?.lastName ?? '',
+    firstName: '',
+    lastName: '',
+    phone: '',
     seminary: '',
     diocese: '',
     parish: '',
     ordinationDate: '',
     firstMassDate: '',
   });
+
+  // Pre-populate name fields once Clerk user object loads
+  const [namePrefilled, setNamePrefilled] = useState(false);
+  if (isLoaded && user && !namePrefilled) {
+    setNamePrefilled(true);
+    setForm((prev) => ({
+      ...prev,
+      firstName: user.firstName ?? prev.firstName,
+      lastName: user.lastName ?? prev.lastName,
+    }));
+  }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -141,6 +153,19 @@ export default function OnboardingPage() {
               value={form.parish}
               onChange={handleChange}
               placeholder="St. Mary's Parish"
+            />
+          </div>
+
+          {/* Phone */}
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="(555) 555-5555"
             />
           </div>
 
