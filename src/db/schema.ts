@@ -28,7 +28,7 @@ export const priests = pgTable('priests', {
   stripeAccountId: text('stripe_account_id'),
   stripeOnboardingComplete: boolean('stripe_onboarding_complete').default(false).notNull(),
   thankYouTemplate: text('thank_you_template').default(
-    'Dear {donor_name},\n\nThank you so much for your generous gift in support of my ordination. Your kindness is a true blessing and means more than words can express.\n\nPlease know that you will be remembered in my prayers, especially at my First Mass.\n\nIn Christ,\nFr. {priest_name}'
+    'Dear {donor_name},\n\nThank you so much for your generous gift of {amount} in support of my ordination. Your contribution toward {item_name} is a true blessing and means more than words can express.\n\nPlease know that you will be remembered in my prayers, especially at my First Mass.\n\nIn Christ,\nFr. {priest_name}'
   ),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

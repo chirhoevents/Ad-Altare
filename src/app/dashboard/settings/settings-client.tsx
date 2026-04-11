@@ -203,7 +203,7 @@ export function SettingsClient() {
             Used when you send a personal thank-you to a donor. Merge tags:
           </p>
           <div className="flex flex-wrap gap-2 mb-4">
-            {['{donor_name}', '{item_name}', '{priest_name}'].map((tag) => (
+            {['{donor_name}', '{amount}', '{item_name}', '{priest_name}'].map((tag) => (
               <code key={tag} className="font-mono text-xs bg-near-black/5 px-2 py-0.5 rounded-sm text-near-black/60">
                 {tag}
               </code>

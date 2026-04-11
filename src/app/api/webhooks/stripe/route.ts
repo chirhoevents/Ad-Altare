@@ -105,6 +105,7 @@ export async function POST(req: Request) {
         donor_name: templateDonorName,
         item_name: itemName ?? undefined,
         priest_name: priestName,
+        amount: amountFormatted,
       });
       const bodyHtml = bodyText
         .split('\n')

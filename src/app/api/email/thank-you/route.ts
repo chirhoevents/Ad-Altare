@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendThankYouEmail } from '@/lib/resend';
-import { applyMergeTagsToTemplate } from '@/lib/utils';
+import { applyMergeTagsToTemplate, formatCurrency } from '@/lib/utils';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -52,6 +52,7 @@ export async function POST(req: Request) {
     donor_name: donorName,
     item_name: itemName || undefined,
     priest_name: priestName,
+    amount: formatCurrency(donation.amountGross),
   });
 
   // Convert newlines to HTML paragraphs

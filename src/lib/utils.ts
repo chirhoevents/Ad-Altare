@@ -43,10 +43,12 @@ export function applyMergeTagsToTemplate(
     donor_name: string;
     item_name?: string;
     priest_name: string;
+    amount?: string;
   }
 ): string {
   return template
     .replace(/\{donor_name\}/g, vars.donor_name)
-    .replace(/\{item_name\}/g, vars.item_name ?? '')
-    .replace(/\{priest_name\}/g, vars.priest_name);
+    .replace(/\{item_name\}/g, vars.item_name ?? 'General Fund')
+    .replace(/\{priest_name\}/g, vars.priest_name)
+    .replace(/\{amount\}/g, vars.amount ?? '');
 }
