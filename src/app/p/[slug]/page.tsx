@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import type { Metadata } from 'next';
 import { db } from '@/db';
-import { priests, registryItems } from '@/db/schema';
+import { priests, registryItems, events } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { formatDate } from '@/lib/utils';
 import { PriestPageClient } from '@/components/priest/priest-page-client';
@@ -34,13 +34,16 @@ export default async function PriestPage({ params }: Props) {
 
   if (!priest) notFound();
 
-  const items = await db.query.registryItems.findMany({
-    where: and(
-      eq(registryItems.priestId, priest.id),
-      eq(registryItems.isActive, true)
-    ),
-    orderBy: (registryItems, { asc }) => [asc(registryItems.createdAt)],
-  });
+  const [items, rsvpEvents] = await Promise.all([
+    db.query.registryItems.findMany({
+      where: and(eq(registryItems.priestId, priest.id), eq(registryItems.isActive, true)),
+      orderBy: (r, { asc }) => [asc(r.createdAt)],
+    }),
+    db.query.events.findMany({
+      where: and(eq(events.priestId, priest.id), eq(events.rsvpEnabled, true)),
+      orderBy: (e, { asc }) => [asc(e.date)],
+    }),
+  ]);
 
   const priestName = `Fr. ${priest.firstName} ${priest.lastName}`;
 
@@ -148,7 +151,7 @@ export default async function PriestPage({ params }: Props) {
       </div>
 
       {/* Client content (tabs, registry, donation modal) */}
-      <PriestPageClient priest={priest} registryItems={items} />
+      <PriestPageClient priest={priest} registryItems={items} hasRsvp={rsvpEvents.length > 0} />
 
       {/* Footer */}
       <div className="border-t border-near-black/10 mt-16 py-6 text-center">

@@ -5,16 +5,18 @@ import { useRouter } from 'next/navigation';
 import { RegistryItemCard } from './registry-item';
 import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
+import { RsvpFlow } from './rsvp-flow';
 import type { Priest, RegistryItem } from '@/db/schema';
 
 interface PriestPageClientProps {
   priest: Priest;
   registryItems: RegistryItem[];
+  hasRsvp?: boolean;
 }
 
-type ActiveTab = 'about' | 'registry';
+type ActiveTab = 'about' | 'registry' | 'rsvp';
 
-export function PriestPageClient({ priest, registryItems }: PriestPageClientProps) {
+export function PriestPageClient({ priest, registryItems, hasRsvp = false }: PriestPageClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>('about');
   const [modalOpen, setModalOpen] = useState(false);
@@ -35,7 +37,7 @@ export function PriestPageClient({ priest, registryItems }: PriestPageClientProp
       {/* Tab Navigation */}
       <div className="border-b border-near-black/10 bg-cream sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 flex gap-0">
-          {(['about', 'registry'] as const).map((tab) => (
+          {(['about', 'registry', ...(hasRsvp ? ['rsvp'] : [])] as ActiveTab[]).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -45,7 +47,7 @@ export function PriestPageClient({ priest, registryItems }: PriestPageClientProp
                   : 'border-transparent text-near-black/50 hover:text-near-black'
               }`}
             >
-              {tab === 'about' ? `About Fr. ${priest.firstName}` : 'Registry'}
+              {tab === 'about' ? `About Fr. ${priest.firstName}` : tab === 'rsvp' ? 'RSVP' : 'Registry'}
             </button>
           ))}
         </div>
@@ -108,6 +110,15 @@ export function PriestPageClient({ priest, registryItems }: PriestPageClientProp
               </>
             )}
           </div>
+        )}
+
+        {/* RSVP Tab */}
+        {activeTab === 'rsvp' && (
+          <RsvpFlow
+            priestId={priest.id}
+            priestFirstName={priest.firstName}
+            priestLastName={priest.lastName}
+          />
         )}
       </div>
 
