@@ -37,6 +37,7 @@ interface DonorForm {
 interface DonationModalProps {
   open: boolean;
   onClose: () => void;
+  onPaymentComplete?: () => void;
   priestId: string;
   priestName: string;
   item: RegistryItem | null;
@@ -111,6 +112,7 @@ function PaymentStep({
 export function DonationModal({
   open,
   onClose,
+  onPaymentComplete,
   priestId,
   priestName,
   item,
@@ -310,7 +312,14 @@ export function DonationModal({
               Your donation of {formatCurrency(amount)} has been received.
               A confirmation has been sent to {form.email}.
             </p>
-            <Button onClick={handleClose} variant="secondary" className="mt-2">
+            <Button
+              onClick={() => {
+                handleClose();
+                onPaymentComplete?.();
+              }}
+              variant="secondary"
+              className="mt-2"
+            >
               Close
             </Button>
           </div>

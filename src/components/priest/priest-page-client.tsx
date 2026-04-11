@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { RegistryItemCard } from './registry-item';
 import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
@@ -14,6 +15,7 @@ interface PriestPageClientProps {
 type ActiveTab = 'about' | 'registry';
 
 export function PriestPageClient({ priest, registryItems }: PriestPageClientProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>('about');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RegistryItem | null>(null);
@@ -112,6 +114,7 @@ export function PriestPageClient({ priest, registryItems }: PriestPageClientProp
       <DonationModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        onPaymentComplete={() => router.refresh()}
         priestId={priest.id}
         priestName={priestName}
         item={selectedItem}
