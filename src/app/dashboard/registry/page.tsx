@@ -13,11 +13,12 @@ import type { RegistryItem } from '@/db/schema';
 
 interface ItemForm {
   name: string;
+  category: string;
   description: string;
   goalAmount: string;
 }
 
-const emptyForm: ItemForm = { name: '', description: '', goalAmount: '' };
+const emptyForm: ItemForm = { name: '', category: '', description: '', goalAmount: '' };
 
 export default function RegistryPage() {
   const [items, setItems] = useState<RegistryItem[]>([]);
@@ -49,6 +50,7 @@ export default function RegistryPage() {
     setEditingId(item.id);
     setForm({
       name: item.name,
+      category: item.category ?? '',
       description: item.description ?? '',
       goalAmount: (item.goalAmount / 100).toString(),
     });
@@ -78,6 +80,7 @@ export default function RegistryPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name,
+        category: form.category,
         description: form.description,
         goalAmount: goalCents,
       }),
@@ -107,6 +110,7 @@ export default function RegistryPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: form.name,
+        category: form.category,
         description: form.description,
         goalAmount: goalCents,
       }),
@@ -175,6 +179,16 @@ export default function RegistryPage() {
                 onChange={handleChange}
                 placeholder="e.g. Chalice, Roman Missal, Stole"
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                placeholder="e.g. Vessels, Vestments, Books"
               />
             </div>
             <div className="space-y-2">
@@ -251,6 +265,16 @@ export default function RegistryPage() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor={`cat-${item.id}`}>Category</Label>
+                      <Input
+                        id={`cat-${item.id}`}
+                        name="category"
+                        value={form.category}
+                        onChange={handleChange}
+                        placeholder="e.g. Vessels, Vestments, Books"
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor={`desc-${item.id}`}>Description</Label>
                       <Textarea
                         id={`desc-${item.id}`}
@@ -299,6 +323,7 @@ export default function RegistryPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-cormorant text-xl text-burgundy-800">{item.name}</h3>
+                      {item.category && <Badge variant="muted">{item.category}</Badge>}
                       {!item.isActive && <Badge variant="muted">Hidden</Badge>}
                       {item.amountRaised >= item.goalAmount && (
                         <Badge variant="gold">Funded</Badge>

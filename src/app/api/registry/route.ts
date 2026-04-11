@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 const createSchema = z.object({
   name: z.string().min(1).max(200),
+  category: z.string().max(100).optional().default(''),
   description: z.string().max(1000).optional().default(''),
   goalAmount: z.number().int().min(100),
 });
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
     .values({
       priestId: priest.id,
       name: parsed.data.name,
+      category: parsed.data.category || null,
       description: parsed.data.description || null,
       goalAmount: parsed.data.goalAmount,
     })

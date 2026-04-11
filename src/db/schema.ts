@@ -40,6 +40,7 @@ export const registryItems = pgTable('registry_items', {
     .references(() => priests.id, { onDelete: 'cascade' })
     .notNull(),
   name: text('name').notNull(),
+  category: text('category'),
   description: text('description'),
   goalAmount: integer('goal_amount').notNull(), // in cents
   amountRaised: integer('amount_raised').default(0).notNull(), // in cents

@@ -92,22 +92,6 @@ export default async function DashboardPage() {
           </Button>
         </div>
 
-        {/* Stripe Warning */}
-        {!priest.stripeOnboardingComplete && (
-          <div className="mt-4 bg-gold-50 border border-gold-200 rounded-sm px-5 py-4 flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <p className="font-inter font-medium text-sm text-gold-800">
-                Connect Stripe to receive donations
-              </p>
-              <p className="font-inter text-xs text-gold-700 mt-0.5">
-                Your public page is live, but donors can't give until you connect a bank account.
-              </p>
-            </div>
-            <Button asChild size="sm" variant="gold">
-              <Link href="/dashboard/settings">Connect Stripe</Link>
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Stats */}

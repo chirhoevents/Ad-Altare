@@ -33,9 +33,16 @@ export function RegistryItemCard({ item, onDonate, stripeReady }: RegistryItemCa
     <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
       <div className="p-6">
         <div className="flex items-start justify-between gap-4 mb-3">
-          <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800">
-            {item.name}
-          </h3>
+          <div>
+            <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800">
+              {item.name}
+            </h3>
+            {item.category && (
+              <span className="font-inter text-xs uppercase tracking-widest text-near-black/40 mt-0.5 block">
+                {item.category}
+              </span>
+            )}
+          </div>
           {isFunded ? (
             <Badge variant="gold" className="shrink-0">Fully Funded</Badge>
           ) : (
