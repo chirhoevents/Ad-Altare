@@ -44,7 +44,8 @@ export async function POST(req: Request) {
 
   const template = priest.thankYouTemplate ?? '';
   const priestName = `${priest.firstName} ${priest.lastName}`;
-  const donorName = donation.isAnonymous ? 'Dear Friend' : (donation.donorName ?? 'Dear Friend');
+  // Pass just the name (not "Dear Friend") — the template itself contains "Dear {donor_name}"
+  const donorName = donation.isAnonymous ? 'Friend' : (donation.donorName ?? 'Friend');
   const itemName = donation.registryItem?.name ?? '';
 
   const body_text = applyMergeTagsToTemplate(template, {

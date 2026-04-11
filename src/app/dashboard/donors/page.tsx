@@ -4,18 +4,51 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
-import { Mail, CheckCircle } from 'lucide-react';
+import { Mail, CheckCircle, Download } from 'lucide-react';
 
 interface DonationRow {
   id: string;
   donorName: string | null;
   donorEmail: string;
   donorAddress: string | null;
+  donorPhone: string | null;
   isAnonymous: boolean;
   amountGross: number;
   thankYouSent: boolean;
   createdAt: string;
   registryItem: { name: string } | null;
+}
+
+function escapeCSV(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function exportToCSV(rows: DonationRow[]) {
+  const headers = [
+    'Date', 'Donor Name', 'Email', 'Address', 'Phone',
+    'Item', 'Amount', 'Anonymous', 'Thank You Sent',
+  ];
+  const lines = rows.map((d) =>
+    [
+      new Date(d.createdAt).toLocaleDateString('en-US'),
+      d.isAnonymous ? 'Anonymous' : (d.donorName ?? ''),
+      d.isAnonymous ? '' : d.donorEmail,
+      d.isAnonymous ? '' : (d.donorAddress ?? ''),
+      d.isAnonymous ? '' : (d.donorPhone ?? ''),
+      d.registryItem?.name ?? 'General Fund',
+      (d.amountGross / 100).toFixed(2),
+      d.isAnonymous ? 'Yes' : 'No',
+      d.thankYouSent ? 'Yes' : 'No',
+    ].map(escapeCSV).join(',')
+  );
+  const csv = [headers.map(escapeCSV).join(','), ...lines].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'donations.csv';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function DonorsPage() {
@@ -63,12 +96,25 @@ export default function DonorsPage() {
   return (
     <div className="p-8 max-w-6xl">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-cormorant text-4xl font-light text-burgundy-800">Donors</h1>
-        <p className="font-inter text-sm text-near-black/50 mt-1">
-          {donations.length} donation{donations.length !== 1 ? 's' : ''} ·{' '}
-          {formatCurrency(total)} total received
-        </p>
+      <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="font-cormorant text-4xl font-light text-burgundy-800">Donors</h1>
+          <p className="font-inter text-sm text-near-black/50 mt-1">
+            {donations.length} donation{donations.length !== 1 ? 's' : ''} ·{' '}
+            {formatCurrency(total)} total received
+          </p>
+        </div>
+        {donations.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportToCSV(donations)}
+            className="gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </Button>
+        )}
       </div>
 
       {/* Table */}
@@ -126,6 +172,9 @@ export default function DonorsPage() {
                         )}
                         {d.donorAddress && !d.isAnonymous && (
                           <p className="font-inter text-xs text-near-black/30">{d.donorAddress}</p>
+                        )}
+                        {d.donorPhone && !d.isAnonymous && (
+                          <p className="font-inter text-xs text-near-black/30">{d.donorPhone}</p>
                         )}
                       </div>
                     </td>

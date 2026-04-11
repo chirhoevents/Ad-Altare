@@ -4,8 +4,8 @@ import { stripe } from '@/lib/stripe';
 import { db } from '@/db';
 import { donations, registryItems, priests } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { formatCurrency } from '@/lib/utils';
-import { sendDonorConfirmationEmail, sendPriestNotificationEmail } from '@/lib/resend';
+import { formatCurrency, applyMergeTagsToTemplate } from '@/lib/utils';
+import { sendThankYouEmail, sendPriestNotificationEmail } from '@/lib/resend';
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -94,15 +94,27 @@ export async function POST(req: Request) {
     const amountFormatted = formatCurrency(amountGross);
     const donorDisplayName = isAnonymous ? 'Anonymous' : (donorName ?? 'A donor');
 
-    // Send donor confirmation
-    if (donorEmail) {
-      await sendDonorConfirmationEmail({
+    // Send donor thank-you using priest's customisable template
+    if (donorEmail && priest) {
+      const template =
+        priest.thankYouTemplate ??
+        `Dear {donor_name},\n\nThank you for your generous support of Fr. {priest_name}'s ordination.\n\nIn Christ,\nFr. {priest_name}`;
+      // For anonymous donors pass just "Friend" so "Dear {donor_name}" → "Dear Friend"
+      const templateDonorName = isAnonymous ? 'Friend' : (donorName ?? 'Friend');
+      const bodyText = applyMergeTagsToTemplate(template, {
+        donor_name: templateDonorName,
+        item_name: itemName ?? undefined,
+        priest_name: priestName,
+      });
+      const bodyHtml = bodyText
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
+        .join('');
+      await sendThankYouEmail({
         donorEmail,
-        donorName: donorName,
-        priestName,
-        amountFormatted,
-        itemName,
-        isAnonymous,
+        subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
+        bodyHtml,
       }).catch(console.error);
     }
 
