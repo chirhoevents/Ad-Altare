@@ -25,6 +25,7 @@ export default function SignUpPage() {
 
           <div className="flex justify-center">
             <SignUp
+              afterSignUpUrl="/dashboard"
               appearance={{
                 elements: {
                   rootBox: 'w-full',
