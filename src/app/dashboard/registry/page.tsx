@@ -18,6 +18,8 @@ interface ItemForm {
   goalAmount: string;
 }
 
+const CATEGORIES = ['Vessels', 'Vestments', 'Books', 'Devotional', 'Mass Kit', 'General Fund', 'Other'];
+
 const emptyForm: ItemForm = { name: '', category: '', description: '', goalAmount: '' };
 
 export default function RegistryPage() {
@@ -183,13 +185,18 @@ export default function RegistryPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Input
+              <select
                 id="category"
                 name="category"
                 value={form.category}
-                onChange={handleChange}
-                placeholder="e.g. Vessels, Vestments, Books"
-              />
+                onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+                className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+              >
+                <option value="">Select a category…</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
@@ -266,13 +273,18 @@ export default function RegistryPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`cat-${item.id}`}>Category</Label>
-                      <Input
+                      <select
                         id={`cat-${item.id}`}
                         name="category"
                         value={form.category}
-                        onChange={handleChange}
-                        placeholder="e.g. Vessels, Vestments, Books"
-                      />
+                        onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+                        className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+                      >
+                        <option value="">Select a category…</option>
+                        {CATEGORIES.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor={`desc-${item.id}`}>Description</Label>

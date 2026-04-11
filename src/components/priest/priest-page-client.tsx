@@ -90,6 +90,7 @@ export function PriestPageClient({ priest, registryItems }: PriestPageClientProp
                     <RegistryItemCard
                       key={item.id}
                       item={item}
+                      priestFirstName={priest.firstName}
                       onDonate={(item, amount) => handleDonate(item, amount)}
                       stripeReady={stripeReady}
                     />

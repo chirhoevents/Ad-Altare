@@ -5,7 +5,11 @@ import { db } from '@/db';
 import { donations, registryItems, priests } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { formatCurrency, applyMergeTagsToTemplate } from '@/lib/utils';
-import { sendThankYouEmail, sendPriestNotificationEmail } from '@/lib/resend';
+import {
+  sendDonorConfirmationEmail,
+  sendThankYouEmail,
+  sendPriestNotificationEmail,
+} from '@/lib/resend';
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -94,29 +98,40 @@ export async function POST(req: Request) {
     const amountFormatted = formatCurrency(amountGross);
     const donorDisplayName = isAnonymous ? 'Anonymous' : (donorName ?? 'A donor');
 
-    // Send donor thank-you using priest's customisable template
-    if (donorEmail && priest) {
-      const template =
-        priest.thankYouTemplate ??
-        `Dear {donor_name},\n\nThank you for your generous support of Fr. {priest_name}'s ordination.\n\nIn Christ,\nFr. {priest_name}`;
-      // For anonymous donors pass just "Friend" so "Dear {donor_name}" → "Dear Friend"
-      const templateDonorName = isAnonymous ? 'Friend' : (donorName ?? 'Friend');
-      const bodyText = applyMergeTagsToTemplate(template, {
-        donor_name: templateDonorName,
-        item_name: itemName ?? undefined,
-        priest_name: priestName,
-        amount: amountFormatted,
-      });
-      const bodyHtml = bodyText
-        .split('\n')
-        .filter((line) => line.trim())
-        .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
-        .join('');
-      await sendThankYouEmail({
-        donorEmail,
-        subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
-        bodyHtml,
-      }).catch(console.error);
+    // Non-anonymous donors: hardcoded branded confirmation (amount, item, priest name)
+    // Anonymous donors: priest's editable thank-you template letter (fires automatically)
+    if (donorEmail) {
+      if (!isAnonymous) {
+        await sendDonorConfirmationEmail({
+          donorEmail,
+          donorName,
+          priestName,
+          amountFormatted,
+          itemName,
+          isAnonymous: false,
+        }).catch(console.error);
+      } else if (priest) {
+        // Anonymous thank-you — uses priest's custom template
+        const template =
+          priest.thankYouTemplate ??
+          `Dear {donor_name},\n\nThank you for your generous support of Fr. {priest_name}'s ordination.\n\nIn Christ,\nFr. {priest_name}`;
+        const bodyText = applyMergeTagsToTemplate(template, {
+          donor_name: 'Friend', // "Dear {donor_name}" → "Dear Friend"
+          item_name: itemName ?? undefined,
+          priest_name: priestName,
+          amount: amountFormatted,
+        });
+        const bodyHtml = bodyText
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
+          .join('');
+        await sendThankYouEmail({
+          donorEmail,
+          subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
+          bodyHtml,
+        }).catch(console.error);
+      }
     }
 
     // Send priest notification
