@@ -32,7 +32,7 @@ export default function SignUpPage() {
 
           <div className="flex justify-center">
             <SignUp
-              afterSignUpUrl="/dashboard"
+              forceRedirectUrl="/dashboard"
               appearance={{
                 elements: {
                   rootBox: 'w-full',
