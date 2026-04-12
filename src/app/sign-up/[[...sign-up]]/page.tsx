@@ -1,13 +1,20 @@
 import { SignUp } from '@clerk/nextjs';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       {/* Header */}
       <nav className="px-6 py-5 border-b border-near-black/10">
-        <Link href="/" className="font-cormorant text-2xl text-burgundy-800 font-light tracking-wide">
-          Ad Altare
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/images/logo.png"
+            alt="Ad Altare"
+            width={44}
+            height={44}
+            className="h-11 w-auto"
+          />
         </Link>
       </nav>
 

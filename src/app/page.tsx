@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Hero } from '@/components/landing/hero';
 import { HowItWorks } from '@/components/landing/how-it-works';
 import { WhyAdAltare } from '@/components/landing/why-ad-altare';
@@ -11,8 +12,14 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-8 py-5">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <Link href="/" className="font-cormorant text-2xl text-cream font-light tracking-wide">
-            Ad Altare
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/images/logo.png"
+              alt="Ad Altare"
+              width={44}
+              height={44}
+              className="h-11 w-auto"
+            />
           </Link>
           <div className="flex items-center gap-6">
             <Link

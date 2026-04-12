@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -7,7 +8,13 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
           {/* Brand */}
           <div>
-            <h3 className="font-cormorant text-2xl text-cream mb-2">Ad Altare</h3>
+            <Image
+              src="/images/logo.png"
+              alt="Ad Altare"
+              width={48}
+              height={48}
+              className="h-12 w-auto mb-3"
+            />
             <p className="font-inter text-xs uppercase tracking-[0.2em] text-gold-600 mb-4">
               To the Altar
             </p>
