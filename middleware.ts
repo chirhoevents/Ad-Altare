@@ -15,6 +15,11 @@ const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin(.*)', '/o
 export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims } = await auth();
 
+  // Redirect authenticated users away from the landing page and auth pages
+  if (userId && (req.nextUrl.pathname === '/' || req.nextUrl.pathname.startsWith('/sign-in') || req.nextUrl.pathname.startsWith('/sign-up'))) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
   // Redirect unauthenticated users away from protected routes
   if (isProtectedRoute(req) && !userId) {
     const signInUrl = new URL('/sign-in', req.url);
