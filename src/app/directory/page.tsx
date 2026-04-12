@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { or, eq } from 'drizzle-orm';
@@ -35,8 +36,8 @@ export default async function DirectoryPage() {
       {/* Nav */}
       <nav className="bg-near-black px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="font-cormorant text-xl text-cream font-light">
-            Ad Altare
+          <Link href="/" className="flex items-center">
+            <Image src="/images/logo.png" alt="Ad Altare" width={36} height={36} className="h-9 w-auto" />
           </Link>
           <span className="text-cream/20 hidden sm:inline">|</span>
           <span className="font-inter text-sm text-cream/60 hidden sm:inline">

@@ -6,7 +6,7 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-cream flex flex-col">
       {/* Header */}
-      <nav className="px-6 py-5 border-b border-near-black/10">
+      <nav className="px-6 py-5 bg-burgundy-900 border-b border-white/10">
         <Link href="/" className="flex items-center">
           <Image
             src="/images/logo.png"

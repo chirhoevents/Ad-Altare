@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/db';
 import { priests, registryItems, events } from '@/db/schema';
@@ -78,9 +79,9 @@ export default async function PriestPage({ params }: Props) {
 
         {/* Nav */}
         <div className="absolute top-0 left-0 right-0 px-6 py-4 z-10">
-          <a href="/" className="font-cormorant text-xl text-cream/80 hover:text-cream transition-colors">
-            Ad Altare
-          </a>
+          <Link href="/" className="flex items-center opacity-90 hover:opacity-100 transition-opacity">
+            <Image src="/images/logo.png" alt="Ad Altare" width={36} height={36} className="h-9 w-auto" />
+          </Link>
         </div>
       </div>
 
