@@ -4,10 +4,33 @@ import { eq, sum, count } from 'drizzle-orm';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Users, TrendingUp, DollarSign, CheckCircle } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
+import { getStripe } from '@/lib/stripe';
+
+export const dynamic = 'force-dynamic';
+
+async function getPlatformStripeStatus() {
+  try {
+    const stripe = getStripe();
+    const [account, balance] = await Promise.all([
+      stripe.accounts.retrieve(),
+      stripe.balance.retrieve(),
+    ]);
+    return {
+      ok: true,
+      accountId: account.id,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      availableUsd: balance.available.find((b: { currency: string }) => b.currency === 'usd')?.amount ?? 0,
+      pendingUsd: balance.pending.find((b: { currency: string }) => b.currency === 'usd')?.amount ?? 0,
+    };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : 'Stripe error' };
+  }
+}
 
 export default async function AdminPage() {
-  const [allPriests, donationAggregates, donationTotals] = await Promise.all([
+  const [allPriests, donationAggregates, donationTotals, stripeStatus] = await Promise.all([
     db.query.priests.findMany({
       orderBy: (priests, { desc }) => [desc(priests.createdAt)],
     }),
@@ -24,6 +47,7 @@ export default async function AdminPage() {
       })
       .from(donations)
       .groupBy(donations.priestId),
+    getPlatformStripeStatus(),
   ]);
 
   const totalsByPriest = Object.fromEntries(
@@ -70,6 +94,80 @@ export default async function AdminPage() {
             <p className="font-cormorant text-3xl text-burgundy-800 font-light">{s.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Platform Stripe */}
+      <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden mb-8">
+        <div className="px-5 py-4 border-b border-near-black/10 flex items-center justify-between">
+          <div>
+            <h2 className="font-cormorant text-xl text-burgundy-800">Platform Stripe Account</h2>
+            <p className="font-inter text-xs text-near-black/40 mt-0.5">
+              Platform fees (2%) are deposited here automatically on each donation.
+            </p>
+          </div>
+          <a
+            href="https://dashboard.stripe.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 font-inter text-xs text-burgundy-800 border border-burgundy-800/30 rounded-sm px-3 py-1.5 hover:bg-burgundy-800 hover:text-cream transition-colors"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Open Stripe Dashboard
+          </a>
+        </div>
+
+        <div className="px-5 py-5">
+          {!stripeStatus.ok ? (
+            <div className="flex items-center gap-3 text-red-600">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <p className="font-inter text-sm">
+                Could not reach Stripe: {(stripeStatus as { ok: false; error: string }).error}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+              <div>
+                <p className="font-inter text-xs uppercase tracking-widest text-near-black/40 mb-1">Account</p>
+                <p className="font-inter text-sm text-near-black font-mono truncate">
+                  {stripeStatus.accountId}
+                </p>
+              </div>
+              <div>
+                <p className="font-inter text-xs uppercase tracking-widest text-near-black/40 mb-1">Charges</p>
+                {stripeStatus.chargesEnabled ? (
+                  <Badge variant="success">Enabled</Badge>
+                ) : (
+                  <Badge variant="muted">Disabled</Badge>
+                )}
+              </div>
+              <div>
+                <p className="font-inter text-xs uppercase tracking-widest text-near-black/40 mb-1">Available Balance</p>
+                <p className="font-cormorant text-2xl text-burgundy-800 font-light">
+                  {formatCurrency(stripeStatus.availableUsd ?? 0)}
+                </p>
+              </div>
+              <div>
+                <p className="font-inter text-xs uppercase tracking-widest text-near-black/40 mb-1">Pending Balance</p>
+                <p className="font-cormorant text-2xl text-near-black/50 font-light">
+                  {formatCurrency(stripeStatus.pendingUsd ?? 0)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {stripeStatus.ok && !stripeStatus.chargesEnabled && (
+            <div className="mt-4 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-sm px-4 py-3">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="font-inter text-sm text-amber-800">
+                Your platform Stripe account cannot accept charges yet. Go to{' '}
+                <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="underline">
+                  Stripe Dashboard
+                </a>{' '}
+                to complete account setup and add a payout bank account.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Priests Table */}
