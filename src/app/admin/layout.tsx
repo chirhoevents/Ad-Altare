@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
@@ -8,10 +8,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const role = (sessionClaims?.publicMetadata as { role?: string })?.role;
+  const clerkUser = await currentUser();
+  const role = clerkUser?.publicMetadata?.role as string | undefined;
   if (role !== 'admin') redirect('/dashboard');
 
   return (

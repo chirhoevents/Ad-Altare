@@ -27,13 +27,9 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.redirect(signInUrl);
   }
 
-  // Admin-only routes: redirect non-admins to dashboard
-  if (isAdminRoute(req) && userId) {
-    const role = (sessionClaims?.publicMetadata as { role?: string } | undefined)?.role;
-    if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
-    }
-  }
+  // Admin role check is handled in the admin layout using currentUser(),
+  // which reads live metadata from Clerk rather than stale JWT claims.
+  // The middleware only enforces authentication; authorization is in the layout.
 });
 
 export const config = {
