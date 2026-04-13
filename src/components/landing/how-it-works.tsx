@@ -24,7 +24,7 @@ export function HowItWorks() {
     <section id="how-it-works" className="section-padding bg-cream">
       <div className="container-wide">
         {/* Section header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-12 sm:mb-16">
           <p className="text-xs uppercase tracking-[0.3em] text-gold-600 font-inter mb-3">
             Simple by design
           </p>
@@ -38,29 +38,32 @@ export function HowItWorks() {
           </div>
         </div>
 
-        {/* Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+        {/* Steps — vertical on mobile, 3-column on md+ */}
+        <div className="flex flex-col md:grid md:grid-cols-3 gap-0 md:gap-8 lg:gap-12">
           {steps.map((step, idx) => (
-            <div key={step.number} className="relative">
-              {/* Connector line */}
-              {idx < steps.length - 1 && (
-                <div className="hidden md:block absolute top-8 left-full w-full h-px bg-gold-600/20 -translate-y-1/2 z-0" />
-              )}
-
-              <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-4">
-                  <span className="font-cormorant text-5xl font-light text-gold-600/30 leading-none">
-                    {step.number}
-                  </span>
-                  <div className="h-px flex-1 bg-near-black/10" />
-                </div>
-                <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800 mb-3">
-                  {step.title}
-                </h3>
-                <p className="font-inter text-near-black/60 text-sm leading-relaxed">
-                  {step.description}
-                </p>
+            <div key={step.number} className="relative flex flex-col">
+              {/* Number row — no absolute connector; line is contained inside the card */}
+              <div className="flex items-center gap-4 mb-4">
+                <span className="font-cormorant text-5xl sm:text-6xl font-light text-gold-600/40 leading-none shrink-0">
+                  {step.number}
+                </span>
+                {/* Line to right of number — stays within this card only */}
+                <div className="h-px flex-1 bg-near-black/10" />
               </div>
+
+              <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800 mb-3">
+                {step.title}
+              </h3>
+              <p className="font-inter text-near-black/60 text-sm leading-relaxed">
+                {step.description}
+              </p>
+
+              {/* Mobile-only: vertical connector between steps */}
+              {idx < steps.length - 1 && (
+                <div className="flex md:hidden items-center gap-4 mt-8 mb-8">
+                  <div className="w-px h-8 bg-gold-600/30 ml-6" />
+                </div>
+              )}
             </div>
           ))}
         </div>

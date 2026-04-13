@@ -31,7 +31,7 @@ export function Pricing() {
 
         <div className="max-w-lg mx-auto bg-white border border-near-black/10 shadow-sm rounded-sm overflow-hidden">
           {/* Header */}
-          <div className="bg-burgundy-800 px-8 py-6 text-center">
+          <div className="bg-burgundy-800 px-4 sm:px-8 py-6 text-center">
             <h3 className="font-cormorant text-3xl font-light text-cream mb-1">
               Free to Create
             </h3>
@@ -41,7 +41,7 @@ export function Pricing() {
           </div>
 
           {/* Fee callout */}
-          <div className="px-8 py-6 border-b border-near-black/10">
+          <div className="px-4 sm:px-8 py-6 border-b border-near-black/10">
             <div className="flex items-baseline justify-center gap-2">
               <span className="font-cormorant text-6xl font-light text-burgundy-800">
                 2%
@@ -56,7 +56,7 @@ export function Pricing() {
           </div>
 
           {/* Features */}
-          <div className="px-8 py-6">
+          <div className="px-4 sm:px-8 py-6">
             <ul className="space-y-3">
               {features.map((feature) => (
                 <li key={feature} className="flex items-center gap-3">
@@ -70,7 +70,7 @@ export function Pricing() {
           </div>
 
           {/* CTA */}
-          <div className="px-8 pb-8">
+          <div className="px-4 sm:px-8 pb-8">
             <Button asChild size="lg" className="w-full">
               <Link href="/sign-up">Create Your Registry</Link>
             </Button>

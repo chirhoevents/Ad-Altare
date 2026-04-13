@@ -21,29 +21,29 @@ export function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto pt-20 sm:pt-0">
         {/* Gold ornament */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <div className="h-px w-16 bg-gold-600/60" />
+        <div className="flex items-center justify-center gap-4 mb-6 sm:mb-8">
+          <div className="h-px w-12 sm:w-16 bg-gold-600/60" />
           <span className="text-gold-600 text-xs uppercase tracking-[0.3em] font-inter">
             Ad Altare Dei
           </span>
-          <div className="h-px w-16 bg-gold-600/60" />
+          <div className="h-px w-12 sm:w-16 bg-gold-600/60" />
         </div>
 
-        <h1 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl font-light text-cream leading-tight mb-6">
+        <h1 className="font-cormorant text-4xl sm:text-6xl lg:text-7xl font-light text-cream leading-tight mb-5 sm:mb-6">
           Your ordination.
           <br />
           <em className="text-gold-400">A gift to the Church.</em>
         </h1>
 
-        <p className="font-inter text-cream/70 text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="font-inter text-cream/70 text-base sm:text-xl max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed">
           Ad Altare helps seminarians and newly ordained priests share their
           story, build an ordination registry, and receive gifts from those
           who want to support their sacred calling.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
           <Button asChild size="lg" variant="gold">
             <Link href="/sign-up">Create Your Page</Link>
           </Button>
@@ -58,7 +58,7 @@ export function Hero() {
         </div>
 
         {/* Social proof hint */}
-        <p className="mt-12 text-cream/40 text-sm font-inter">
+        <p className="mt-10 sm:mt-12 text-cream/40 text-xs sm:text-sm font-inter">
           Free to create · 2% + processing on donations · Cancel anytime
         </p>
       </div>

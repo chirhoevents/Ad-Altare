@@ -83,12 +83,12 @@ export function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-cream/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="border-t border-cream/10 pt-6 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <p className="font-inter text-xs text-cream/30">
             © {new Date().getFullYear()} Ad Altare. All rights reserved.
           </p>
-          <div className="flex items-center gap-6">
-            <p className="font-inter text-xs text-cream/20">
+          <div className="flex items-center gap-4 sm:gap-6">
+            <p className="font-inter text-xs text-cream/20 hidden sm:block">
               Built for the glory of God and the service of His priests.
             </p>
             <Link
