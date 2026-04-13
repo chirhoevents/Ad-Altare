@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
@@ -11,9 +11,18 @@ export default async function AdminLayout({
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  const clerkUser = await currentUser();
-  const role = clerkUser?.publicMetadata?.role as string | undefined;
-  if (role !== 'admin') redirect('/dashboard');
+  // Use clerkClient to fetch the live user record directly by userId.
+  // This bypasses JWT caching and any issues with currentUser() context.
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const role = user.publicMetadata?.role as string | undefined;
+
+  console.log(`[admin layout] userId=${userId} role=${role} publicMetadata=${JSON.stringify(user.publicMetadata)}`);
+
+  if (role !== 'admin') {
+    console.log(`[admin layout] blocking — role "${role}" is not admin`);
+    redirect('/dashboard');
+  }
 
   return (
     <div className="min-h-screen bg-cream">

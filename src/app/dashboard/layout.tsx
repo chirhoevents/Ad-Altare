@@ -1,4 +1,4 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
@@ -14,10 +14,13 @@ export default async function DashboardLayout({
   const { userId } = await auth();
   if (!userId) redirect('/sign-in');
 
-  // Use currentUser() to get live metadata from Clerk — sessionClaims are
-  // JWT-cached and won't reflect publicMetadata changes until re-issued.
-  const clerkUser = await currentUser();
+  // Fetch live user record to get current publicMetadata (not cached JWT claims)
+  const client = await clerkClient();
+  const clerkUser = await client.users.getUser(userId);
   const role = clerkUser?.publicMetadata?.role as string | undefined;
+
+  console.log(`[dashboard layout] userId=${userId} role=${role}`);
+
   if (role === 'admin') redirect('/admin');
 
   const priest = await db.query.priests.findFirst({
