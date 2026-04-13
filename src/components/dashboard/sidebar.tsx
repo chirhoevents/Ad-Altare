@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import { LayoutDashboard, BookOpen, Users, Settings, ExternalLink, CalendarDays } from 'lucide-react';
@@ -25,11 +26,17 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
   return (
     <aside className="w-64 min-h-screen bg-burgundy-800 flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-cream/10">
-        <Link href="/" className="font-cormorant text-2xl text-cream font-light tracking-wide block mb-1">
-          Ad Altare
+      <div className="px-6 py-5 border-b border-cream/10">
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/images/logo.png"
+            alt="Ad Altare"
+            width={540}
+            height={205}
+            className="h-9 w-auto"
+            quality={100}
+          />
         </Link>
-        <p className="font-inter text-xs text-cream/40 uppercase tracking-[0.2em]">Dashboard</p>
       </div>
 
       {/* Priest Name */}
