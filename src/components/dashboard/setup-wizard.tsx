@@ -16,6 +16,8 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
   const [open, setOpen] = useState(false);
   const [togglingVisible, setTogglingVisible] = useState(false);
   const [isVisible, setIsVisible] = useState(profileVisible);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
 
   // Show on every dashboard load until Stripe is connected
   useEffect(() => {
@@ -40,10 +42,15 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
   }
 
   async function handleStripe() {
+    setStripeLoading(true);
+    setStripeError(null);
     const res = await fetch('/api/stripe/connect', { method: 'POST' });
+    const data = await res.json();
     if (res.ok) {
-      const { url } = await res.json();
-      window.location.href = url;
+      window.location.href = data.url;
+    } else {
+      setStripeError(data.error ?? 'Something went wrong. Please try again.');
+      setStripeLoading(false);
     }
   }
 
@@ -83,9 +90,12 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
               <p className="font-inter text-xs text-near-black/50 mt-0.5">
                 Donors can see your registry but cannot give until your bank account is linked.
               </p>
-              <Button size="sm" className="mt-3 bg-burgundy-800 hover:bg-burgundy-900 text-cream" onClick={handleStripe}>
-                Connect Bank Account
+              <Button size="sm" className="mt-3 bg-burgundy-800 hover:bg-burgundy-900 text-cream" onClick={handleStripe} disabled={stripeLoading}>
+                {stripeLoading ? 'Redirecting to Stripe…' : 'Connect Bank Account'}
               </Button>
+              {stripeError && (
+                <p className="mt-2 font-inter text-xs text-red-600">{stripeError}</p>
+              )}
             </div>
           </div>
 
