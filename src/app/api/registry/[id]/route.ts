@@ -9,6 +9,7 @@ const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   category: z.string().max(100).optional(),
   description: z.string().max(1000).optional(),
+  imageUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
   goalAmount: z.number().int().min(100).optional(),
   isActive: z.boolean().optional(),
 });
@@ -46,6 +47,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (parsed.data.category !== undefined) updates.category = parsed.data.category || null;
   if (parsed.data.description !== undefined) updates.description = parsed.data.description || null;
   if (parsed.data.goalAmount !== undefined) updates.goalAmount = parsed.data.goalAmount;
+  if (parsed.data.imageUrl !== undefined) updates.imageUrl = parsed.data.imageUrl || null;
   if (parsed.data.isActive !== undefined) updates.isActive = parsed.data.isActive;
 
   const [updated] = await db

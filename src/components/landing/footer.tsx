@@ -87,9 +87,17 @@ export function Footer() {
           <p className="font-inter text-xs text-cream/30">
             © {new Date().getFullYear()} Ad Altare. All rights reserved.
           </p>
-          <p className="font-inter text-xs text-cream/20">
-            Built for the glory of God and the service of His priests.
-          </p>
+          <div className="flex items-center gap-6">
+            <p className="font-inter text-xs text-cream/20">
+              Built for the glory of God and the service of His priests.
+            </p>
+            <Link
+              href="/sign-in"
+              className="font-inter text-xs text-cream/20 hover:text-cream/40 transition-colors"
+            >
+              Admin Sign In
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

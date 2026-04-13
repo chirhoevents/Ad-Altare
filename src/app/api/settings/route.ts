@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -70,6 +71,10 @@ export async function PATCH(req: Request) {
     .set({ ...updates, updatedAt: new Date() })
     .where(eq(priests.clerkUserId, userId))
     .returning();
+
+  // Revalidate the public-facing pages so changes appear immediately
+  revalidatePath(`/p/${priest.slug}`);
+  revalidatePath('/directory');
 
   return NextResponse.json(updated);
 }

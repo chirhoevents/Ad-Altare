@@ -35,6 +35,8 @@ export async function POST(req: Request) {
       firstName: guest.firstName,
       lastName: guest.lastName,
       inviteCount: guest.inviteCount,
+      address: guest.address,
+      phone: guest.phone,
     },
   });
 }

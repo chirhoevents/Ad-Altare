@@ -14,6 +14,8 @@ const schema = z.object({
       questionResponses: z.record(z.string()).optional().default({}),
     })
   ).min(1),
+  guestAddress: z.string().max(500).nullish(),
+  guestPhone: z.string().max(50).nullish(),
 });
 
 export async function POST(req: Request) {
@@ -21,7 +23,7 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
 
-  const { guestId, responses } = parsed.data;
+  const { guestId, responses, guestAddress, guestPhone } = parsed.data;
 
   // Verify guest exists and get their inviteCount
   const guest = await db.query.guestList.findFirst({
@@ -75,6 +77,17 @@ export async function POST(req: Request) {
           questionResponses: r.questionResponses,
         },
       });
+  }
+
+  // Update guest contact info if provided
+  if (guestAddress || guestPhone) {
+    await db
+      .update(guestList)
+      .set({
+        ...(guestAddress ? { address: guestAddress } : {}),
+        ...(guestPhone ? { phone: guestPhone } : {}),
+      })
+      .where(eq(guestList.id, guestId));
   }
 
   return NextResponse.json({ success: true });

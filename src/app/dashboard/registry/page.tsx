@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,19 +9,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Pencil, Trash2, X, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Check, Upload } from 'lucide-react';
 import type { RegistryItem } from '@/db/schema';
 
 interface ItemForm {
   name: string;
   category: string;
   description: string;
+  imageUrl: string;
   goalAmount: string;
 }
 
 const CATEGORIES = ['Vessels', 'Vestments', 'Books', 'Devotional', 'Mass Kit', 'General Fund', 'Other'];
 
-const emptyForm: ItemForm = { name: '', category: '', description: '', goalAmount: '' };
+const emptyForm: ItemForm = { name: '', category: '', description: '', imageUrl: '', goalAmount: '' };
 
 export default function RegistryPage() {
   const [items, setItems] = useState<RegistryItem[]>([]);
@@ -29,7 +31,9 @@ export default function RegistryPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<ItemForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/registry');
@@ -48,12 +52,28 @@ export default function RegistryPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  async function handleImageUpload(file: File) {
+    setUploading(true);
+    const body = new FormData();
+    body.append('file', file);
+    const res = await fetch('/api/upload', { method: 'POST', body });
+    if (res.ok) {
+      const { url } = await res.json();
+      setForm((prev) => ({ ...prev, imageUrl: url }));
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Image upload failed');
+    }
+    setUploading(false);
+  }
+
   function startEdit(item: RegistryItem) {
     setEditingId(item.id);
     setForm({
       name: item.name,
       category: item.category ?? '',
       description: item.description ?? '',
+      imageUrl: item.imageUrl ?? '',
       goalAmount: (item.goalAmount / 100).toString(),
     });
     setShowForm(false);
@@ -84,6 +104,7 @@ export default function RegistryPage() {
         name: form.name,
         category: form.category,
         description: form.description,
+        imageUrl: form.imageUrl || null,
         goalAmount: goalCents,
       }),
     });
@@ -114,6 +135,7 @@ export default function RegistryPage() {
         name: form.name,
         category: form.category,
         description: form.description,
+        imageUrl: form.imageUrl || null,
         goalAmount: goalCents,
       }),
     });
@@ -131,7 +153,6 @@ export default function RegistryPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Remove this item from your registry?')) return;
-
     const res = await fetch(`/api/registry/${id}`, { method: 'DELETE' });
     if (res.ok) await fetchItems();
   }
@@ -143,6 +164,57 @@ export default function RegistryPage() {
       body: JSON.stringify({ isActive: !item.isActive }),
     });
     await fetchItems();
+  }
+
+  // Shared image upload field used in both add and edit forms
+  function ImageUploadField() {
+    return (
+      <div className="space-y-2">
+        <Label>Item Photo <span className="text-near-black/30 font-normal">(optional)</span></Label>
+        <div className="flex items-center gap-3">
+          {form.imageUrl && (
+            <div className="w-16 h-16 rounded-sm border border-near-black/10 overflow-hidden shrink-0">
+              <Image src={form.imageUrl} alt="" width={64} height={64} className="object-cover w-full h-full" />
+            </div>
+          )}
+          <div className="flex flex-col gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleImageUpload(f);
+                e.target.value = '';
+              }}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="w-3.5 h-3.5 mr-1.5" />
+              {uploading ? 'Uploading…' : form.imageUrl ? 'Change Photo' : 'Upload Photo'}
+            </Button>
+            {form.imageUrl && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="text-red-600 border-red-200"
+                onClick={() => setForm((p) => ({ ...p, imageUrl: '' }))}
+              >
+                <X className="w-3.5 h-3.5 mr-1.5" />
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -193,9 +265,7 @@ export default function RegistryPage() {
                 className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
               >
                 <option value="">Select a category…</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="space-y-2">
@@ -209,6 +279,7 @@ export default function RegistryPage() {
                 rows={3}
               />
             </div>
+            <ImageUploadField />
             <div className="space-y-2">
               <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
               <Input
@@ -225,7 +296,7 @@ export default function RegistryPage() {
             </div>
             {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
             <div className="flex gap-3">
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" disabled={saving || uploading}>
                 {saving ? 'Adding…' : 'Add to Registry'}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setShowForm(false); setError(null); }}>
@@ -262,62 +333,37 @@ export default function RegistryPage() {
                 <div key={item.id} className="bg-white border border-burgundy-200 rounded-sm p-6">
                   <form onSubmit={handleUpdate} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor={`name-${item.id}`}>Item Name</Label>
-                      <Input
-                        id={`name-${item.id}`}
-                        name="name"
-                        value={form.name}
-                        onChange={handleChange}
-                        required
-                      />
+                      <Label>Item Name</Label>
+                      <Input name="name" value={form.name} onChange={handleChange} required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`cat-${item.id}`}>Category</Label>
+                      <Label>Category</Label>
                       <select
-                        id={`cat-${item.id}`}
                         name="category"
                         value={form.category}
                         onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
                         className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
                       >
                         <option value="">Select a category…</option>
-                        {CATEGORIES.map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
+                        {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor={`desc-${item.id}`}>Description</Label>
-                      <Textarea
-                        id={`desc-${item.id}`}
-                        name="description"
-                        value={form.description}
-                        onChange={handleChange}
-                        rows={2}
-                      />
+                      <Label>Description</Label>
+                      <Textarea name="description" value={form.description} onChange={handleChange} rows={2} />
                     </div>
+                    <ImageUploadField />
                     <div className="space-y-2">
-                      <Label htmlFor={`goal-${item.id}`}>Goal Amount ($)</Label>
-                      <Input
-                        id={`goal-${item.id}`}
-                        name="goalAmount"
-                        type="number"
-                        min="1"
-                        step="0.01"
-                        value={form.goalAmount}
-                        onChange={handleChange}
-                        required
-                      />
+                      <Label>Goal Amount ($)</Label>
+                      <Input name="goalAmount" type="number" min="1" step="0.01" value={form.goalAmount} onChange={handleChange} required />
                     </div>
                     {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
                     <div className="flex gap-3">
-                      <Button type="submit" size="sm" disabled={saving}>
+                      <Button type="submit" size="sm" disabled={saving || uploading}>
                         <Check className="w-3.5 h-3.5 mr-1" />
                         {saving ? 'Saving…' : 'Save Changes'}
                       </Button>
-                      <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>
-                        Cancel
-                      </Button>
+                      <Button type="button" variant="outline" size="sm" onClick={cancelEdit}>Cancel</Button>
                     </div>
                   </form>
                 </div>
@@ -327,19 +373,21 @@ export default function RegistryPage() {
             return (
               <div
                 key={item.id}
-                className={`bg-white border rounded-sm p-5 ${
-                  item.isActive ? 'border-near-black/10' : 'border-near-black/5 opacity-60'
-                }`}
+                className={`bg-white border rounded-sm p-5 ${item.isActive ? 'border-near-black/10' : 'border-near-black/5 opacity-60'}`}
               >
                 <div className="flex items-start justify-between gap-4">
+                  {/* Item photo thumbnail */}
+                  {item.imageUrl && (
+                    <div className="w-16 h-16 rounded-sm border border-near-black/10 overflow-hidden shrink-0">
+                      <Image src={item.imageUrl} alt={item.name} width={64} height={64} className="object-cover w-full h-full" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-cormorant text-xl text-burgundy-800">{item.name}</h3>
                       {item.category && <Badge variant="muted">{item.category}</Badge>}
                       {!item.isActive && <Badge variant="muted">Hidden</Badge>}
-                      {item.amountRaised >= item.goalAmount && (
-                        <Badge variant="gold">Funded</Badge>
-                      )}
+                      {item.amountRaised >= item.goalAmount && <Badge variant="gold">Funded</Badge>}
                     </div>
                     {item.description && (
                       <p className="font-inter text-sm text-near-black/50 mb-3">{item.description}</p>
@@ -353,32 +401,13 @@ export default function RegistryPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => startEdit(item)}
-                      title="Edit"
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => startEdit(item)} title="Edit">
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleToggle(item)}
-                      title={item.isActive ? 'Hide from public page' : 'Show on public page'}
-                    >
-                      {item.isActive ? (
-                        <X className="w-3.5 h-3.5 text-near-black/40" />
-                      ) : (
-                        <Check className="w-3.5 h-3.5 text-green-600" />
-                      )}
+                    <Button size="icon" variant="ghost" onClick={() => handleToggle(item)} title={item.isActive ? 'Hide' : 'Show'}>
+                      {item.isActive ? <X className="w-3.5 h-3.5 text-near-black/40" /> : <Check className="w-3.5 h-3.5 text-green-600" />}
                     </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(item.id)}
-                      title="Delete"
-                    >
+                    <Button size="icon" variant="ghost" onClick={() => handleDelete(item.id)} title="Delete">
                       <Trash2 className="w-3.5 h-3.5 text-red-500" />
                     </Button>
                   </div>

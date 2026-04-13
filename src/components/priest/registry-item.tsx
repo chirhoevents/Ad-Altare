@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,16 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
 
   return (
     <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
+      {item.imageUrl && (
+        <div className="relative w-full h-48 bg-near-black/5">
+          <Image
+            src={item.imageUrl}
+            alt={item.name}
+            fill
+            className="object-cover"
+          />
+        </div>
+      )}
       <div className="p-6">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-3">

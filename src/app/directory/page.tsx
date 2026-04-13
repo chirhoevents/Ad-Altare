@@ -6,6 +6,8 @@ import { priests } from '@/db/schema';
 import { or, eq } from 'drizzle-orm';
 import { DirectoryClient } from './directory-client';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Find a Priest — Ad Altare',
   description: 'Browse and support Catholic priests preparing for their ordination.',

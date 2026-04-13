@@ -78,7 +78,15 @@ export function SettingsClient() {
     const res = await fetch('/api/upload', { method: 'POST', body });
     if (res.ok) {
       const { url } = await res.json();
+      // Update local state
       setSettings((prev) => prev ? { ...prev, [field]: url } : prev);
+      // Auto-save immediately so it shows on the public page right away
+      await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: url }),
+      });
+      setSaveMessage({ ok: true, text: 'Photo saved.' });
     } else {
       const data = await res.json().catch(() => ({}));
       alert(data.error ?? 'Upload failed. Please try again.');

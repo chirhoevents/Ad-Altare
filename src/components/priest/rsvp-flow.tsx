@@ -33,6 +33,8 @@ interface FoundGuest {
   firstName: string;
   lastName: string;
   inviteCount: number;
+  address: string | null;
+  phone: string | null;
 }
 
 interface EventResponse {
@@ -55,13 +57,15 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
   const [responses, setResponses] = useState<Record<string, EventResponse>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  // Contact info collected during RSVP
+  const [guestAddress, setGuestAddress] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
     setSearching(true);
     setNotFound(false);
 
-    // Load events and look up guest in parallel
     const [lookupRes, eventsRes] = await Promise.all([
       fetch('/api/public/rsvp/lookup', {
         method: 'POST',
@@ -86,10 +90,13 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
       return;
     }
 
-    setGuest(lookupData.guest);
+    const foundGuest = lookupData.guest as FoundGuest;
+    setGuest(foundGuest);
+    // Pre-fill contact info if already on file
+    setGuestAddress(foundGuest.address ?? '');
+    setGuestPhone(foundGuest.phone ?? '');
     setEvents(eventsData.events ?? []);
 
-    // Initialize response state for each event
     const init: Record<string, EventResponse> = {};
     (eventsData.events ?? []).forEach((ev: RsvpEvent) => {
       init[ev.id] = { eventId: ev.id, attending: true, partySize: 1, questionResponses: {} };
@@ -123,7 +130,12 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
     const res = await fetch('/api/public/rsvp/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ guestId: guest.id, responses: payload }),
+      body: JSON.stringify({
+        guestId: guest.id,
+        responses: payload,
+        guestAddress: guestAddress.trim() || null,
+        guestPhone: guestPhone.trim() || null,
+      }),
     });
 
     if (res.ok) {
@@ -310,6 +322,35 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
             </div>
           );
         })}
+
+        {/* Contact info — shown once, applies to all events */}
+        <div className="bg-white border border-near-black/10 rounded-sm p-5 space-y-4">
+          <div>
+            <h4 className="font-inter text-sm font-medium text-near-black mb-0.5">Contact Information</h4>
+            <p className="font-inter text-xs text-near-black/40">
+              Optional — helps Fr. {priestFirstName} send you a personal thank-you.
+            </p>
+          </div>
+          <div className="space-y-3">
+            <div>
+              <label className="font-inter text-xs text-near-black/50 block mb-1">Mailing Address</label>
+              <Input
+                value={guestAddress}
+                onChange={(e) => setGuestAddress(e.target.value)}
+                placeholder="123 Main St, City, State 00000"
+              />
+            </div>
+            <div>
+              <label className="font-inter text-xs text-near-black/50 block mb-1">Phone Number</label>
+              <Input
+                value={guestPhone}
+                onChange={(e) => setGuestPhone(e.target.value)}
+                placeholder="(555) 555-5555"
+                type="tel"
+              />
+            </div>
+          </div>
+        </div>
 
         {submitError && <p className="font-inter text-sm text-red-600 text-center">{submitError}</p>}
 

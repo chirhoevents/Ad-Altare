@@ -45,6 +45,7 @@ export const registryItems = pgTable('registry_items', {
   name: text('name').notNull(),
   category: text('category'),
   description: text('description'),
+  imageUrl: text('image_url'),
   goalAmount: integer('goal_amount').notNull(), // in cents
   amountRaised: integer('amount_raised').default(0).notNull(), // in cents
   isActive: boolean('is_active').default(true).notNull(),
