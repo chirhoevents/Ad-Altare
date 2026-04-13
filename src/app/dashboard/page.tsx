@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
 import { db } from '@/db';
 import { priests, registryItems, donations } from '@/db/schema';
 import { eq, sum, count, desc } from 'drizzle-orm';

@@ -3,6 +3,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { db } from '@/db';
+
+// Always fetch from the database — never serve a cached build of this page.
+// Registry item amounts and profile details change at any time.
+export const dynamic = 'force-dynamic';
 import { priests, registryItems, events } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { formatDate } from '@/lib/utils';
