@@ -10,7 +10,7 @@ function getResend(): Resend {
   return _resend;
 }
 
-const FROM_ADDRESS = 'Ad Altare <noreply@adaltare.com>';
+const FROM_ADDRESS = 'Ad Altare <noreply@ad-altare.com>';
 
 async function send(payload: Parameters<Resend['emails']['send']>[0]): Promise<void> {
   const { data, error } = await getResend().emails.send(payload);
