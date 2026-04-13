@@ -62,13 +62,19 @@ export async function POST(req: Request) {
     .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
     .join('');
 
-  await sendThankYouEmail({
-    donorEmail: donation.donorEmail,
-    subject: `A personal note from Fr. ${priestName}`,
-    bodyHtml,
-  });
+  try {
+    await sendThankYouEmail({
+      donorEmail: donation.donorEmail,
+      subject: `A personal note from Fr. ${priestName}`,
+      bodyHtml,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send email';
+    console.error('[thank-you] email send failed:', err);
+    return NextResponse.json({ error: message }, { status: 502 });
+  }
 
-  // Mark as sent
+  // Mark as sent only after confirmed delivery to Resend
   await db
     .update(donations)
     .set({ thankYouSent: true })

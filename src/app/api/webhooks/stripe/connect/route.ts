@@ -113,8 +113,7 @@ export async function POST(request: Request) {
     const amountFormatted = formatCurrency(amountGross);
     const donorDisplayName = isAnonymous ? 'Anonymous' : (donorName ?? 'A donor');
 
-    // 3. Send donor confirmation email (non-anonymous)
-    // 5. If anonymous, send thank-you email immediately using priest's template
+    // 3 & 5. Donor email
     if (!isAnonymous) {
       await sendDonorConfirmationEmail({
         donorEmail,
@@ -123,7 +122,7 @@ export async function POST(request: Request) {
         amountFormatted,
         itemName,
         isAnonymous: false,
-      }).catch(console.error);
+      }).catch((err) => console.error('[connect webhook] donor confirmation email failed:', err));
     } else if (priest) {
       const template =
         priest.thankYouTemplate ??
@@ -143,10 +142,10 @@ export async function POST(request: Request) {
         donorEmail,
         subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
         bodyHtml,
-      }).catch(console.error);
+      }).catch((err) => console.error('[connect webhook] anonymous thank-you email failed:', err));
     }
 
-    // 4. Send priest notification email
+    // 4. Priest notification
     if (priest?.email) {
       await sendPriestNotificationEmail({
         priestEmail: priest.email,
@@ -154,7 +153,7 @@ export async function POST(request: Request) {
         amountFormatted,
         donorDisplayName,
         itemName,
-      }).catch(console.error);
+      }).catch((err) => console.error('[connect webhook] priest notification email failed:', err));
     }
   }
 

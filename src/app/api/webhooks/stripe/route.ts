@@ -111,43 +111,40 @@ export async function POST(req: Request) {
     const amountFormatted = formatCurrency(amountGross);
     const donorDisplayName = isAnonymous ? 'Anonymous' : (donorName ?? 'A donor');
 
-    // Non-anonymous donors: hardcoded branded confirmation (amount, item, priest name)
-    // Anonymous donors: priest's editable thank-you template letter (fires automatically)
-    if (donorEmail) {
-      if (!isAnonymous) {
-        await sendDonorConfirmationEmail({
-          donorEmail,
-          donorName,
-          priestName,
-          amountFormatted,
-          itemName,
-          isAnonymous: false,
-        }).catch(console.error);
-      } else if (priest) {
-        // Anonymous thank-you — uses priest's custom template
-        const template =
-          priest.thankYouTemplate ??
-          `Dear {donor_name},\n\nThank you for your generous support of Fr. {priest_name}'s ordination.\n\nIn Christ,\nFr. {priest_name}`;
-        const bodyText = applyMergeTagsToTemplate(template, {
-          donor_name: 'Friend', // "Dear {donor_name}" → "Dear Friend"
-          item_name: itemName ?? undefined,
-          priest_name: priestName,
-          amount: amountFormatted,
-        });
-        const bodyHtml = bodyText
-          .split('\n')
-          .filter((line) => line.trim())
-          .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
-          .join('');
-        await sendThankYouEmail({
-          donorEmail,
-          subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
-          bodyHtml,
-        }).catch(console.error);
-      }
+    // Donor email
+    if (!isAnonymous) {
+      await sendDonorConfirmationEmail({
+        donorEmail,
+        donorName,
+        priestName,
+        amountFormatted,
+        itemName,
+        isAnonymous: false,
+      }).catch((err) => console.error('[webhook] donor confirmation email failed:', err));
+    } else if (priest) {
+      // Anonymous — send priest's custom thank-you template immediately
+      const template =
+        priest.thankYouTemplate ??
+        `Dear {donor_name},\n\nThank you for your generous support of Fr. {priest_name}'s ordination.\n\nIn Christ,\nFr. {priest_name}`;
+      const bodyText = applyMergeTagsToTemplate(template, {
+        donor_name: 'Friend',
+        item_name: itemName ?? undefined,
+        priest_name: priestName,
+        amount: amountFormatted,
+      });
+      const bodyHtml = bodyText
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
+        .join('');
+      await sendThankYouEmail({
+        donorEmail,
+        subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
+        bodyHtml,
+      }).catch((err) => console.error('[webhook] anonymous thank-you email failed:', err));
     }
 
-    // Send priest notification
+    // Priest notification
     if (priest?.email) {
       await sendPriestNotificationEmail({
         priestEmail: priest.email,
@@ -155,7 +152,7 @@ export async function POST(req: Request) {
         amountFormatted,
         donorDisplayName,
         itemName,
-      }).catch(console.error);
+      }).catch((err) => console.error('[webhook] priest notification email failed:', err));
     }
   }
 

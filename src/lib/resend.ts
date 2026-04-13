@@ -3,11 +3,22 @@ import { Resend } from 'resend';
 let _resend: Resend | null = null;
 
 function getResend(): Resend {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY environment variable is not set');
+  }
   if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
   return _resend;
 }
 
 const FROM_ADDRESS = 'Ad Altare <noreply@adaltare.com>';
+
+async function send(payload: Parameters<Resend['emails']['send']>[0]): Promise<void> {
+  const { data, error } = await getResend().emails.send(payload);
+  if (error) {
+    throw new Error(`Resend error: ${error.message} (name: ${error.name})`);
+  }
+  console.log(`[resend] sent email id=${data?.id} to=${payload.to}`);
+}
 
 export async function sendDonorConfirmationEmail({
   donorEmail,
@@ -32,7 +43,7 @@ export async function sendDonorConfirmationEmail({
     ? `<p><em>Your donation has been recorded anonymously. ${priestName} will know only that a generous donor has contributed.</em></p>`
     : '';
 
-  await getResend().emails.send({
+  await send({
     from: FROM_ADDRESS,
     to: donorEmail,
     subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
@@ -75,7 +86,7 @@ export async function sendPriestNotificationEmail({
     ? `<p><strong>Item:</strong> ${itemName}</p>`
     : `<p><strong>Item:</strong> General Fund</p>`;
 
-  await getResend().emails.send({
+  await send({
     from: FROM_ADDRESS,
     to: priestEmail,
     subject: `New donation received for your registry`,
@@ -110,7 +121,7 @@ export async function sendThankYouEmail({
   subject: string;
   bodyHtml: string;
 }) {
-  await getResend().emails.send({
+  await send({
     from: FROM_ADDRESS,
     to: donorEmail,
     subject,
