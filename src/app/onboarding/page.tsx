@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -68,9 +69,16 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-cream">
       {/* Header */}
-      <nav className="px-6 py-5 border-b border-near-black/10">
-        <Link href="/" className="font-cormorant text-2xl text-burgundy-800 font-light tracking-wide">
-          Ad Altare
+      <nav className="px-6 py-5 bg-burgundy-900 border-b border-white/10">
+        <Link href="/" className="flex items-center">
+          <Image
+            src="/images/logo.png"
+            alt="Ad Altare"
+            width={540}
+            height={205}
+            className="h-10 w-auto"
+            quality={100}
+          />
         </Link>
       </nav>
 
