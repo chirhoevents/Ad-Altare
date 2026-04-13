@@ -35,10 +35,9 @@ export function LandingNav() {
           </div>
         ) : (
           <div className="flex items-center gap-3 sm:gap-6">
-            {/* Hide secondary links on mobile — only show Get Started */}
             <Link
               href="/directory"
-              className="font-inter text-sm text-cream/70 hover:text-cream transition-colors hidden sm:inline"
+              className="font-inter text-xs sm:text-sm text-cream/70 hover:text-cream transition-colors whitespace-nowrap"
             >
               Find a Priest
             </Link>

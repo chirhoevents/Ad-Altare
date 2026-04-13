@@ -33,6 +33,14 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
+                  href="/directory"
+                  className="font-inter text-sm hover:text-cream transition-colors font-medium text-cream/80"
+                >
+                  Find a Priest →
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/sign-up"
                   className="font-inter text-sm hover:text-cream transition-colors"
                 >

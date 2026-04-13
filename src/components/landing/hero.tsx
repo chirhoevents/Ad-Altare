@@ -63,8 +63,8 @@ export function Hero() {
         </p>
       </div>
 
-      {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+      {/* Scroll indicator — hidden on mobile to avoid layout noise */}
+      <div className="hidden sm:block absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
         <div className="w-5 h-8 border-2 border-cream/30 rounded-full flex items-start justify-center pt-1">
           <div className="w-1 h-2 bg-cream/50 rounded-full" />
         </div>

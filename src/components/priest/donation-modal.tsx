@@ -29,7 +29,10 @@ type Step = 'form' | 'payment' | 'success';
 interface DonorForm {
   name: string;
   email: string;
-  address: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zip: string;
   phone: string;
   isAnonymous: boolean;
 }
@@ -126,13 +129,26 @@ export function DonationModal({
   const [form, setForm] = useState<DonorForm>({
     name: '',
     email: '',
-    address: '',
+    streetAddress: '',
+    city: '',
+    state: '',
+    zip: '',
     phone: '',
     isAnonymous: false,
   });
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  /** Build a single mailing address string from the individual fields */
+  function buildAddress(): string {
+    const parts = [
+      form.streetAddress,
+      form.city,
+      form.state && form.zip ? `${form.state} ${form.zip}` : (form.state || form.zip),
+    ].filter(Boolean);
+    return parts.join(', ');
   }
 
   async function handleFormSubmit(e: React.FormEvent) {
@@ -150,8 +166,8 @@ export function DonationModal({
           amountCents: amount,
           donorName: form.name,
           donorEmail: form.email,
-          donorAddress: form.address,
-          donorPhone: form.phone,
+          donorAddress: form.isAnonymous ? null : buildAddress(),
+          donorPhone: form.isAnonymous ? null : form.phone,
           isAnonymous: form.isAnonymous,
         }),
       });
@@ -199,18 +215,40 @@ export function DonationModal({
 
         {step === 'form' && (
           <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Your name"
-                disabled={form.isAnonymous}
+
+            {/* Anonymous toggle — first, so it controls what shows below */}
+            <div className="flex items-center gap-3 pb-1 border-b border-near-black/5">
+              <Switch
+                id="anonymous"
+                checked={form.isAnonymous}
+                onCheckedChange={(checked) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    isAnonymous: checked,
+                    name: checked ? '' : prev.name,
+                  }))
+                }
               />
+              <Label htmlFor="anonymous" className="cursor-pointer normal-case text-sm text-near-black/70">
+                Donate anonymously
+              </Label>
             </div>
 
+            {/* Name — hidden when anonymous */}
+            {!form.isAnonymous && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Your name"
+                />
+              </div>
+            )}
+
+            {/* Email — always required */}
             <div className="space-y-2">
               <Label htmlFor="email">Email Address *</Label>
               <Input
@@ -227,41 +265,69 @@ export function DonationModal({
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Mailing Address</Label>
-              <Input
-                id="address"
-                name="address"
-                value={form.address}
-                onChange={handleChange}
-                placeholder="123 Main St, City, ST 12345"
-              />
-            </div>
+            {/* Address + Phone — hidden when anonymous */}
+            {!form.isAnonymous && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="streetAddress">Street Address</Label>
+                  <Input
+                    id="streetAddress"
+                    name="streetAddress"
+                    value={form.streetAddress}
+                    onChange={handleChange}
+                    placeholder="123 Main St"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="(555) 555-5555"
-              />
-            </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={form.city}
+                      onChange={handleChange}
+                      placeholder="Boston"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      name="state"
+                      value={form.state}
+                      onChange={handleChange}
+                      placeholder="MA"
+                      maxLength={2}
+                    />
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <Switch
-                id="anonymous"
-                checked={form.isAnonymous}
-                onCheckedChange={(checked) =>
-                  setForm((prev) => ({ ...prev, isAnonymous: checked, name: checked ? '' : prev.name }))
-                }
-              />
-              <Label htmlFor="anonymous" className="cursor-pointer normal-case text-sm text-near-black/70">
-                Donate anonymously
-              </Label>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="zip">ZIP Code</Label>
+                  <Input
+                    id="zip"
+                    name="zip"
+                    value={form.zip}
+                    onChange={handleChange}
+                    placeholder="02101"
+                    maxLength={10}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={form.phone}
+                    onChange={handleChange}
+                    placeholder="(555) 555-5555"
+                  />
+                </div>
+              </>
+            )}
 
             {error && (
               <p className="text-red-600 text-sm font-inter">{error}</p>

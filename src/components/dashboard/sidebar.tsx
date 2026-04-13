@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
-import { LayoutDashboard, BookOpen, Users, Settings, ExternalLink, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, Settings, ExternalLink, CalendarDays, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -75,6 +75,17 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
         })}
       </nav>
 
+      {/* Find a Priest */}
+      <div className="px-3 pb-2">
+        <Link
+          href="/directory"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-sm font-inter text-sm text-cream/60 hover:text-cream hover:bg-cream/10 transition-colors"
+        >
+          <Search className="w-4 h-4 shrink-0" />
+          Find a Priest
+        </Link>
+      </div>
+
       {/* User */}
       <div className="px-6 py-5 border-t border-cream/10 flex items-center gap-3">
         <UserButton
@@ -84,7 +95,7 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
             },
           }}
         />
-        <span className="font-inter text-xs text-cream/50">Account</span>
+        <span className="font-inter text-xs text-cream/50">Sign Out</span>
       </div>
     </aside>
   );
