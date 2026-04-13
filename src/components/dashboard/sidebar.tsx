@@ -26,14 +26,14 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
   return (
     <aside className="w-64 min-h-screen bg-burgundy-800 flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-cream/10">
-        <Link href="/" className="flex items-center">
+      <div className="px-4 py-5 border-b border-cream/10 flex justify-center">
+        <Link href="/">
           <Image
             src="/images/logo.png"
             alt="Ad Altare"
             width={540}
             height={205}
-            className="h-9 w-auto"
+            className="h-11 w-auto"
             quality={100}
           />
         </Link>
