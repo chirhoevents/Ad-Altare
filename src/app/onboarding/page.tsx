@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
@@ -27,15 +27,15 @@ export default function OnboardingPage() {
   });
 
   // Pre-populate name fields once Clerk user object loads
-  const [namePrefilled, setNamePrefilled] = useState(false);
-  if (isLoaded && user && !namePrefilled) {
-    setNamePrefilled(true);
-    setForm((prev) => ({
-      ...prev,
-      firstName: user.firstName ?? prev.firstName,
-      lastName: user.lastName ?? prev.lastName,
-    }));
-  }
+  useEffect(() => {
+    if (isLoaded && user) {
+      setForm((prev) => ({
+        ...prev,
+        firstName: prev.firstName || user.firstName || '',
+        lastName: prev.lastName || user.lastName || '',
+      }));
+    }
+  }, [isLoaded, user]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

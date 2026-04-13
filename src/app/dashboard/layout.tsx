@@ -11,8 +11,12 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { userId } = await auth();
+  const { userId, sessionClaims } = await auth();
   if (!userId) redirect('/sign-in');
+
+  // Admins have no priest record — send them straight to the admin console
+  const role = (sessionClaims?.publicMetadata as { role?: string } | undefined)?.role;
+  if (role === 'admin') redirect('/admin');
 
   const priest = await db.query.priests.findFirst({
     where: eq(priests.clerkUserId, userId),
