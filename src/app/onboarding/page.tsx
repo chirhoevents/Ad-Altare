@@ -26,16 +26,22 @@ export default function OnboardingPage() {
     firstMassDate: '',
   });
 
-  // Pre-populate name fields once Clerk user object loads
+  // Pre-populate name fields once Clerk user object loads.
+  // Also hard-redirect admins — they should never be on this page.
   useEffect(() => {
-    if (isLoaded && user) {
-      setForm((prev) => ({
-        ...prev,
-        firstName: prev.firstName || user.firstName || '',
-        lastName: prev.lastName || user.lastName || '',
-      }));
+    if (!isLoaded || !user) return;
+
+    if ((user.publicMetadata?.role as string | undefined) === 'admin') {
+      router.replace('/admin');
+      return;
     }
-  }, [isLoaded, user]);
+
+    setForm((prev) => ({
+      ...prev,
+      firstName: prev.firstName || user.firstName || '',
+      lastName: prev.lastName || user.lastName || '',
+    }));
+  }, [isLoaded, user, router]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
