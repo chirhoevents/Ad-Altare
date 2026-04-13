@@ -37,7 +37,7 @@ export default async function DirectoryPage() {
       <nav className="bg-near-black px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center">
-            <Image src="/images/logo.png" alt="Ad Altare" width={36} height={36} className="h-9 w-auto" />
+            <Image src="/images/logo.png" alt="Ad Altare" width={540} height={205} className="h-9 w-auto" quality={100} />
           </Link>
           <span className="text-cream/20 hidden sm:inline">|</span>
           <span className="font-inter text-sm text-cream/60 hidden sm:inline">

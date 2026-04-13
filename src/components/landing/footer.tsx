@@ -11,9 +11,10 @@ export function Footer() {
             <Image
               src="/images/logo.png"
               alt="Ad Altare"
-              width={48}
-              height={48}
+              width={540}
+              height={205}
               className="h-12 w-auto mb-3"
+              quality={100}
             />
             <p className="font-inter text-xs uppercase tracking-[0.2em] text-gold-600 mb-4">
               To the Altar

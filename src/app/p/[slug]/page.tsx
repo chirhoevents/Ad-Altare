@@ -80,7 +80,7 @@ export default async function PriestPage({ params }: Props) {
         {/* Nav */}
         <div className="absolute top-0 left-0 right-0 px-6 py-4 z-10">
           <Link href="/" className="flex items-center opacity-90 hover:opacity-100 transition-opacity">
-            <Image src="/images/logo.png" alt="Ad Altare" width={36} height={36} className="h-9 w-auto" />
+            <Image src="/images/logo.png" alt="Ad Altare" width={540} height={205} className="h-9 w-auto" quality={100} />
           </Link>
         </div>
       </div>

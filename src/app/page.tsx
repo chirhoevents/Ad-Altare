@@ -16,9 +16,10 @@ export default function LandingPage() {
             <Image
               src="/images/logo.png"
               alt="Ad Altare"
-              width={44}
-              height={44}
-              className="h-11 w-auto"
+              width={540}
+              height={205}
+              className="h-10 w-auto"
+              quality={100}
             />
           </Link>
           <div className="flex items-center gap-6">
