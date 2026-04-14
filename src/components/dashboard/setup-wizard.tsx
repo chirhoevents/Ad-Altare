@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { X, CreditCard, Eye, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, CreditCard, Eye, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 interface SetupWizardProps {
   stripeConnected: boolean;
@@ -18,7 +18,7 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
   const [isVisible, setIsVisible] = useState(profileVisible);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
-  const [showStripeGuide, setShowStripeGuide] = useState(false);
+  const [showStripeGuide, setShowStripeGuide] = useState(true);
 
   // Show on every dashboard load until Stripe is connected
   useEffect(() => {
@@ -100,43 +100,123 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
                   className="flex items-center gap-1 mt-2 font-inter text-xs text-burgundy-800 hover:underline"
                 >
                   {showStripeGuide ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  {showStripeGuide ? 'Hide setup guide' : 'What will Stripe ask me?'}
+                  {showStripeGuide ? 'Hide setup guide' : 'What to expect — read before connecting'}
                 </button>
 
                 {showStripeGuide && (
-                  <div className="mt-3 bg-burgundy-50 border border-burgundy-100 rounded-sm px-4 py-3 space-y-2">
-                    <p className="font-inter text-xs font-semibold text-burgundy-900 uppercase tracking-wider">
-                      Have these ready before you click:
-                    </p>
-                    <ul className="font-inter text-xs text-near-black/70 space-y-1.5">
-                      <li className="flex gap-2">
-                        <span className="text-gold-600 shrink-0">1.</span>
-                        <span><strong>Business type:</strong> Select <em>"Individual"</em> (not a company) unless you have a registered ministry entity.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-gold-600 shrink-0">2.</span>
-                        <span><strong>Legal name &amp; date of birth:</strong> Exactly as on your government ID.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-gold-600 shrink-0">3.</span>
-                        <span><strong>SSN (last 4 digits):</strong> Stripe uses this to verify your identity. Most individuals only need the last 4.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-gold-600 shrink-0">4.</span>
-                        <span><strong>Home address:</strong> Your current mailing address.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-gold-600 shrink-0">5.</span>
-                        <span><strong>Bank account:</strong> Routing number + account number from a check or your online banking app. This is where donations will be deposited.</span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-gold-600 shrink-0">6.</span>
-                        <span><strong>Phone number:</strong> For two-factor verification with Stripe.</span>
-                      </li>
-                    </ul>
-                    <p className="font-inter text-xs text-near-black/50 pt-1 border-t border-burgundy-200">
-                      Stripe is a secure, PCI-compliant payment processor trusted by millions. Your information goes directly to Stripe — Ad Altare never sees your SSN or bank details.
-                    </p>
+                  <div className="mt-3 border border-burgundy-100 bg-burgundy-50 rounded-sm overflow-hidden">
+                    {/* Guide header */}
+                    <div className="px-4 py-3 border-b border-burgundy-100">
+                      <p className="font-inter text-xs font-medium text-burgundy-900">
+                        Before you connect your bank account, here&apos;s what Stripe will ask you.
+                      </p>
+                      <p className="font-inter text-xs text-burgundy-800/60 mt-0.5">
+                        Don&apos;t worry — this takes about 5 minutes.
+                      </p>
+                    </div>
+
+                    {/* Steps */}
+                    <div className="divide-y divide-burgundy-100">
+                      {/* Step 1 */}
+                      <div className="px-4 py-3 flex gap-3">
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                          1
+                        </div>
+                        <div>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
+                            Account Type
+                          </p>
+                          <ul className="mt-1 space-y-1">
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              Select <strong>&ldquo;Individual&rdquo;</strong> (not Business)
+                            </li>
+                            <li className="font-inter text-xs text-near-black/60 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              You are receiving personal gifts &amp; donations, not operating a business
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Step 2 */}
+                      <div className="px-4 py-3 flex gap-3">
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                          2
+                        </div>
+                        <div>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
+                            Personal Information
+                          </p>
+                          <ul className="mt-1 space-y-1">
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              Legal first and last name (as it appears on your ID)
+                            </li>
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              Date of birth &amp; home address
+                            </li>
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              <span>
+                                <strong>Last 4 digits of SSN</strong> — required by law to verify your
+                                identity. Secure and encrypted.
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Step 3 */}
+                      <div className="px-4 py-3 flex gap-3">
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                          3
+                        </div>
+                        <div>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
+                            Bank Account
+                          </p>
+                          <ul className="mt-1 space-y-1">
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              Routing number + account number (personal checking)
+                            </li>
+                            <li className="font-inter text-xs text-near-black/60 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              This is where your donations will be deposited
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Step 4 */}
+                      <div className="px-4 py-3 flex gap-3">
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                          4
+                        </div>
+                        <div>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
+                            Phone Number
+                          </p>
+                          <ul className="mt-1 space-y-1">
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              Stripe will send a verification code to confirm your identity
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Security note */}
+                    <div className="px-4 py-2.5 bg-burgundy-100/50 flex items-start gap-2">
+                      <Lock className="w-3 h-3 text-burgundy-700 shrink-0 mt-0.5" />
+                      <p className="font-inter text-xs text-burgundy-800">
+                        Your information is encrypted and stored securely by Stripe.
+                        Ad Altare never sees or stores your banking information.
+                      </p>
+                    </div>
                   </div>
                 )}
 
