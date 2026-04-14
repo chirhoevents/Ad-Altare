@@ -63,6 +63,14 @@ export function Footer() {
                   How It Works
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="#faq"
+                  className="font-inter text-sm hover:text-cream transition-colors"
+                >
+                  Features &amp; FAQ
+                </Link>
+              </li>
             </ul>
           </div>
 

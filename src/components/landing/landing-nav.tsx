@@ -42,6 +42,12 @@ export function LandingNav() {
               Find a Priest
             </Link>
             <Link
+              href="/#faq"
+              className="font-inter text-sm text-cream/70 hover:text-cream transition-colors hidden sm:inline"
+            >
+              FAQ
+            </Link>
+            <Link
               href="/sign-in"
               className="font-inter text-sm text-cream/70 hover:text-cream transition-colors hidden sm:inline"
             >
