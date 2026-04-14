@@ -20,7 +20,10 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
-export async function createStripeExpressAccount(email: string): Promise<Stripe.Account> {
+export async function createStripeExpressAccount(
+  email: string,
+  profileUrl?: string,
+): Promise<Stripe.Account> {
   return getStripe().accounts.create({
     type: 'express',
     country: 'US',
@@ -29,6 +32,13 @@ export async function createStripeExpressAccount(email: string): Promise<Stripe.
     capabilities: {
       card_payments: { requested: true },
       transfers: { requested: true },
+    },
+    // Pre-fill business profile so the priest doesn't have to figure it out.
+    // Stripe Express still shows the step but the fields arrive pre-populated.
+    business_profile: {
+      url: profileUrl,
+      product_description:
+        'Catholic priest receiving ordination gifts and donations through the Ad Altare registry platform.',
     },
     settings: {
       payouts: {

@@ -127,21 +127,13 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
                     <div className="divide-y divide-burgundy-100">
                       {/* Step 1 */}
                       <div className="px-4 py-3 flex gap-3">
-                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          1
-                        </div>
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</div>
                         <div>
-                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
-                            Account Type
-                          </p>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">Account Type</p>
                           <ul className="mt-1 space-y-1">
                             <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
                               <span className="text-gold-600 shrink-0">→</span>
                               Select <strong>&ldquo;Individual&rdquo;</strong> (not Business)
-                            </li>
-                            <li className="font-inter text-xs text-near-black/60 flex gap-1.5">
-                              <span className="text-gold-600 shrink-0">→</span>
-                              You are receiving personal gifts &amp; donations, not operating a business
                             </li>
                           </ul>
                         </div>
@@ -149,28 +141,20 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
 
                       {/* Step 2 */}
                       <div className="px-4 py-3 flex gap-3">
-                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          2
-                        </div>
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</div>
                         <div>
-                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
-                            Personal Information
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">Business Details <span className="normal-case text-near-black/40 font-normal">(don&apos;t worry — this is normal)</span></p>
+                          <p className="font-inter text-xs text-near-black/60 mt-1">
+                            Stripe calls this step &ldquo;Business Details&rdquo; even for individuals. Here&apos;s what to enter:
                           </p>
                           <ul className="mt-1 space-y-1">
                             <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
                               <span className="text-gold-600 shrink-0">→</span>
-                              Legal first and last name (as it appears on your ID)
+                              <span><strong>Industry:</strong> select <strong>&ldquo;Charities or social service organizations&rdquo;</strong></span>
                             </li>
                             <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
                               <span className="text-gold-600 shrink-0">→</span>
-                              Date of birth &amp; home address
-                            </li>
-                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
-                              <span className="text-gold-600 shrink-0">→</span>
-                              <span>
-                                <strong>Last 4 digits of SSN</strong> — required by law to verify your
-                                identity. Secure and encrypted.
-                              </span>
+                              <span><strong>Website:</strong> your Ad Altare link is already filled in — just click Continue</span>
                             </li>
                           </ul>
                         </div>
@@ -178,21 +162,17 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
 
                       {/* Step 3 */}
                       <div className="px-4 py-3 flex gap-3">
-                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          3
-                        </div>
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</div>
                         <div>
-                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
-                            Bank Account
-                          </p>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">Personal Information</p>
                           <ul className="mt-1 space-y-1">
                             <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
                               <span className="text-gold-600 shrink-0">→</span>
-                              Routing number + account number (personal checking)
+                              Legal name, date of birth, home address
                             </li>
-                            <li className="font-inter text-xs text-near-black/60 flex gap-1.5">
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
                               <span className="text-gold-600 shrink-0">→</span>
-                              This is where your donations will be deposited
+                              <span><strong>Last 4 digits of SSN</strong> — required by law, secure &amp; encrypted</span>
                             </li>
                           </ul>
                         </div>
@@ -200,17 +180,27 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
 
                       {/* Step 4 */}
                       <div className="px-4 py-3 flex gap-3">
-                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                          4
-                        </div>
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</div>
                         <div>
-                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">
-                            Phone Number
-                          </p>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">Bank Account</p>
                           <ul className="mt-1 space-y-1">
                             <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
                               <span className="text-gold-600 shrink-0">→</span>
-                              Stripe will send a verification code to confirm your identity
+                              Personal checking: routing number + account number
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+
+                      {/* Step 5 */}
+                      <div className="px-4 py-3 flex gap-3">
+                        <div className="w-5 h-5 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">5</div>
+                        <div>
+                          <p className="font-inter text-xs font-semibold text-near-black uppercase tracking-wide">Phone Verification</p>
+                          <ul className="mt-1 space-y-1">
+                            <li className="font-inter text-xs text-near-black/70 flex gap-1.5">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              Stripe texts you a code to confirm your identity
                             </li>
                           </ul>
                         </div>

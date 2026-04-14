@@ -33,11 +33,13 @@ export async function POST() {
   if (!priest) return NextResponse.json({ error: 'Priest not found' }, { status: 404 });
 
   let accountId = priest.stripeAccountId;
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
 
   try {
     // Create Stripe account if none exists
     if (!accountId) {
-      const account = await createStripeExpressAccount(priest.email);
+      const profileUrl = `${APP_URL}/p/${priest.slug}`;
+      const account = await createStripeExpressAccount(priest.email, profileUrl);
       accountId = account.id;
 
       await db
@@ -46,7 +48,6 @@ export async function POST() {
         .where(eq(priests.clerkUserId, userId));
     }
 
-    const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
     const refreshUrl = `${APP_URL}/dashboard/settings?stripe=refresh`;
     const returnUrl = `${APP_URL}/dashboard/settings?stripe=complete`;
 

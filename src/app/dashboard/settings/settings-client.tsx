@@ -483,24 +483,13 @@ export function SettingsClient() {
                 <div className="divide-y divide-burgundy-100">
                   {/* Step 1 */}
                   <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      1
-                    </div>
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</div>
                     <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
-                        Account Type
-                      </p>
-                      <p className="font-inter text-xs text-near-black/60 mt-1 leading-relaxed">
-                        When Stripe asks <em>"What type of account is this?"</em>
-                      </p>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Account Type</p>
                       <ul className="mt-1.5 space-y-1">
                         <li className="font-inter text-xs text-near-black/70 flex gap-2">
                           <span className="text-gold-600 shrink-0">→</span>
-                          Select <strong>"Individual"</strong> (not Business)
-                        </li>
-                        <li className="font-inter text-xs text-near-black/60 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          You are receiving personal gifts &amp; donations, not operating a business
+                          Select <strong>&ldquo;Individual&rdquo;</strong> (not Business)
                         </li>
                       </ul>
                     </div>
@@ -508,33 +497,23 @@ export function SettingsClient() {
 
                   {/* Step 2 */}
                   <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      2
-                    </div>
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</div>
                     <div>
                       <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
-                        Personal Information
+                        Business Details{' '}
+                        <span className="normal-case font-normal text-near-black/40 text-xs">— this is normal, don&apos;t worry</span>
                       </p>
-                      <ul className="mt-1.5 space-y-1">
+                      <p className="font-inter text-xs text-near-black/60 mt-1 leading-relaxed">
+                        Stripe shows this step for everyone, even individuals. Here&apos;s exactly what to enter:
+                      </p>
+                      <ul className="mt-1.5 space-y-1.5">
                         <li className="font-inter text-xs text-near-black/70 flex gap-2">
                           <span className="text-gold-600 shrink-0">→</span>
-                          Legal first and last name (as it appears on your ID)
+                          <span><strong>Industry:</strong> select <strong>&ldquo;Charities or social service organizations&rdquo;</strong></span>
                         </li>
                         <li className="font-inter text-xs text-near-black/70 flex gap-2">
                           <span className="text-gold-600 shrink-0">→</span>
-                          Date of birth
-                        </li>
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          Home address (your seminary address is fine)
-                        </li>
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          <span>
-                            <strong>Last 4 digits of SSN</strong> — Stripe requires this by law to
-                            verify your identity for any account receiving money. It is secure and
-                            encrypted.
-                          </span>
+                          <span><strong>Website:</strong> your Ad Altare page URL is already pre-filled — just click Continue</span>
                         </li>
                       </ul>
                     </div>
@@ -542,25 +521,17 @@ export function SettingsClient() {
 
                   {/* Step 3 */}
                   <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      3
-                    </div>
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</div>
                     <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
-                        Bank Account
-                      </p>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Personal Information</p>
                       <ul className="mt-1.5 space-y-1">
                         <li className="font-inter text-xs text-near-black/70 flex gap-2">
                           <span className="text-gold-600 shrink-0">→</span>
-                          Your personal checking account routing number
+                          Legal name (as on your ID), date of birth, home address
                         </li>
                         <li className="font-inter text-xs text-near-black/70 flex gap-2">
                           <span className="text-gold-600 shrink-0">→</span>
-                          Your personal checking account number
-                        </li>
-                        <li className="font-inter text-xs text-near-black/60 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          This is where your registry donations will be deposited
+                          <span><strong>Last 4 digits of SSN</strong> — required by federal law to receive payments. Encrypted and stored only by Stripe.</span>
                         </li>
                       </ul>
                     </div>
@@ -568,17 +539,31 @@ export function SettingsClient() {
 
                   {/* Step 4 */}
                   <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
-                      4
-                    </div>
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</div>
                     <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
-                        Phone Number
-                      </p>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Bank Account</p>
                       <ul className="mt-1.5 space-y-1">
                         <li className="font-inter text-xs text-near-black/70 flex gap-2">
                           <span className="text-gold-600 shrink-0">→</span>
-                          Stripe will send a verification code to confirm your identity
+                          Personal checking: routing number + account number
+                        </li>
+                        <li className="font-inter text-xs text-near-black/60 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Donations will be deposited here daily
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Step 5 */}
+                  <div className="px-5 py-4 flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">5</div>
+                    <div>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Phone Verification</p>
+                      <ul className="mt-1.5 space-y-1">
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Stripe texts you a verification code — enter it to finish
                         </li>
                       </ul>
                     </div>
