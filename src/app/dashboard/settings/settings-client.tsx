@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, CheckCircle, AlertCircle, Upload, X } from 'lucide-react';
+import { ExternalLink, CheckCircle, AlertCircle, Upload, X, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 interface PriestSettings {
   firstName: string;
@@ -38,6 +38,7 @@ export function SettingsClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
+  const [showStripeGuide, setShowStripeGuide] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [uploadingProfile, setUploadingProfile] = useState(false);
   const [uploadingBackdrop, setUploadingBackdrop] = useState(false);
@@ -409,26 +410,172 @@ export function SettingsClient() {
 
       {/* Stripe Connect */}
       <div className="mt-8 bg-white border border-near-black/10 rounded-sm p-6">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
           <div>
             <h2 className="font-cormorant text-2xl text-burgundy-800 mb-1">Stripe Connect</h2>
-            <p className="font-inter text-sm text-near-black/50 mb-3">
+            <p className="font-inter text-sm text-near-black/50">
               Connect a bank account to receive donations directly.
             </p>
-            {settings.stripeOnboardingComplete ? (
-              <Badge variant="success" className="gap-1.5">
-                <CheckCircle className="w-3 h-3" />
-                Connected & Active
-              </Badge>
-            ) : settings.stripeAccountId ? (
-              <Badge variant="muted" className="gap-1.5">
-                <AlertCircle className="w-3 h-3" />
-                Onboarding Incomplete
-              </Badge>
-            ) : (
-              <Badge variant="muted">Not Connected</Badge>
+          </div>
+          {settings.stripeOnboardingComplete ? (
+            <Badge variant="success" className="gap-1.5">
+              <CheckCircle className="w-3 h-3" />
+              Connected & Active
+            </Badge>
+          ) : settings.stripeAccountId ? (
+            <Badge variant="muted" className="gap-1.5">
+              <AlertCircle className="w-3 h-3" />
+              Onboarding Incomplete
+            </Badge>
+          ) : (
+            <Badge variant="muted">Not Connected</Badge>
+          )}
+        </div>
+
+        {/* Pre-connect guide — only shown until fully connected */}
+        {!settings.stripeOnboardingComplete && (
+          <div className="mb-5">
+            <button
+              type="button"
+              onClick={() => setShowStripeGuide((v) => !v)}
+              className="flex items-center gap-2 font-inter text-sm font-medium text-burgundy-800 hover:text-burgundy-900 transition-colors"
+            >
+              {showStripeGuide ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {showStripeGuide ? 'Hide setup guide' : 'What to expect — read before connecting'}
+            </button>
+
+            {showStripeGuide && (
+              <div className="mt-3 border border-burgundy-100 bg-burgundy-50 rounded-sm overflow-hidden">
+                {/* Guide header */}
+                <div className="px-5 py-4 border-b border-burgundy-100">
+                  <p className="font-cormorant text-lg text-burgundy-900 font-light">
+                    Before you connect your bank account, here&apos;s what Stripe will ask you.
+                  </p>
+                  <p className="font-inter text-xs text-burgundy-800/60 mt-0.5">
+                    Don&apos;t worry — this takes about 5 minutes.
+                  </p>
+                </div>
+
+                {/* Steps */}
+                <div className="divide-y divide-burgundy-100">
+                  {/* Step 1 */}
+                  <div className="px-5 py-4 flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      1
+                    </div>
+                    <div>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
+                        Account Type
+                      </p>
+                      <p className="font-inter text-xs text-near-black/60 mt-1 leading-relaxed">
+                        When Stripe asks <em>"What type of account is this?"</em>
+                      </p>
+                      <ul className="mt-1.5 space-y-1">
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Select <strong>"Individual"</strong> (not Business)
+                        </li>
+                        <li className="font-inter text-xs text-near-black/60 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          You are receiving personal gifts &amp; donations, not operating a business
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Step 2 */}
+                  <div className="px-5 py-4 flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      2
+                    </div>
+                    <div>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
+                        Personal Information
+                      </p>
+                      <ul className="mt-1.5 space-y-1">
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Legal first and last name (as it appears on your ID)
+                        </li>
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Date of birth
+                        </li>
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Home address (your seminary address is fine)
+                        </li>
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          <span>
+                            <strong>Last 4 digits of SSN</strong> — Stripe requires this by law to
+                            verify your identity for any account receiving money. It is secure and
+                            encrypted.
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="px-5 py-4 flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      3
+                    </div>
+                    <div>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
+                        Bank Account
+                      </p>
+                      <ul className="mt-1.5 space-y-1">
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Your personal checking account routing number
+                        </li>
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Your personal checking account number
+                        </li>
+                        <li className="font-inter text-xs text-near-black/60 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          This is where your registry donations will be deposited
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Step 4 */}
+                  <div className="px-5 py-4 flex gap-4">
+                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                      4
+                    </div>
+                    <div>
+                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
+                        Phone Number
+                      </p>
+                      <ul className="mt-1.5 space-y-1">
+                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
+                          <span className="text-gold-600 shrink-0">→</span>
+                          Stripe will send a verification code to confirm your identity
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security note */}
+                <div className="px-5 py-3 bg-burgundy-100/50 flex items-start gap-2.5">
+                  <Lock className="w-3.5 h-3.5 text-burgundy-700 shrink-0 mt-0.5" />
+                  <p className="font-inter text-xs text-burgundy-800 leading-relaxed">
+                    Your information is encrypted and stored securely by Stripe.
+                    Ad Altare never sees or stores your banking information.
+                  </p>
+                </div>
+              </div>
             )}
           </div>
+        )}
+
+        <div className="flex items-center gap-4 flex-wrap">
           <Button
             size="sm"
             variant={settings.stripeOnboardingComplete ? 'outline' : 'gold'}
@@ -436,14 +583,20 @@ export function SettingsClient() {
             disabled={connectingStripe}
           >
             {connectingStripe
-              ? 'Redirecting…'
+              ? 'Redirecting to Stripe…'
               : settings.stripeOnboardingComplete
               ? 'Manage Stripe Account'
               : settings.stripeAccountId
-              ? 'Continue Onboarding'
-              : 'Connect Stripe'}
+              ? 'Continue Onboarding →'
+              : 'Connect Bank Account →'}
           </Button>
+          {!settings.stripeOnboardingComplete && (
+            <p className="font-inter text-xs text-near-black/40">
+              You will be taken to Stripe&apos;s secure site. Return here when finished.
+            </p>
+          )}
         </div>
+
         <p className="font-inter text-xs text-near-black/30 mt-4">
           Ad Altare retains 2% of each donation as a platform fee; Stripe retains their processing fee (~2.9% + 30¢). You receive the remainder.
         </p>
