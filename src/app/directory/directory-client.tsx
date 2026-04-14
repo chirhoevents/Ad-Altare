@@ -23,23 +23,49 @@ interface Props {
   priests: DirectoryPriest[];
 }
 
+// Normalize for deduplication: trim, collapse spaces, lowercase.
+// "Mount Saint Mary" and "mount saint mary" → same key "mount saint mary"
+function normalize(s: string): string {
+  return s.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+// Title-case for display: "mount saint mary" → "Mount Saint Mary"
+function toTitleCase(s: string): string {
+  return s.trim().replace(/\s+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export function DirectoryClient({ priests }: Props) {
   const [query, setQuery] = useState('');
   const [filterDiocese, setFilterDiocese] = useState('');
   const [filterSeminary, setFilterSeminary] = useState('');
   const [filterYear, setFilterYear] = useState('');
 
-  // Build filter option lists from the data
+  // Build deduplicated filter lists. The option `value` is the normalized key
+  // so "mount saint mary" and "Mount Saint Mary" collapse into one entry.
   const dioceses = useMemo(() => {
-    const set = new Set<string>();
-    priests.forEach((p) => { if (p.diocese) set.add(p.diocese); });
-    return Array.from(set).sort();
+    const map = new Map<string, string>(); // normalizedKey → displayLabel
+    priests.forEach((p) => {
+      if (p.diocese) {
+        const key = normalize(p.diocese);
+        if (!map.has(key)) map.set(key, toTitleCase(p.diocese));
+      }
+    });
+    return Array.from(map.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [priests]);
 
   const seminaries = useMemo(() => {
-    const set = new Set<string>();
-    priests.forEach((p) => { if (p.seminary) set.add(p.seminary); });
-    return Array.from(set).sort();
+    const map = new Map<string, string>();
+    priests.forEach((p) => {
+      if (p.seminary) {
+        const key = normalize(p.seminary);
+        if (!map.has(key)) map.set(key, toTitleCase(p.seminary));
+      }
+    });
+    return Array.from(map.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [priests]);
 
   const ordinationYears = useMemo(() => {
@@ -62,10 +88,10 @@ export function DirectoryClient({ priests }: Props) {
         ].filter(Boolean).join(' ').toLowerCase();
         if (!searchable.includes(q)) return false;
       }
-      // Diocese filter
-      if (filterDiocese && p.diocese !== filterDiocese) return false;
-      // Seminary filter
-      if (filterSeminary && p.seminary !== filterSeminary) return false;
+      // Diocese filter — compare normalized so casing differences still match
+      if (filterDiocese && normalize(p.diocese ?? '') !== filterDiocese) return false;
+      // Seminary filter — same
+      if (filterSeminary && normalize(p.seminary ?? '') !== filterSeminary) return false;
       // Year filter
       if (filterYear) {
         const year = p.ordinationDate
@@ -110,8 +136,8 @@ export function DirectoryClient({ priests }: Props) {
             className="border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800 text-near-black/70"
           >
             <option value="">All Dioceses</option>
-            {dioceses.map((d) => (
-              <option key={d} value={d}>{d}</option>
+            {dioceses.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
             ))}
           </select>
 
@@ -121,8 +147,8 @@ export function DirectoryClient({ priests }: Props) {
             className="border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800 text-near-black/70"
           >
             <option value="">All Seminaries</option>
-            {seminaries.map((s) => (
-              <option key={s} value={s}>{s}</option>
+            {seminaries.map(({ value, label }) => (
+              <option key={value} value={value}>{label}</option>
             ))}
           </select>
 

@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { or, eq } from 'drizzle-orm';
 import { DirectoryClient } from './directory-client';
+import { DirectoryNavAuth } from '@/components/directory/directory-nav-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,20 +48,7 @@ export default async function DirectoryPage() {
             Find a Priest
           </span>
         </div>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/sign-in"
-            className="font-inter text-sm text-cream/60 hover:text-cream transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/sign-up"
-            className="font-inter text-sm bg-gold-600 text-white px-4 py-2 rounded-sm hover:bg-gold-700 transition-colors"
-          >
-            Get Started
-          </Link>
-        </div>
+        <DirectoryNavAuth />
       </nav>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12">
