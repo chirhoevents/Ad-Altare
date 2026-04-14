@@ -229,6 +229,7 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
                 )}
 
                 <Button
+                  type="button"
                   size="sm"
                   className="mt-3 bg-burgundy-800 hover:bg-burgundy-900 text-cream"
                   onClick={handleStripe}

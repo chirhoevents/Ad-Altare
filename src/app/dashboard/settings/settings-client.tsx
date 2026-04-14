@@ -38,6 +38,7 @@ export function SettingsClient() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [connectingStripe, setConnectingStripe] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
   const [showStripeGuide, setShowStripeGuide] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [uploadingProfile, setUploadingProfile] = useState(false);
@@ -122,11 +123,13 @@ export function SettingsClient() {
 
   async function handleStripeConnect() {
     setConnectingStripe(true);
+    setStripeError(null);
     const res = await fetch('/api/stripe/connect', { method: 'POST' });
+    const data = await res.json().catch(() => ({}));
     if (res.ok) {
-      const { url } = await res.json();
-      window.location.href = url;
+      window.location.href = data.url;
     } else {
+      setStripeError(data.error ?? 'Something went wrong. Please try again.');
       setConnectingStripe(false);
     }
   }
@@ -597,6 +600,7 @@ export function SettingsClient() {
 
         <div className="flex items-center gap-4 flex-wrap">
           <Button
+            type="button"
             size="sm"
             variant={settings.stripeOnboardingComplete ? 'outline' : 'gold'}
             onClick={handleStripeConnect}
@@ -616,6 +620,13 @@ export function SettingsClient() {
             </p>
           )}
         </div>
+
+        {stripeError && (
+          <div className="mt-3 bg-red-50 border border-red-200 rounded-sm px-4 py-3 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <p className="font-inter text-sm text-red-700">{stripeError}</p>
+          </div>
+        )}
 
         <p className="font-inter text-xs text-near-black/30 mt-4">
           Ad Altare retains 1% of each donation as a platform fee; Stripe retains their processing fee (~2.9% + 30¢). You receive the remainder.
