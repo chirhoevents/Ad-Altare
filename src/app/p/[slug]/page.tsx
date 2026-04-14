@@ -53,6 +53,17 @@ export default async function PriestPage({ params }: Props) {
 
   const priestName = `Fr. ${priest.firstName} ${priest.lastName}`;
 
+  // Strip sensitive fields before passing to the client component.
+  // Only expose what the public page actually needs — never send email, phone,
+  // stripeAccountId, clerkUserId, platformFeeOverride, etc. to the browser.
+  const publicPriest = {
+    id: priest.id,
+    firstName: priest.firstName,
+    lastName: priest.lastName,
+    bio: priest.bio,
+    stripeReady: !!(priest.stripeAccountId && priest.stripeOnboardingComplete),
+  };
+
   return (
     <div className="min-h-screen bg-cream">
 
@@ -141,7 +152,7 @@ export default async function PriestPage({ params }: Props) {
       </div>
 
       {/* Client content (tabs, registry, donation modal) */}
-      <PriestPageClient priest={priest} registryItems={items} hasRsvp={rsvpEvents.length > 0} />
+      <PriestPageClient priest={publicPriest} registryItems={items} hasRsvp={rsvpEvents.length > 0} />
 
       {/* Footer */}
       <div className="border-t border-near-black/10 mt-16 py-6 text-center">

@@ -16,6 +16,21 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          // Prevent the site from being embedded in iframes (clickjacking)
+          { key: 'X-Frame-Options', value: 'DENY' },
+          // Prevent browsers from MIME-sniffing the content type
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Only send the origin when making cross-origin requests
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

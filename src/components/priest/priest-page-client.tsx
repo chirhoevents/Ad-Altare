@@ -6,10 +6,21 @@ import { RegistryItemCard } from './registry-item';
 import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
 import { RsvpFlow } from './rsvp-flow';
-import type { Priest, RegistryItem } from '@/db/schema';
+import type { RegistryItem } from '@/db/schema';
+
+// Only the fields the public page actually needs — sensitive fields (email, phone,
+// stripeAccountId, clerkUserId, platformFeeOverride, etc.) are stripped server-side
+// before this component receives them, so they never appear in the browser payload.
+interface PublicPriestData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  bio: string | null;
+  stripeReady: boolean; // computed server-side; never expose the raw stripeAccountId
+}
 
 interface PriestPageClientProps {
-  priest: Priest;
+  priest: PublicPriestData;
   registryItems: RegistryItem[];
   hasRsvp?: boolean;
 }
@@ -23,7 +34,7 @@ export function PriestPageClient({ priest, registryItems, hasRsvp = false }: Pri
   const [selectedItem, setSelectedItem] = useState<RegistryItem | null>(null);
   const [donationAmount, setDonationAmount] = useState(0);
 
-  const stripeReady = !!(priest.stripeAccountId && priest.stripeOnboardingComplete);
+  const { stripeReady } = priest;
   const priestName = `${priest.firstName} ${priest.lastName}`;
 
   function handleDonate(item: RegistryItem | null, amount: number) {
