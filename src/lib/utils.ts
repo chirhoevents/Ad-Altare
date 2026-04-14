@@ -34,7 +34,7 @@ export function generateBaseSlug(firstName: string, lastName: string): string {
 }
 
 export function computePlatformFee(grossCents: number): number {
-  return Math.floor(grossCents * 0.02);
+  return Math.floor(grossCents * 0.01);
 }
 
 export function applyMergeTagsToTemplate(

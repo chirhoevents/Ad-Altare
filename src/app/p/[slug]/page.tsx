@@ -11,6 +11,7 @@ import { priests, registryItems, events } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { formatDate } from '@/lib/utils';
 import { PriestPageClient } from '@/components/priest/priest-page-client';
+import { PriestPageNav } from '@/components/priest/priest-page-nav';
 
 interface Props {
   params: { slug: string };
@@ -55,39 +56,8 @@ export default async function PriestPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-cream">
 
-      {/* ── Branded top nav ── */}
-      <nav className="bg-burgundy-900 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/images/logo.png"
-            alt="Ad Altare"
-            width={540}
-            height={205}
-            className="h-9 w-auto"
-            quality={100}
-          />
-        </Link>
-        <div className="flex items-center gap-5">
-          <Link
-            href="/directory"
-            className="font-inter text-sm text-cream/70 hover:text-cream transition-colors hidden sm:inline"
-          >
-            Find a Priest
-          </Link>
-          <Link
-            href="/sign-in"
-            className="font-inter text-sm text-cream/70 hover:text-cream transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/sign-up"
-            className="font-inter text-xs bg-gold-600 text-white px-4 py-2 rounded-sm hover:bg-gold-700 transition-colors"
-          >
-            Create Account
-          </Link>
-        </div>
-      </nav>
+      {/* ── Branded top nav (auth-aware) ── */}
+      <PriestPageNav />
 
       {/* ── Backdrop photo ── */}
       <div className="relative h-52 sm:h-64 lg:h-72 bg-burgundy-900 overflow-hidden">

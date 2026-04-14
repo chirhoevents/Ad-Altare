@@ -62,15 +62,15 @@ export async function POST(req: Request) {
     itemName = item.name;
   }
 
-  // Resolve fee: null = default 2%, 0 = waived, N = N%
+  // Resolve fee: null = default 1%, 0 = waived, N = N%
   const feePercent =
     priest.platformFeeOverride !== null && priest.platformFeeOverride !== undefined
       ? priest.platformFeeOverride / 100
-      : 0.02;
+      : 0.01;
   const feePercentUsed =
     priest.platformFeeOverride !== null && priest.platformFeeOverride !== undefined
       ? priest.platformFeeOverride
-      : 2;
+      : 1;
 
   const platformFee = Math.floor(amountCents * feePercent);
   const amountNet = amountCents - platformFee;

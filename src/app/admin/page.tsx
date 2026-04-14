@@ -102,7 +102,7 @@ export default async function AdminPage() {
           <div>
             <h2 className="font-cormorant text-xl text-burgundy-800">Platform Stripe Account</h2>
             <p className="font-inter text-xs text-near-black/40 mt-0.5">
-              Platform fees (2%) are deposited here automatically on each donation.
+              Platform fees (1%) are deposited here automatically on each donation.
             </p>
           </div>
           <a
@@ -221,7 +221,7 @@ export default async function AdminPage() {
                     </td>
                     <td className="px-5 py-4">
                       {priest.platformFeeOverride === null ? (
-                        <Badge variant="success">2%</Badge>
+                        <Badge variant="success">1%</Badge>
                       ) : priest.platformFeeOverride === 0 ? (
                         <Badge variant="muted">Waived</Badge>
                       ) : (

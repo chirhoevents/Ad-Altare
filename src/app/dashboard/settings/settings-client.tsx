@@ -618,7 +618,7 @@ export function SettingsClient() {
         </div>
 
         <p className="font-inter text-xs text-near-black/30 mt-4">
-          Ad Altare retains 2% of each donation as a platform fee; Stripe retains their processing fee (~2.9% + 30¢). You receive the remainder.
+          Ad Altare retains 1% of each donation as a platform fee; Stripe retains their processing fee (~2.9% + 30¢). You receive the remainder.
         </p>
       </div>
     </div>

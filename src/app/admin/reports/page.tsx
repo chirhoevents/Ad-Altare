@@ -136,7 +136,7 @@ export default async function AdminReportsPage({ searchParams }: Props) {
         {[
           { label: 'Total Donations', value: overallCount.toString() },
           { label: 'Gross Revenue', value: formatCurrency(overallGross) },
-          { label: 'Platform Fees (2%)', value: formatCurrency(overallFees) },
+          { label: 'Platform Fees (1%)', value: formatCurrency(overallFees) },
           { label: 'Net to Priests', value: formatCurrency(overallNet) },
         ].map((s) => (
           <div key={s.label} className="bg-white border border-near-black/10 rounded-sm p-5">

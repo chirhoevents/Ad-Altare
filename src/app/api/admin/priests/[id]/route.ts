@@ -23,8 +23,7 @@ const patchSchema = z.object({
   firstMassDate: z.string().optional(),
   bio: z.string().max(5000).optional(),
   stripeOnboardingComplete: z.boolean().optional(),
-  // null = restore default 2%, 0 = waive entirely, 1-100 = custom %
-  platformFeeOverride: z.number().int().min(0).max(100).nullable().optional(),
+  platformFeeOverride: z.number().int().min(0).max(100).nullable().optional(), // null=1% default, 0=waived, N=N%
 });
 
 export async function GET(

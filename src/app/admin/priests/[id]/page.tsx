@@ -123,7 +123,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
         <div className="flex items-center gap-3 mb-1">
           <h2 className="font-cormorant text-2xl text-burgundy-800">Platform Fee</h2>
           {priest.platformFeeOverride === null ? (
-            <Badge variant="success">2% default</Badge>
+            <Badge variant="success">1% default</Badge>
           ) : priest.platformFeeOverride === 0 ? (
             <Badge variant="muted">Waived</Badge>
           ) : (
@@ -132,10 +132,10 @@ export default async function AdminPriestDetailPage({ params }: Props) {
         </div>
         <p className="font-inter text-xs text-near-black/40 mb-4">
           {priest.platformFeeOverride === null
-            ? 'This priest is charged the standard 2% platform fee on each donation.'
+            ? 'This priest is charged the standard 1% platform fee on each donation.'
             : priest.platformFeeOverride === 0
             ? 'Platform fee is waived. Donations go directly to this priest minus Stripe processing only.'
-            : `This priest is charged a custom ${priest.platformFeeOverride}% platform fee instead of the default 2%.`}
+            : `This priest is charged a custom ${priest.platformFeeOverride}% platform fee instead of the default 1%.`}
         </p>
         <AdminFeeActions
           priestId={priest.id}

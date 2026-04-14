@@ -181,7 +181,7 @@ export function AdminFeeActions({ priestId, platformFeeOverride }: FeeActionsPro
             onClick={() => { patchFee(null); setShowCustomInput(false); }}
             disabled={saving}
           >
-            Restore Default (2%)
+            Restore Default (1%)
           </Button>
         )}
       </div>

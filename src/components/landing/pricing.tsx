@@ -44,7 +44,7 @@ export function Pricing() {
           <div className="px-4 sm:px-8 py-6 border-b border-near-black/10">
             <div className="flex items-baseline justify-center gap-2">
               <span className="font-cormorant text-6xl font-light text-burgundy-800">
-                2%
+                1%
               </span>
               <span className="font-inter text-near-black/50 text-sm">
                 + Stripe processing fees
