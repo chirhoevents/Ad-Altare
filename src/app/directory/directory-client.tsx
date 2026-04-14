@@ -3,13 +3,14 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatPriestName } from '@/lib/utils';
 import { Search } from 'lucide-react';
 
 interface DirectoryPriest {
   id: string;
   firstName: string;
   lastName: string;
+  currentTitle: string;
   diocese: string | null;
   seminary: string | null;
   parish: string | null;
@@ -175,7 +176,7 @@ export function DirectoryClient({ priests }: Props) {
                   {priest.profilePhotoUrl ? (
                     <Image
                       src={priest.profilePhotoUrl}
-                      alt={`Fr. ${priest.firstName} ${priest.lastName}`}
+                      alt={formatPriestName(priest)}
                       width={64}
                       height={64}
                       className="object-cover w-full h-full"
@@ -193,7 +194,7 @@ export function DirectoryClient({ priests }: Props) {
               {/* Card body */}
               <div className="pt-12 px-5 pb-5">
                 <h2 className="font-cormorant text-xl text-burgundy-800 font-light leading-tight">
-                  Fr. {priest.firstName} {priest.lastName}
+                  {formatPriestName(priest)}
                 </h2>
 
                 <div className="mt-2 space-y-1">

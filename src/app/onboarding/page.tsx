@@ -18,6 +18,7 @@ export default function OnboardingPage() {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
+    currentTitle: 'Seminarian' as 'Seminarian' | 'Transitional Deacon' | 'Deacon',
     phone: '',
     seminary: '',
     diocese: '',
@@ -43,7 +44,7 @@ export default function OnboardingPage() {
     }));
   }, [isLoaded, user, router]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
@@ -132,6 +133,25 @@ export default function OnboardingPage() {
                 required
               />
             </div>
+          </div>
+
+          {/* Current Title */}
+          <div className="space-y-2">
+            <Label htmlFor="currentTitle">Current Title</Label>
+            <select
+              id="currentTitle"
+              name="currentTitle"
+              value={form.currentTitle}
+              onChange={handleChange}
+              className="w-full border border-near-black/20 rounded-sm px-3 py-2 font-inter text-sm bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800 text-near-black"
+            >
+              <option value="Seminarian">Seminarian</option>
+              <option value="Transitional Deacon">Transitional Deacon</option>
+              <option value="Deacon">Deacon</option>
+            </select>
+            <p className="text-xs font-inter text-near-black/40">
+              Your title will update automatically to &ldquo;Fr.&rdquo; on your ordination date.
+            </p>
           </div>
 
           {/* Seminary & Diocese */}

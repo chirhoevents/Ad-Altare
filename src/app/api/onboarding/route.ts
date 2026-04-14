@@ -6,9 +6,12 @@ import { eq } from 'drizzle-orm';
 import { generateUniqueSlug } from '@/lib/slug';
 import { z } from 'zod';
 
+const SELF_SELECTABLE_TITLES = ['Seminarian', 'Transitional Deacon', 'Deacon'] as const;
+
 const schema = z.object({
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
+  currentTitle: z.enum(SELF_SELECTABLE_TITLES).optional().default('Seminarian'),
   phone: z.string().max(30).optional().default(''),
   seminary: z.string().max(200).optional().default(''),
   diocese: z.string().max(200).optional().default(''),
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid input', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { firstName, lastName, phone, seminary, diocese, parish, ordinationDate, firstMassDate } =
+  const { firstName, lastName, currentTitle, phone, seminary, diocese, parish, ordinationDate, firstMassDate } =
     parsed.data;
 
   const user = await currentUser();
@@ -47,6 +50,7 @@ export async function POST(req: Request) {
     clerkUserId: userId,
     firstName,
     lastName,
+    currentTitle,
     email,
     phone: phone || null,
     seminary: seminary || null,

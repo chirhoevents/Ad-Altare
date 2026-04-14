@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, sum, count, gte, lte, and } from 'drizzle-orm';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, formatPriestName } from '@/lib/utils';
 import { ExportCSVButton } from './reports-client';
 
 interface Props {
@@ -51,10 +51,10 @@ export default async function AdminReportsPage({ searchParams }: Props) {
 
   // Get priest names
   const allPriests = await db.query.priests.findMany({
-    columns: { id: true, firstName: true, lastName: true },
+    columns: { id: true, firstName: true, lastName: true, currentTitle: true, ordinationDate: true },
   });
   const priestMap = Object.fromEntries(
-    allPriests.map((p) => [p.id, `Fr. ${p.firstName} ${p.lastName}`])
+    allPriests.map((p) => [p.id, formatPriestName(p)])
   );
 
   const rows = perPriestRaw

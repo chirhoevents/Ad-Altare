@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { priests, registryItems, donations } from '@/db/schema';
 import { eq, sum, count } from 'drizzle-orm';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPriestName, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -59,7 +59,7 @@ export default async function AdminPreviewPage({ params }: Props) {
           <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
           <div>
             <p className="font-inter text-sm font-semibold text-red-700">
-              Admin View — Fr. {priest.firstName} {priest.lastName}&apos;s Dashboard
+              Admin View — {formatPriestName(priest)}&apos;s Dashboard
             </p>
             <p className="font-inter text-xs text-red-500 mt-0.5">
               You are viewing this priest&apos;s dashboard as an admin. All actions are read-only.
@@ -75,7 +75,9 @@ export default async function AdminPreviewPage({ params }: Props) {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-cormorant text-4xl font-light text-burgundy-800">
-            Welcome, Fr. {priest.firstName}
+            {getTitleForDisplay(priest)
+              ? `Welcome, ${getTitleForDisplay(priest)} ${priest.firstName}`
+              : `Welcome, ${priest.firstName}`}
           </h1>
           <p className="font-inter text-sm text-near-black/50 mt-1">
             Here&apos;s an overview of your ordination registry.

@@ -28,6 +28,7 @@ export const priests = pgTable('priests', {
   profilePhotoUrl: text('profile_photo_url'),
   backgroundPhotoUrl: text('background_photo_url'),
   slug: text('slug').unique().notNull(),
+  currentTitle: text('current_title').default('Seminarian').notNull(), // 'Seminarian' | 'Transitional Deacon' | 'Deacon' | 'Father' (Father is auto-assigned by date logic, never self-selected)
   stripeAccountId: text('stripe_account_id'),
   stripeOnboardingComplete: boolean('stripe_onboarding_complete').default(false).notNull(),
   platformFeeOverride: integer('platform_fee_override'), // null = default 1%, 0 = waived, N = N%

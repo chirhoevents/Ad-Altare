@@ -13,6 +13,7 @@ import { ExternalLink, CheckCircle, AlertCircle, Upload, X, ChevronDown, Chevron
 interface PriestSettings {
   firstName: string;
   lastName: string;
+  currentTitle: string;
   email: string;
   phone: string | null;
   seminary: string | null;
@@ -196,6 +197,23 @@ export function SettingsClient() {
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input id="lastName" name="lastName" value={settings.lastName} onChange={handleChange} />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currentTitle">Current Title</Label>
+              <select
+                id="currentTitle"
+                name="currentTitle"
+                value={settings.currentTitle}
+                onChange={(e) => setSettings((prev) => prev ? { ...prev, currentTitle: e.target.value } : prev)}
+                className="w-full border border-near-black/20 rounded-sm px-3 py-2 font-inter text-sm bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800 text-near-black"
+              >
+                <option value="Seminarian">Seminarian</option>
+                <option value="Transitional Deacon">Transitional Deacon</option>
+                <option value="Deacon">Deacon</option>
+              </select>
+              <p className="font-inter text-xs text-near-black/40">
+                Your title advances to &ldquo;Fr.&rdquo; automatically on your ordination date. You cannot self-select Father.
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>

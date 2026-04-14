@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendThankYouEmail } from '@/lib/resend';
-import { applyMergeTagsToTemplate, formatCurrency } from '@/lib/utils';
+import { applyMergeTagsToTemplate, formatCurrency, formatPriestName, getTitleForDisplay } from '@/lib/utils';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
   }
 
   const template = priest.thankYouTemplate ?? '';
-  const priestName = `${priest.firstName} ${priest.lastName}`;
+  const priestName = formatPriestName(priest);
   // Pass just the name (not "Dear Friend") — the template itself contains "Dear {donor_name}"
   const donorName = donation.isAnonymous ? 'Friend' : (donation.donorName ?? 'Friend');
   const itemName = donation.registryItem?.name ?? '';
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
   try {
     await sendThankYouEmail({
       donorEmail: donation.donorEmail,
-      subject: `A personal note from Fr. ${priestName}`,
+      subject: `A personal note from ${priestName}`,
       bodyHtml,
     });
   } catch (err) {

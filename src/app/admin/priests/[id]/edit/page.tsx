@@ -20,6 +20,7 @@ interface PriestData {
   ordinationDate: string | null;
   firstMassDate: string | null;
   bio: string | null;
+  currentTitle: string;
 }
 
 export default function AdminPriestEditPage() {
@@ -39,6 +40,7 @@ export default function AdminPriestEditPage() {
     ordinationDate: '',
     firstMassDate: '',
     bio: '',
+    currentTitle: 'Seminarian',
   });
 
   useEffect(() => {
@@ -60,13 +62,14 @@ export default function AdminPriestEditPage() {
         ordinationDate: data.ordinationDate ?? '',
         firstMassDate: data.firstMassDate ?? '',
         bio: data.bio ?? '',
+        currentTitle: data.currentTitle ?? 'Seminarian',
       });
       setLoading(false);
     }
     load();
   }, [id]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
@@ -88,6 +91,7 @@ export default function AdminPriestEditPage() {
         ordinationDate: form.ordinationDate || undefined,
         firstMassDate: form.firstMassDate || undefined,
         bio: form.bio,
+        currentTitle: form.currentTitle,
       }),
     });
 
@@ -147,6 +151,25 @@ export default function AdminPriestEditPage() {
               required
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="currentTitle">Current Title</Label>
+          <select
+            id="currentTitle"
+            name="currentTitle"
+            value={form.currentTitle}
+            onChange={handleChange}
+            className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800 text-near-black"
+          >
+            <option value="Seminarian">Seminarian</option>
+            <option value="Transitional Deacon">Transitional Deacon</option>
+            <option value="Deacon">Deacon</option>
+            <option value="Father">Father</option>
+          </select>
+          <p className="font-inter text-xs text-near-black/40">
+            Admins can set any title. Title displays as "Fr." automatically on/after ordination date.
+          </p>
         </div>
 
         <div className="space-y-2">

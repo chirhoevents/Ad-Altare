@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { db } from '@/db';
 import { priests, registryItems, donations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPriestName } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Pencil, Eye } from 'lucide-react';
@@ -46,7 +46,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="font-cormorant text-4xl font-light text-burgundy-800">
-            Fr. {priest.firstName} {priest.lastName}
+            {formatPriestName(priest)}
           </h1>
           <p className="font-inter text-sm text-near-black/50 mt-1">{priest.email}</p>
         </div>
@@ -74,6 +74,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
         <h2 className="font-cormorant text-2xl text-burgundy-800 mb-5">Profile</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm font-inter">
           {[
+            ['Title', priest.currentTitle],
             ['Diocese', priest.diocese],
             ['Seminary', priest.seminary],
             ['Parish', priest.parish],

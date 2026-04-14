@@ -15,6 +15,7 @@ async function assertAdmin() {
 const patchSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
+  currentTitle: z.enum(['Seminarian', 'Transitional Deacon', 'Deacon', 'Father']).optional(), // admin can set Father directly
   phone: z.string().max(30).optional(),
   seminary: z.string().max(200).optional(),
   diocese: z.string().max(200).optional(),
@@ -67,6 +68,7 @@ export async function PATCH(
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (data.firstName !== undefined) updates.firstName = data.firstName;
   if (data.lastName !== undefined) updates.lastName = data.lastName;
+  if (data.currentTitle !== undefined) updates.currentTitle = data.currentTitle;
   if (data.phone !== undefined) updates.phone = data.phone || null;
   if (data.seminary !== undefined) updates.seminary = data.seminary || null;
   if (data.diocese !== undefined) updates.diocese = data.diocese || null;

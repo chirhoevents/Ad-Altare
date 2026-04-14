@@ -25,12 +25,61 @@ export function formatDate(dateStr: string | null | undefined): string {
 }
 
 export function generateBaseSlug(firstName: string, lastName: string): string {
-  const name = `${firstName} ${lastName}`
+  // No title prefix — slugs must stay stable as titles change over time.
+  // Existing "fr-*" slugs are grandfathered; new slugs generate as "john-smith".
+  return `${firstName} ${lastName}`
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
     .replace(/\s+/g, '-');
-  return `fr-${name}`;
+}
+
+/**
+ * Returns the display title prefix for a priest based on their ordination date
+ * and self-reported current title.
+ *
+ * - On/after ordination date → 'Fr.'
+ * - Within 3 months before ordination → 'Soon-to-be Fr.'
+ * - Earlier, title=Transitional Deacon or Deacon → 'Dcn.'
+ * - Earlier, title=Seminarian → '' (no prefix)
+ */
+export function getTitleForDisplay(priest: {
+  currentTitle?: string | null;
+  ordinationDate?: string | null;
+}): string {
+  if (priest.ordinationDate) {
+    const [year, month, day] = priest.ordinationDate.split('-').map(Number);
+    const ordDate = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (today >= ordDate) return 'Fr.';
+
+    const threeMonthsBefore = new Date(ordDate);
+    threeMonthsBefore.setMonth(threeMonthsBefore.getMonth() - 3);
+    if (today >= threeMonthsBefore) return 'Soon-to-be Fr.';
+  }
+
+  switch (priest.currentTitle) {
+    case 'Transitional Deacon':
+    case 'Deacon':
+      return 'Dcn.';
+    default:
+      return ''; // Seminarian or unknown — no prefix
+  }
+}
+
+/** Full formatted name: "Fr. John Smith", "Dcn. John Smith", "John Smith", etc. */
+export function formatPriestName(priest: {
+  firstName: string;
+  lastName: string;
+  currentTitle?: string | null;
+  ordinationDate?: string | null;
+}): string {
+  const title = getTitleForDisplay(priest);
+  return title
+    ? `${title} ${priest.firstName} ${priest.lastName}`
+    : `${priest.firstName} ${priest.lastName}`;
 }
 
 export function computePlatformFee(grossCents: number): number {

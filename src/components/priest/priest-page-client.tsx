@@ -17,6 +17,7 @@ interface PublicPriestData {
   lastName: string;
   bio: string | null;
   stripeReady: boolean; // computed server-side; never expose the raw stripeAccountId
+  displayTitle: string; // computed server-side from ordinationDate/currentTitle
 }
 
 interface PriestPageClientProps {
@@ -35,7 +36,9 @@ export function PriestPageClient({ priest, registryItems, hasRsvp = false }: Pri
   const [donationAmount, setDonationAmount] = useState(0);
 
   const { stripeReady } = priest;
-  const priestName = `${priest.firstName} ${priest.lastName}`;
+  const priestName = priest.displayTitle
+    ? `${priest.displayTitle} ${priest.firstName} ${priest.lastName}`
+    : `${priest.firstName} ${priest.lastName}`;
 
   function handleDonate(item: RegistryItem | null, amount: number) {
     setSelectedItem(item);
@@ -58,7 +61,11 @@ export function PriestPageClient({ priest, registryItems, hasRsvp = false }: Pri
                   : 'border-transparent text-near-black/50 hover:text-near-black'
               }`}
             >
-              {tab === 'about' ? `About Fr. ${priest.firstName}` : tab === 'rsvp' ? 'RSVP' : 'Registry'}
+              {tab === 'about'
+                ? priest.displayTitle
+                  ? `About ${priest.displayTitle} ${priest.firstName}`
+                  : `About ${priest.firstName}`
+                : tab === 'rsvp' ? 'RSVP' : 'Registry'}
             </button>
           ))}
         </div>
@@ -78,7 +85,7 @@ export function PriestPageClient({ priest, registryItems, hasRsvp = false }: Pri
               </div>
             ) : (
               <p className="font-inter text-near-black/40 italic">
-                Fr. {priest.firstName} hasn't added a bio yet.
+                {priestName} hasn't added a bio yet.
               </p>
             )}
           </div>
@@ -93,7 +100,7 @@ export function PriestPageClient({ priest, registryItems, hasRsvp = false }: Pri
                   No items yet
                 </p>
                 <p className="font-inter text-sm text-near-black/30">
-                  Fr. {priest.firstName} hasn't added any registry items.
+                  {priestName} hasn't added any registry items.
                 </p>
               </div>
             ) : (

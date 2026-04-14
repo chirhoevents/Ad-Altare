@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, sum, count } from 'drizzle-orm';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPriestName } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Users, TrendingUp, DollarSign, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
@@ -198,7 +198,7 @@ export default async function AdminPage() {
                     <td className="px-5 py-4">
                       <Link href={`/admin/priests/${priest.id}`} className="block group">
                         <p className="font-inter text-sm font-medium text-near-black group-hover:text-burgundy-800 transition-colors">
-                          Fr. {priest.firstName} {priest.lastName}
+                          {formatPriestName(priest)}
                         </p>
                         <p className="font-inter text-xs text-near-black/40">{priest.email}</p>
                       </Link>

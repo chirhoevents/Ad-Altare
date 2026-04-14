@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 import { db } from '@/db';
 import { priests, registryItems, donations } from '@/db/schema';
 import { eq, sum, count, desc } from 'drizzle-orm';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, DollarSign, Gift, Users } from 'lucide-react';
@@ -75,7 +75,9 @@ export default async function DashboardPage() {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="font-cormorant text-4xl font-light text-burgundy-800">
-              Welcome, Fr. {priest.firstName}
+              {getTitleForDisplay(priest)
+                ? `Welcome, ${getTitleForDisplay(priest)} ${priest.firstName}`
+                : `Welcome, ${priest.firstName}`}
             </h1>
             <p className="font-inter text-sm text-near-black/50 mt-1">
               Here's an overview of your ordination registry.

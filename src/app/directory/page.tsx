@@ -23,6 +23,7 @@ export default async function DirectoryPage() {
       id: true,
       firstName: true,
       lastName: true,
+      currentTitle: true,
       diocese: true,
       seminary: true,
       parish: true,

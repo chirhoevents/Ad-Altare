@@ -6,9 +6,12 @@ import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+const SELF_SELECTABLE_TITLES = ['Seminarian', 'Transitional Deacon', 'Deacon'] as const;
+
 const patchSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
+  currentTitle: z.enum(SELF_SELECTABLE_TITLES).optional(),
   phone: z.string().max(30).nullish(),
   seminary: z.string().max(200).nullish(),
   diocese: z.string().max(200).nullish(),
@@ -54,6 +57,7 @@ export async function PATCH(req: Request) {
 
   if (data.firstName !== undefined) updates.firstName = data.firstName;
   if (data.lastName !== undefined) updates.lastName = data.lastName;
+  if (data.currentTitle !== undefined) updates.currentTitle = data.currentTitle;
   if (data.phone !== undefined) updates.phone = data.phone || null;
   if (data.seminary !== undefined) updates.seminary = data.seminary || null;
   if (data.diocese !== undefined) updates.diocese = data.diocese || null;

@@ -9,7 +9,7 @@ import { db } from '@/db';
 export const dynamic = 'force-dynamic';
 import { priests, registryItems, events } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { formatDate } from '@/lib/utils';
+import { formatDate, formatPriestName, getTitleForDisplay } from '@/lib/utils';
 import { PriestPageClient } from '@/components/priest/priest-page-client';
 import { PriestPageNav } from '@/components/priest/priest-page-nav';
 
@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!priest) return { title: 'Not Found' };
 
   return {
-    title: `Fr. ${priest.firstName} ${priest.lastName} — Ordination Registry`,
-    description: priest.bio?.slice(0, 160) ?? `Support Fr. ${priest.firstName} ${priest.lastName}'s ordination.`,
+    title: `${formatPriestName(priest)} — Ordination Registry`,
+    description: priest.bio?.slice(0, 160) ?? `Support ${formatPriestName(priest)}'s ordination.`,
     openGraph: {
       images: priest.profilePhotoUrl ? [priest.profilePhotoUrl] : [],
     },
@@ -51,7 +51,7 @@ export default async function PriestPage({ params }: Props) {
     }),
   ]);
 
-  const priestName = `Fr. ${priest.firstName} ${priest.lastName}`;
+  const priestName = formatPriestName(priest);
 
   // Strip sensitive fields before passing to the client component.
   // Only expose what the public page actually needs — never send email, phone,
@@ -62,6 +62,8 @@ export default async function PriestPage({ params }: Props) {
     lastName: priest.lastName,
     bio: priest.bio,
     stripeReady: !!(priest.stripeAccountId && priest.stripeOnboardingComplete),
+    // Computed server-side so currentTitle/ordinationDate never reach the browser
+    displayTitle: getTitleForDisplay(priest),
   };
 
   return (
