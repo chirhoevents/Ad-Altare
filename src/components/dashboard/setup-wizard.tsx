@@ -56,8 +56,16 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-near-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-sm shadow-2xl w-full max-w-lg border border-near-black/10 max-h-[90vh] overflow-y-auto">
+    /* Backdrop — click anywhere outside the card to dismiss */
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-near-black/40 backdrop-blur-sm"
+      onClick={() => setOpen(false)}
+    >
+      {/* Stop clicks inside the card from closing the modal */}
+      <div
+        className="bg-white rounded-sm shadow-2xl w-full max-w-lg border border-near-black/10 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-burgundy-900 px-6 py-5 rounded-t-sm flex items-start justify-between gap-4 sticky top-0">
           <div>
@@ -70,10 +78,10 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="text-cream/40 hover:text-cream mt-0.5"
+            className="text-cream/50 hover:text-cream transition-colors mt-0.5 p-1 rounded hover:bg-white/10"
             aria-label="Skip for now"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -261,12 +269,15 @@ export function SetupWizard({ stripeConnected, profileVisible, slug }: SetupWiza
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-5 flex justify-end">
+        <div className="px-6 pb-5 pt-2 flex items-center justify-between border-t border-near-black/10">
+          <p className="font-inter text-xs text-near-black/30 italic">
+            You can complete this later from Settings.
+          </p>
           <button
             onClick={() => setOpen(false)}
-            className="font-inter text-xs text-near-black/40 hover:text-near-black"
+            className="font-inter text-sm text-near-black/50 hover:text-near-black underline underline-offset-2 transition-colors"
           >
-            Skip for now — remind me next time
+            Skip for now
           </button>
         </div>
       </div>

@@ -27,6 +27,7 @@ export async function createStripeExpressAccount(email: string): Promise<Stripe.
     email,
     business_type: 'individual',
     capabilities: {
+      card_payments: { requested: true },
       transfers: { requested: true },
     },
     settings: {
