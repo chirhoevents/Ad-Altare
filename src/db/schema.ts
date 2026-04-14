@@ -8,6 +8,7 @@ import {
   date,
   jsonb,
   uniqueIndex,
+  doublePrecision,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -29,6 +30,7 @@ export const priests = pgTable('priests', {
   slug: text('slug').unique().notNull(),
   stripeAccountId: text('stripe_account_id'),
   stripeOnboardingComplete: boolean('stripe_onboarding_complete').default(false).notNull(),
+  platformFeeOverride: integer('platform_fee_override'), // null = default 2%, 0 = waived, N = N%
   profileVisible: boolean('profile_visible').default(false).notNull(),
   thankYouTemplate: text('thank_you_template').default(
     'Dear {donor_name},\n\nThank you so much for your generous gift of {amount} in support of my ordination. Your contribution toward {item_name} is a true blessing and means more than words can express.\n\nPlease know that you will be remembered in my prayers, especially at my First Mass.\n\nIn Christ,\nFr. {priest_name}'
@@ -69,6 +71,7 @@ export const donations = pgTable('donations', {
   donorAddress: text('donor_address'),
   donorPhone: text('donor_phone'),
   isAnonymous: boolean('is_anonymous').default(false).notNull(),
+  feePercentUsed: doublePrecision('fee_percent_used').default(2.0).notNull(), // actual % charged (2 = 2%, 0 = waived)
   thankYouSent: boolean('thank_you_sent').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

@@ -185,7 +185,7 @@ export default async function AdminPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-near-black/10">
-                  {['Name', 'Diocese / Seminary', 'Ordination', 'Stripe', 'Total Raised', 'Joined', ''].map((h) => (
+                  {['Name', 'Diocese / Seminary', 'Ordination', 'Stripe', 'Fee', 'Total Raised', 'Joined', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left font-inter text-xs uppercase tracking-widest text-near-black/40">
                       {h}
                     </th>
@@ -217,6 +217,15 @@ export default async function AdminPage() {
                         <Badge variant="muted">Pending</Badge>
                       ) : (
                         <Badge variant="outline">None</Badge>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
+                      {priest.platformFeeOverride === null ? (
+                        <Badge variant="success">2%</Badge>
+                      ) : priest.platformFeeOverride === 0 ? (
+                        <Badge variant="muted">Waived</Badge>
+                      ) : (
+                        <Badge variant="gold">{priest.platformFeeOverride}%</Badge>
                       )}
                     </td>
                     <td className="px-5 py-4">

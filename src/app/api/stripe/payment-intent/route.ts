@@ -3,7 +3,6 @@ import { db } from '@/db';
 import { priests, registryItems } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createDonationPaymentIntent } from '@/lib/stripe';
-import { computePlatformFee } from '@/lib/utils';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -63,12 +62,23 @@ export async function POST(req: Request) {
     itemName = item.name;
   }
 
-  const platformFee = computePlatformFee(amountCents);
+  // Resolve fee: null = default 2%, 0 = waived, N = N%
+  const feePercent =
+    priest.platformFeeOverride !== null && priest.platformFeeOverride !== undefined
+      ? priest.platformFeeOverride / 100
+      : 0.02;
+  const feePercentUsed =
+    priest.platformFeeOverride !== null && priest.platformFeeOverride !== undefined
+      ? priest.platformFeeOverride
+      : 2;
+
+  const platformFee = Math.floor(amountCents * feePercent);
   const amountNet = amountCents - platformFee;
 
   const paymentIntent = await createDonationPaymentIntent({
     amountCents,
-    platformFeeCents: platformFee,
+    // Pass null when fee is 0 — Stripe forbids application_fee_amount: 0
+    platformFeeCents: platformFee > 0 ? platformFee : null,
     connectedAccountId: priest.stripeAccountId,
     metadata: {
       priestId,
@@ -81,6 +91,7 @@ export async function POST(req: Request) {
       isAnonymous: isAnonymous.toString(),
       platformFee: platformFee.toString(),
       amountNet: amountNet.toString(),
+      feePercentUsed: feePercentUsed.toString(),
     },
   });
 

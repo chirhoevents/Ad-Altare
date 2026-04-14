@@ -7,7 +7,7 @@ import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Pencil, Eye } from 'lucide-react';
-import { AdminPriestActions } from './actions-client';
+import { AdminPriestActions, AdminFeeActions } from './actions-client';
 
 interface Props {
   params: { id: string };
@@ -112,10 +112,34 @@ export default async function AdminPriestDetailPage({ params }: Props) {
             </span>
           )}
         </div>
-        {/* Client-side admin actions */}
         <AdminPriestActions
           priestId={priest.id}
           stripeOnboardingComplete={priest.stripeOnboardingComplete}
+        />
+      </section>
+
+      {/* Platform Fee */}
+      <section className="bg-white border border-near-black/10 rounded-sm p-6">
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="font-cormorant text-2xl text-burgundy-800">Platform Fee</h2>
+          {priest.platformFeeOverride === null ? (
+            <Badge variant="success">2% default</Badge>
+          ) : priest.platformFeeOverride === 0 ? (
+            <Badge variant="muted">Waived</Badge>
+          ) : (
+            <Badge variant="gold">{priest.platformFeeOverride}% custom</Badge>
+          )}
+        </div>
+        <p className="font-inter text-xs text-near-black/40 mb-4">
+          {priest.platformFeeOverride === null
+            ? 'This priest is charged the standard 2% platform fee on each donation.'
+            : priest.platformFeeOverride === 0
+            ? 'Platform fee is waived. Donations go directly to this priest minus Stripe processing only.'
+            : `This priest is charged a custom ${priest.platformFeeOverride}% platform fee instead of the default 2%.`}
+        </p>
+        <AdminFeeActions
+          priestId={priest.id}
+          platformFeeOverride={priest.platformFeeOverride}
         />
       </section>
 

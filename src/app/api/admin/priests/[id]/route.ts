@@ -23,6 +23,8 @@ const patchSchema = z.object({
   firstMassDate: z.string().optional(),
   bio: z.string().max(5000).optional(),
   stripeOnboardingComplete: z.boolean().optional(),
+  // null = restore default 2%, 0 = waive entirely, 1-100 = custom %
+  platformFeeOverride: z.number().int().min(0).max(100).nullable().optional(),
 });
 
 export async function GET(
@@ -74,6 +76,10 @@ export async function PATCH(
   if (data.firstMassDate !== undefined) updates.firstMassDate = data.firstMassDate || null;
   if (data.bio !== undefined) updates.bio = data.bio || null;
   if (data.stripeOnboardingComplete !== undefined) updates.stripeOnboardingComplete = data.stripeOnboardingComplete;
+  // platformFeeOverride can be null (restore default), 0 (waive), or 1-100 (custom %)
+  if (Object.prototype.hasOwnProperty.call(data, 'platformFeeOverride')) {
+    updates.platformFeeOverride = data.platformFeeOverride ?? null;
+  }
 
   const [updated] = await db
     .update(priests)

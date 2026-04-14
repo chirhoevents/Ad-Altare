@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     const isAnonymous = meta.isAnonymous === 'true';
     const platformFee = parseInt(meta.platformFee ?? '0', 10);
     const amountNet = parseInt(meta.amountNet ?? '0', 10);
+    const feePercentUsed = parseFloat(meta.feePercentUsed ?? '2');
     const amountGross = pi.amount;
     const amountReceived = pi.amount_received ?? pi.amount;
 
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
       amountGross,
       platformFee,
       amountNet,
+      feePercentUsed,
       donorName: isAnonymous ? null : donorName,
       donorEmail,
       donorAddress: isAnonymous ? null : donorAddress,

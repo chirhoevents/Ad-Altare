@@ -63,14 +63,15 @@ export async function createDonationPaymentIntent({
   metadata,
 }: {
   amountCents: number;
-  platformFeeCents: number;
+  platformFeeCents: number | null; // null = fee waived; Stripe forbids passing 0
   connectedAccountId: string;
   metadata: Record<string, string>;
 }): Promise<Stripe.PaymentIntent> {
   return getStripe().paymentIntents.create({
     amount: amountCents,
     currency: 'usd',
-    application_fee_amount: platformFeeCents,
+    // Omit application_fee_amount entirely when fee is waived (Stripe rejects 0)
+    ...(platformFeeCents !== null && { application_fee_amount: platformFeeCents }),
     transfer_data: {
       destination: connectedAccountId,
     },
