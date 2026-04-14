@@ -166,8 +166,8 @@ export function DonationModal({
           amountCents: amount,
           donorName: form.name,
           donorEmail: form.email,
-          donorAddress: form.isAnonymous ? null : buildAddress(),
-          donorPhone: form.isAnonymous ? null : form.phone,
+          donorAddress: form.isAnonymous ? '' : buildAddress(),
+          donorPhone: form.isAnonymous ? '' : form.phone,
           isAnonymous: form.isAnonymous,
         }),
       });
@@ -196,7 +196,7 @@ export function DonationModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
-      <DialogContent className="p-0 overflow-hidden">
+      <DialogContent className="p-0 overflow-y-auto max-h-[90vh]">
         <DialogHeader className="p-6 pb-2 border-b border-near-black/10">
           <DialogTitle>
             {step === 'success' ? 'Thank You!' : `Support Fr. ${priestName}`}
