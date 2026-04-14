@@ -23,10 +23,18 @@ export const stripe = new Proxy({} as Stripe, {
 export async function createStripeExpressAccount(email: string): Promise<Stripe.Account> {
   return getStripe().accounts.create({
     type: 'express',
+    country: 'US',
     email,
+    business_type: 'individual',
     capabilities: {
-      card_payments: { requested: true },
       transfers: { requested: true },
+    },
+    settings: {
+      payouts: {
+        schedule: {
+          interval: 'daily',
+        },
+      },
     },
   });
 }

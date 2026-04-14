@@ -59,7 +59,7 @@ export function SettingsClient() {
   }, [fetchSettings]);
 
   useEffect(() => {
-    if (stripeStatus === 'success') {
+    if (stripeStatus === 'complete') {
       fetch('/api/stripe/connect', { method: 'PUT' }).then(() => fetchSettings());
     }
   }, [stripeStatus, fetchSettings]);
@@ -150,12 +150,32 @@ export function SettingsClient() {
         </p>
       </div>
 
-      {stripeStatus === 'success' && settings.stripeOnboardingComplete && (
-        <div className="mb-6 bg-green-50 border border-green-200 rounded-sm px-5 py-4 flex items-center gap-3">
-          <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
-          <p className="font-inter text-sm text-green-800">
-            Stripe connected successfully! You can now receive donations.
-          </p>
+      {stripeStatus === 'complete' && (
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-sm px-5 py-4 flex items-start gap-3">
+          <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-inter text-sm font-medium text-green-800">
+              You&apos;re almost set!
+            </p>
+            <p className="font-inter text-sm text-green-700 mt-0.5">
+              Stripe is verifying your information. This usually takes a few minutes.
+              Once approved, donations will be deposited to your bank account daily.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {stripeStatus === 'refresh' && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-sm px-5 py-4 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <p className="font-inter text-sm text-amber-800">
+              Your session expired before finishing. Please try connecting again.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={handleStripeConnect} disabled={connectingStripe}>
+            {connectingStripe ? 'Redirecting…' : 'Try Again'}
+          </Button>
         </div>
       )}
 

@@ -48,7 +48,7 @@ export async function POST() {
 
     const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
     const refreshUrl = `${APP_URL}/dashboard/settings?stripe=refresh`;
-    const returnUrl = `${APP_URL}/dashboard/settings?stripe=success`;
+    const returnUrl = `${APP_URL}/dashboard/settings?stripe=complete`;
 
     const accountLink = await createAccountLink(accountId, refreshUrl, returnUrl);
     return NextResponse.json({ url: accountLink.url });
