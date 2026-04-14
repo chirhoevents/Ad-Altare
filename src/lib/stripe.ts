@@ -70,6 +70,9 @@ export async function createDonationPaymentIntent({
   return getStripe().paymentIntents.create({
     amount: amountCents,
     currency: 'usd',
+    // on_behalf_of makes the connected account the merchant of record so that
+    // Stripe's processing fee (2.9% + 30¢) is charged to the priest, not the platform.
+    on_behalf_of: connectedAccountId,
     // Omit application_fee_amount entirely when fee is waived (Stripe rejects 0)
     ...(platformFeeCents !== null && { application_fee_amount: platformFeeCents }),
     transfer_data: {
