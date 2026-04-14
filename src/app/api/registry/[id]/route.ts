@@ -53,7 +53,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const [updated] = await db
     .update(registryItems)
     .set(updates)
-    .where(eq(registryItems.id, params.id))
+    .where(and(eq(registryItems.id, params.id), eq(registryItems.priestId, item.priestId)))
     .returning();
 
   return NextResponse.json(updated);
@@ -66,7 +66,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const item = await getPriestItem(userId, params.id);
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  await db.delete(registryItems).where(eq(registryItems.id, params.id));
+  await db.delete(registryItems).where(and(eq(registryItems.id, params.id), eq(registryItems.priestId, item.priestId)));
 
   return NextResponse.json({ success: true });
 }
