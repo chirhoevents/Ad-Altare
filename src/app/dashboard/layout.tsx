@@ -35,7 +35,8 @@ export default async function DashboardLayout({
         priestName={`${priest.firstName} ${priest.lastName}`}
         slug={priest.slug}
       />
-      <main className="flex-1 overflow-auto">
+      {/* pt-14 offsets the fixed mobile top bar (56px); removed on lg+ where sidebar is static */}
+      <main className="flex-1 overflow-auto pt-14 lg:pt-0 min-w-0">
         {children}
       </main>
 

@@ -137,7 +137,7 @@ export function SettingsClient() {
 
   if (loading) {
     return (
-      <div className="p-8 text-center">
+      <div className="p-4 sm:p-8 text-center">
         <p className="font-inter text-sm text-near-black/40">Loading…</p>
       </div>
     );
@@ -146,7 +146,7 @@ export function SettingsClient() {
   if (!settings) return null;
 
   return (
-    <div className="p-8 max-w-3xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-3xl">
       <div className="mb-8">
         <h1 className="font-cormorant text-4xl font-light text-burgundy-800">Settings</h1>
         <p className="font-inter text-sm text-near-black/50 mt-1">

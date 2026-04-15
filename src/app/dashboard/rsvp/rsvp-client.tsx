@@ -685,7 +685,7 @@ export function RsvpClient() {
   const [tab, setTab] = useState<Tab>('events');
 
   return (
-    <div className="p-8 max-w-5xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl">
       <div className="mb-8">
         <h1 className="font-cormorant text-4xl font-light text-burgundy-800">RSVP Management</h1>
         <p className="font-inter text-sm text-near-black/50 mt-1">Manage events, guest lists, and RSVP responses.</p>
