@@ -10,7 +10,9 @@ const createSchema = z.object({
   category: z.string().max(100).optional().default(''),
   description: z.string().max(1000).optional().default(''),
   imageUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
-  goalAmount: z.number().int().min(100),
+  goalAmount: z.number().int().min(0),
+  itemType: z.enum(['campaign', 'wishlist']).default('campaign'),
+  externalUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
 });
 
 export async function GET() {
@@ -54,6 +56,8 @@ export async function POST(req: Request) {
       description: parsed.data.description || null,
       imageUrl: parsed.data.imageUrl || null,
       goalAmount: parsed.data.goalAmount,
+      itemType: parsed.data.itemType,
+      externalUrl: parsed.data.externalUrl || null,
     })
     .returning();
 

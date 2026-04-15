@@ -10,8 +10,11 @@ const patchSchema = z.object({
   category: z.string().max(100).optional(),
   description: z.string().max(1000).optional(),
   imageUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
-  goalAmount: z.number().int().min(100).optional(),
+  goalAmount: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
+  itemType: z.enum(['campaign', 'wishlist']).optional(),
+  externalUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  isPurchased: z.boolean().optional(),
 });
 
 async function getPriestItem(userId: string, itemId: string) {
@@ -49,6 +52,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (parsed.data.goalAmount !== undefined) updates.goalAmount = parsed.data.goalAmount;
   if (parsed.data.imageUrl !== undefined) updates.imageUrl = parsed.data.imageUrl || null;
   if (parsed.data.isActive !== undefined) updates.isActive = parsed.data.isActive;
+  if (parsed.data.itemType !== undefined) updates.itemType = parsed.data.itemType;
+  if (parsed.data.externalUrl !== undefined) updates.externalUrl = parsed.data.externalUrl || null;
+  if (parsed.data.isPurchased !== undefined) updates.isPurchased = parsed.data.isPurchased;
 
   const [updated] = await db
     .update(registryItems)

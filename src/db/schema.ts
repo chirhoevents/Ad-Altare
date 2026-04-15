@@ -52,6 +52,18 @@ export const registryItems = pgTable('registry_items', {
   goalAmount: integer('goal_amount').notNull(), // in cents
   amountRaised: integer('amount_raised').default(0).notNull(), // in cents
   isActive: boolean('is_active').default(true).notNull(),
+  itemType: text('item_type').default('campaign').notNull(), // 'campaign' | 'wishlist'
+  externalUrl: text('external_url'),
+  isPurchased: boolean('is_purchased').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const registryLinks = pgTable('registry_links', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  priestId: uuid('priest_id').references(() => priests.id, { onDelete: 'cascade' }).notNull(),
+  label: text('label').notNull(), // e.g. "Amazon Registry", "Target Registry"
+  url: text('url').notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -138,6 +150,7 @@ export const priestsRelations = relations(priests, ({ many }) => ({
   donations: many(donations),
   events: many(events),
   guestList: many(guestList),
+  registryLinks: many(registryLinks),
 }));
 
 export const registryItemsRelations = relations(registryItems, ({ one, many }) => ({
@@ -170,6 +183,10 @@ export const rsvpsRelations = relations(rsvps, ({ one }) => ({
   event: one(events, { fields: [rsvps.eventId], references: [events.id] }),
 }));
 
+export const registryLinksRelations = relations(registryLinks, ({ one }) => ({
+  priest: one(priests, { fields: [registryLinks.priestId], references: [priests.id] }),
+}));
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type Priest = typeof priests.$inferSelect;
@@ -183,3 +200,5 @@ export type NewEvent = typeof events.$inferInsert;
 export type EventQuestion = typeof eventQuestions.$inferSelect;
 export type GuestListEntry = typeof guestList.$inferSelect;
 export type Rsvp = typeof rsvps.$inferSelect;
+export type RegistryLink = typeof registryLinks.$inferSelect;
+export type NewRegistryLink = typeof registryLinks.$inferInsert;
