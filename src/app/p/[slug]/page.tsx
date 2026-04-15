@@ -7,7 +7,7 @@ import { db } from '@/db';
 // Always fetch from the database — never serve a cached build of this page.
 // Registry item amounts and profile details change at any time.
 export const dynamic = 'force-dynamic';
-import { priests, registryItems, events } from '@/db/schema';
+import { priests, registryItems, events, registryLinks } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { formatDate, formatPriestName, getTitleForDisplay } from '@/lib/utils';
 import { PriestPageClient } from '@/components/priest/priest-page-client';
@@ -40,7 +40,7 @@ export default async function PriestPage({ params }: Props) {
 
   if (!priest) notFound();
 
-  const [items, rsvpEvents] = await Promise.all([
+  const [items, rsvpEvents, links] = await Promise.all([
     db.query.registryItems.findMany({
       where: and(eq(registryItems.priestId, priest.id), eq(registryItems.isActive, true)),
       orderBy: (r, { asc }) => [asc(r.createdAt)],
@@ -48,6 +48,10 @@ export default async function PriestPage({ params }: Props) {
     db.query.events.findMany({
       where: and(eq(events.priestId, priest.id), eq(events.rsvpEnabled, true)),
       orderBy: (e, { asc }) => [asc(e.date)],
+    }),
+    db.query.registryLinks.findMany({
+      where: eq(registryLinks.priestId, priest.id),
+      orderBy: (l, { asc }) => [asc(l.sortOrder), asc(l.createdAt)],
     }),
   ]);
 
@@ -154,7 +158,7 @@ export default async function PriestPage({ params }: Props) {
       </div>
 
       {/* Client content (tabs, registry, donation modal) */}
-      <PriestPageClient priest={publicPriest} registryItems={items} hasRsvp={rsvpEvents.length > 0} />
+      <PriestPageClient priest={publicPriest} registryItems={items} registryLinks={links} hasRsvp={rsvpEvents.length > 0} />
 
       {/* Footer */}
       <div className="border-t border-near-black/10 mt-16 py-6 text-center">

@@ -6,7 +6,7 @@ import { RegistryItemCard } from './registry-item';
 import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
 import { RsvpFlow } from './rsvp-flow';
-import type { RegistryItem } from '@/db/schema';
+import type { RegistryItem, RegistryLink } from '@/db/schema';
 
 // Only the fields the public page actually needs — sensitive fields (email, phone,
 // stripeAccountId, clerkUserId, platformFeeOverride, etc.) are stripped server-side
@@ -23,12 +23,13 @@ interface PublicPriestData {
 interface PriestPageClientProps {
   priest: PublicPriestData;
   registryItems: RegistryItem[];
+  registryLinks: RegistryLink[];
   hasRsvp?: boolean;
 }
 
 type ActiveTab = 'about' | 'registry' | 'rsvp';
 
-export function PriestPageClient({ priest, registryItems, hasRsvp = false }: PriestPageClientProps) {
+export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp = false }: PriestPageClientProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<ActiveTab>('about');
   const [modalOpen, setModalOpen] = useState(false);
@@ -105,6 +106,21 @@ export function PriestPageClient({ priest, registryItems, hasRsvp = false }: Pri
               </div>
             ) : (
               <>
+                {registryLinks.length > 0 && (
+                  <div className="flex flex-wrap gap-3 mb-6">
+                    {registryLinks.map((link) => (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 font-inter text-sm border border-burgundy-800/30 text-burgundy-800 px-4 py-2 rounded-sm hover:bg-burgundy-800 hover:text-cream transition-colors"
+                      >
+                        {link.label} →
+                      </a>
+                    ))}
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {registryItems.map((item) => (
                     <RegistryItemCard

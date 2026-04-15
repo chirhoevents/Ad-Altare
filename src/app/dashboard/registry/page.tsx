@@ -9,8 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Pencil, Trash2, X, Check, Upload } from 'lucide-react';
-import type { RegistryItem } from '@/db/schema';
+import { Plus, Pencil, Trash2, X, Check, Upload, ShoppingBag, Link as LinkIcon } from 'lucide-react';
+import type { RegistryItem, RegistryLink } from '@/db/schema';
 
 interface ItemForm {
   name: string;
@@ -18,11 +18,21 @@ interface ItemForm {
   description: string;
   imageUrl: string;
   goalAmount: string;
+  itemType: 'campaign' | 'wishlist';
+  externalUrl: string;
 }
 
 const CATEGORIES = ['Vessels', 'Vestments', 'Books', 'Devotional', 'Mass Kit', 'General Fund', 'Other'];
 
-const emptyForm: ItemForm = { name: '', category: '', description: '', imageUrl: '', goalAmount: '' };
+const emptyForm: ItemForm = {
+  name: '',
+  category: '',
+  description: '',
+  imageUrl: '',
+  goalAmount: '',
+  itemType: 'campaign',
+  externalUrl: '',
+};
 
 export default function RegistryPage() {
   const [items, setItems] = useState<RegistryItem[]>([]);
@@ -35,6 +45,14 @@ export default function RegistryPage() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Registry Links state
+  const [links, setLinks] = useState<RegistryLink[]>([]);
+  const [linksLoading, setLinksLoading] = useState(true);
+  const [linkLabel, setLinkLabel] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkSaving, setLinkSaving] = useState(false);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/registry');
     if (res.ok) {
@@ -44,12 +62,31 @@ export default function RegistryPage() {
     setLoading(false);
   }, []);
 
+  const fetchLinks = useCallback(async () => {
+    const res = await fetch('/api/registry-links');
+    if (res.ok) {
+      const data = await res.json();
+      setLinks(data);
+    }
+    setLinksLoading(false);
+  }, []);
+
   useEffect(() => {
     fetchItems();
-  }, [fetchItems]);
+    fetchLinks();
+  }, [fetchItems, fetchLinks]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function handleItemTypeChange(newType: 'campaign' | 'wishlist') {
+    setForm((prev) => ({
+      ...prev,
+      itemType: newType,
+      goalAmount: '',
+      externalUrl: '',
+    }));
   }
 
   async function handleImageUpload(file: File) {
@@ -74,7 +111,9 @@ export default function RegistryPage() {
       category: item.category ?? '',
       description: item.description ?? '',
       imageUrl: item.imageUrl ?? '',
-      goalAmount: (item.goalAmount / 100).toString(),
+      goalAmount: item.goalAmount > 0 ? (item.goalAmount / 100).toString() : '',
+      itemType: (item.itemType as 'campaign' | 'wishlist') ?? 'campaign',
+      externalUrl: item.externalUrl ?? '',
     });
     setShowForm(false);
   }
@@ -90,11 +129,17 @@ export default function RegistryPage() {
     setSaving(true);
     setError(null);
 
-    const goalCents = Math.round(parseFloat(form.goalAmount) * 100);
-    if (!goalCents || goalCents < 100) {
-      setError('Goal amount must be at least $1');
-      setSaving(false);
-      return;
+    let goalCents = 0;
+    if (form.goalAmount) {
+      goalCents = Math.round(parseFloat(form.goalAmount) * 100);
+    }
+
+    if (form.itemType === 'campaign') {
+      if (!goalCents || goalCents < 100) {
+        setError('Goal amount must be at least $1');
+        setSaving(false);
+        return;
+      }
     }
 
     const res = await fetch('/api/registry', {
@@ -106,6 +151,8 @@ export default function RegistryPage() {
         description: form.description,
         imageUrl: form.imageUrl || null,
         goalAmount: goalCents,
+        itemType: form.itemType,
+        externalUrl: form.externalUrl || null,
       }),
     });
 
@@ -126,7 +173,10 @@ export default function RegistryPage() {
     setSaving(true);
     setError(null);
 
-    const goalCents = Math.round(parseFloat(form.goalAmount) * 100);
+    let goalCents = 0;
+    if (form.goalAmount) {
+      goalCents = Math.round(parseFloat(form.goalAmount) * 100);
+    }
 
     const res = await fetch(`/api/registry/${editingId}`, {
       method: 'PATCH',
@@ -137,6 +187,8 @@ export default function RegistryPage() {
         description: form.description,
         imageUrl: form.imageUrl || null,
         goalAmount: goalCents,
+        itemType: form.itemType,
+        externalUrl: form.externalUrl || null,
       }),
     });
 
@@ -164,6 +216,41 @@ export default function RegistryPage() {
       body: JSON.stringify({ isActive: !item.isActive }),
     });
     await fetchItems();
+  }
+
+  async function handleTogglePurchased(item: RegistryItem) {
+    await fetch(`/api/registry/${item.id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPurchased: !item.isPurchased }),
+    });
+    await fetchItems();
+  }
+
+  async function handleAddLink(e: React.FormEvent) {
+    e.preventDefault();
+    setLinkSaving(true);
+    setLinkError(null);
+    const res = await fetch('/api/registry-links', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label: linkLabel, url: linkUrl }),
+    });
+    if (res.ok) {
+      setLinkLabel('');
+      setLinkUrl('');
+      await fetchLinks();
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setLinkError(data.error ?? 'Failed to add link');
+    }
+    setLinkSaving(false);
+  }
+
+  async function handleDeleteLink(id: string) {
+    if (!confirm('Remove this registry link?')) return;
+    const res = await fetch(`/api/registry-links/${id}`, { method: 'DELETE' });
+    if (res.ok) await fetchLinks();
   }
 
   // Shared image upload field used in both add and edit forms
@@ -217,6 +304,127 @@ export default function RegistryPage() {
     );
   }
 
+  // Shared form fields for both Add and Edit
+  function FormFields() {
+    return (
+      <>
+        {/* Item type selector */}
+        <div className="space-y-2">
+          <Label>Item Type</Label>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => handleItemTypeChange('campaign')}
+              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+                form.itemType === 'campaign'
+                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+              }`}
+            >
+              Campaign
+            </button>
+            <button
+              type="button"
+              onClick={() => handleItemTypeChange('wishlist')}
+              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+                form.itemType === 'wishlist'
+                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+              }`}
+            >
+              Wishlist
+            </button>
+          </div>
+          <p className="font-inter text-xs text-near-black/40">
+            {form.itemType === 'campaign'
+              ? 'Donors contribute funds toward this item through the platform.'
+              : 'Link donors to an external site where they can purchase it directly.'}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="name">Item Name *</Label>
+          <Input
+            id="name"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="e.g. Chalice, Roman Missal, Stole"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <select
+            id="category"
+            name="category"
+            value={form.category}
+            onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
+            className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+          >
+            <option value="">Select a category…</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            placeholder="Tell donors what this item means for your ministry…"
+            rows={3}
+          />
+        </div>
+        <ImageUploadField />
+
+        {form.itemType === 'campaign' ? (
+          <div className="space-y-2">
+            <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
+            <Input
+              id="goalAmount"
+              name="goalAmount"
+              type="number"
+              min="1"
+              step="0.01"
+              value={form.goalAmount}
+              onChange={handleChange}
+              placeholder="250.00"
+              required
+            />
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="goalAmount">Estimated Price ($) <span className="text-near-black/30 font-normal">(optional)</span></Label>
+              <Input
+                id="goalAmount"
+                name="goalAmount"
+                type="number"
+                step="0.01"
+                value={form.goalAmount}
+                onChange={handleChange}
+                placeholder="49.99"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="externalUrl">Product Link <span className="text-near-black/30 font-normal">(optional)</span></Label>
+              <Input
+                id="externalUrl"
+                name="externalUrl"
+                type="url"
+                value={form.externalUrl}
+                onChange={handleChange}
+                placeholder="https://www.amazon.com/dp/..."
+              />
+            </div>
+          </>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="p-8 max-w-4xl">
       {/* Header */}
@@ -244,56 +452,7 @@ export default function RegistryPage() {
             </button>
           </div>
           <form onSubmit={handleAdd} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Item Name *</Label>
-              <Input
-                id="name"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="e.g. Chalice, Roman Missal, Stole"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <select
-                id="category"
-                name="category"
-                value={form.category}
-                onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-                className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
-              >
-                <option value="">Select a category…</option>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Tell donors what this item means for your ministry…"
-                rows={3}
-              />
-            </div>
-            <ImageUploadField />
-            <div className="space-y-2">
-              <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
-              <Input
-                id="goalAmount"
-                name="goalAmount"
-                type="number"
-                min="1"
-                step="0.01"
-                value={form.goalAmount}
-                onChange={handleChange}
-                placeholder="250.00"
-                required
-              />
-            </div>
+            <FormFields />
             {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
             <div className="flex gap-3">
               <Button type="submit" disabled={saving || uploading}>
@@ -325,38 +484,15 @@ export default function RegistryPage() {
       ) : (
         <div className="space-y-4">
           {items.map((item) => {
-            const pct = Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100));
+            const isWishlist = item.itemType === 'wishlist';
+            const pct = isWishlist ? 0 : Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100));
             const isEditing = editingId === item.id;
 
             if (isEditing) {
               return (
                 <div key={item.id} className="bg-white border border-burgundy-200 rounded-sm p-6">
                   <form onSubmit={handleUpdate} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Item Name</Label>
-                      <Input name="name" value={form.name} onChange={handleChange} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Category</Label>
-                      <select
-                        name="category"
-                        value={form.category}
-                        onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-                        className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
-                      >
-                        <option value="">Select a category…</option>
-                        {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Description</Label>
-                      <Textarea name="description" value={form.description} onChange={handleChange} rows={2} />
-                    </div>
-                    <ImageUploadField />
-                    <div className="space-y-2">
-                      <Label>Goal Amount ($)</Label>
-                      <Input name="goalAmount" type="number" min="1" step="0.01" value={form.goalAmount} onChange={handleChange} required />
-                    </div>
+                    <FormFields />
                     {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
                     <div className="flex gap-3">
                       <Button type="submit" size="sm" disabled={saving || uploading}>
@@ -383,24 +519,63 @@ export default function RegistryPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <h3 className="font-cormorant text-xl text-burgundy-800">{item.name}</h3>
+                      {isWishlist && (
+                        <Badge variant="muted" className="flex items-center gap-1">
+                          <ShoppingBag className="w-3 h-3" />
+                          Wishlist
+                        </Badge>
+                      )}
                       {item.category && <Badge variant="muted">{item.category}</Badge>}
                       {!item.isActive && <Badge variant="muted">Hidden</Badge>}
-                      {item.amountRaised >= item.goalAmount && <Badge variant="gold">Funded</Badge>}
+                      {!isWishlist && item.amountRaised >= item.goalAmount && <Badge variant="gold">Funded</Badge>}
+                      {isWishlist && item.isPurchased && <Badge variant="gold">Purchased</Badge>}
                     </div>
                     {item.description && (
                       <p className="font-inter text-sm text-near-black/50 mb-3">{item.description}</p>
                     )}
-                    <div className="space-y-1.5">
-                      <Progress value={pct} />
-                      <div className="flex justify-between text-xs font-inter text-near-black/40">
-                        <span>{formatCurrency(item.amountRaised)} raised</span>
-                        <span>Goal: {formatCurrency(item.goalAmount)}</span>
+                    {isWishlist ? (
+                      <div className="space-y-1">
+                        {item.goalAmount > 0 && (
+                          <p className="font-inter text-xs text-near-black/40">
+                            Est. Price: {formatCurrency(item.goalAmount)}
+                          </p>
+                        )}
+                        {item.externalUrl && (
+                          <a
+                            href={item.externalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-inter text-xs text-burgundy-800 hover:underline flex items-center gap-1"
+                          >
+                            <LinkIcon className="w-3 h-3" />
+                            {item.externalUrl.length > 50 ? item.externalUrl.slice(0, 50) + '…' : item.externalUrl}
+                          </a>
+                        )}
                       </div>
-                    </div>
+                    ) : (
+                      <div className="space-y-1.5">
+                        <Progress value={pct} />
+                        <div className="flex justify-between text-xs font-inter text-near-black/40">
+                          <span>{formatCurrency(item.amountRaised)} raised</span>
+                          <span>Goal: {formatCurrency(item.goalAmount)}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
+                    {isWishlist && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleTogglePurchased(item)}
+                        title={item.isPurchased ? 'Mark as not purchased' : 'Mark as purchased'}
+                        className="text-xs"
+                      >
+                        {item.isPurchased ? 'Unmark' : 'Purchased'}
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" onClick={() => startEdit(item)} title="Edit">
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>
@@ -417,6 +592,85 @@ export default function RegistryPage() {
           })}
         </div>
       )}
+
+      {/* ── Registry Links Section ─────────────────────────────────────────── */}
+      <div className="mt-12">
+        <div className="mb-4">
+          <h2 className="font-cormorant text-2xl text-burgundy-800">External Registry Links</h2>
+          <p className="font-inter text-sm text-near-black/50 mt-1">
+            Add links to Amazon, Target, or other wishlists. Donors will see these as buttons on your public page.
+          </p>
+        </div>
+
+        {/* Add link form */}
+        <form onSubmit={handleAddLink} className="bg-white border border-near-black/10 rounded-sm p-5 mb-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1 space-y-1">
+              <Label htmlFor="linkLabel" className="text-xs">Label</Label>
+              <Input
+                id="linkLabel"
+                value={linkLabel}
+                onChange={(e) => setLinkLabel(e.target.value)}
+                placeholder="Amazon Registry"
+                required
+              />
+            </div>
+            <div className="flex-[2] space-y-1">
+              <Label htmlFor="linkUrl" className="text-xs">URL</Label>
+              <Input
+                id="linkUrl"
+                type="url"
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://www.amazon.com/hz/wishlist/..."
+                required
+              />
+            </div>
+            <div className="flex items-end">
+              <Button type="submit" disabled={linkSaving} size="sm">
+                {linkSaving ? 'Adding…' : 'Add Link'}
+              </Button>
+            </div>
+          </div>
+          {linkError && <p className="text-red-600 text-sm font-inter mt-2">{linkError}</p>}
+        </form>
+
+        {/* Links list */}
+        {linksLoading ? (
+          <p className="font-inter text-sm text-near-black/40">Loading…</p>
+        ) : links.length === 0 ? (
+          <p className="font-inter text-sm text-near-black/30 italic">No external registry links yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {links.map((link) => (
+              <div key={link.id} className="bg-white border border-near-black/10 rounded-sm px-4 py-3 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <LinkIcon className="w-4 h-4 text-near-black/30 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-inter text-sm font-medium text-near-black">{link.label}</p>
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-inter text-xs text-near-black/40 hover:text-burgundy-800 truncate block max-w-xs"
+                    >
+                      {link.url.length > 60 ? link.url.slice(0, 60) + '…' : link.url}
+                    </a>
+                  </div>
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => handleDeleteLink(link.id)}
+                  title="Delete link"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
