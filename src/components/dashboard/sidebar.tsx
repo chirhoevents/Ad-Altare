@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import {
   LayoutDashboard, BookOpen, Users, Settings, ExternalLink,
-  CalendarDays, Search, Menu, X, Camera,
+  CalendarDays, Search, Menu, X, UserCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, exact: true },
+  { href: '/dashboard/profile', label: 'My Profile', icon: UserCircle },
   { href: '/dashboard/registry', label: 'Registry', icon: BookOpen },
   { href: '/dashboard/donors', label: 'Donors', icon: Users },
   { href: '/dashboard/rsvp', label: 'RSVP', icon: CalendarDays },
@@ -25,40 +26,11 @@ interface SidebarProps {
   profilePhotoUrl: string | null;
 }
 
-function ProfilePhotoUpload({
-  priestName,
-  initialUrl,
-}: {
-  priestName: string;
-  initialUrl: string | null;
-}) {
-  const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [photoUrl, setPhotoUrl] = useState<string | null>(initialUrl);
-  const [uploading, setUploading] = useState(false);
+export function Sidebar({ priestName, slug, profilePhotoUrl }: SidebarProps) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleFile = useCallback(async (file: File) => {
-    setUploading(true);
-    const body = new FormData();
-    body.append('file', file);
-
-    const uploadRes = await fetch('/api/upload', { method: 'POST', body });
-    if (!uploadRes.ok) { setUploading(false); return; }
-
-    const { url } = await uploadRes.json();
-
-    const saveRes = await fetch('/api/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profilePhotoUrl: url }),
-    });
-
-    if (saveRes.ok) {
-      setPhotoUrl(url);
-      router.refresh();
-    }
-    setUploading(false);
-  }, [router]);
+  function close() { setMobileOpen(false); }
 
   const initials = priestName
     .split(' ')
@@ -66,63 +38,26 @@ function ProfilePhotoUpload({
     .map((n) => n[0])
     .join('');
 
-  return (
-    <div className="flex items-center gap-3">
-      {/* Photo circle with click-to-change */}
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
-        className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 group focus:outline-none focus-visible:ring-2 focus-visible:ring-cream/50"
-        title="Change profile photo"
+  // Photo circle that links to My Profile
+  function ProfilePhoto() {
+    return (
+      <Link
+        href="/dashboard/profile"
+        onClick={close}
+        title="Edit profile"
+        className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-cream/20 hover:ring-cream/60 transition-all focus:outline-none focus-visible:ring-cream/60"
       >
-        {photoUrl ? (
-          <Image
-            src={photoUrl}
-            alt={priestName}
-            fill
-            className="object-cover"
-          />
+        {profilePhotoUrl ? (
+          <Image src={profilePhotoUrl} alt={priestName} fill className="object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-burgundy-600">
             <span className="font-cormorant text-xl text-cream font-light">{initials}</span>
           </div>
         )}
-        {/* Hover overlay */}
-        <div className={cn(
-          'absolute inset-0 flex items-center justify-center bg-near-black/50 transition-opacity',
-          uploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-        )}>
-          {uploading ? (
-            <div className="w-4 h-4 border-2 border-cream/60 border-t-cream rounded-full animate-spin" />
-          ) : (
-            <Camera className="w-4 h-4 text-cream" />
-          )}
-        </div>
-      </button>
+      </Link>
+    );
+  }
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFile(file);
-          e.target.value = '';
-        }}
-      />
-    </div>
-  );
-}
-
-export function Sidebar({ priestName, slug, profilePhotoUrl }: SidebarProps) {
-  const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  function close() { setMobileOpen(false); }
-
-  // Nav links — shared between desktop sidebar and mobile drawer
   function NavLinks() {
     return (
       <>
@@ -184,7 +119,7 @@ export function Sidebar({ priestName, slug, profilePhotoUrl }: SidebarProps) {
 
         {/* Priest identity */}
         <div className="px-5 py-4 border-b border-cream/10 flex items-center gap-3">
-          <ProfilePhotoUpload priestName={priestName} initialUrl={profilePhotoUrl} />
+          <ProfilePhoto />
           <div className="min-w-0">
             <p className="font-cormorant text-lg text-cream font-light leading-tight truncate">{priestName}</p>
             <a
@@ -235,13 +170,8 @@ export function Sidebar({ priestName, slug, profilePhotoUrl }: SidebarProps) {
       {/* ── Mobile drawer overlay ── */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-near-black/60"
-            onClick={close}
-          />
+          <div className="absolute inset-0 bg-near-black/60" onClick={close} />
 
-          {/* Drawer panel */}
           <div className="relative w-72 max-w-[85vw] bg-burgundy-800 flex flex-col shadow-xl">
             {/* Drawer header */}
             <div className="px-4 py-4 border-b border-cream/10 flex items-center justify-between">
@@ -255,18 +185,14 @@ export function Sidebar({ priestName, slug, profilePhotoUrl }: SidebarProps) {
                   quality={100}
                 />
               </Link>
-              <button
-                onClick={close}
-                aria-label="Close menu"
-                className="p-1 text-cream/60 hover:text-cream transition-colors"
-              >
+              <button onClick={close} aria-label="Close menu" className="p-1 text-cream/60 hover:text-cream transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Priest identity */}
             <div className="px-5 py-4 border-b border-cream/10 flex items-center gap-3">
-              <ProfilePhotoUpload priestName={priestName} initialUrl={profilePhotoUrl} />
+              <ProfilePhoto />
               <div className="min-w-0">
                 <p className="font-cormorant text-lg text-cream font-light leading-tight truncate">{priestName}</p>
                 <a

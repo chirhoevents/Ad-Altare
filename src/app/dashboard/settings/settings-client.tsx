@@ -1,29 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, CheckCircle, AlertCircle, Upload, X, ChevronDown, ChevronUp, Lock } from 'lucide-react';
+import { ExternalLink, CheckCircle, AlertCircle, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 interface PriestSettings {
-  firstName: string;
-  lastName: string;
-  currentTitle: string;
-  email: string;
-  phone: string | null;
-  seminary: string | null;
-  diocese: string | null;
-  parish: string | null;
-  ordinationDate: string | null;
-  firstMassDate: string | null;
-  bio: string | null;
-  profilePhotoUrl: string | null;
-  backgroundPhotoUrl: string | null;
   thankYouTemplate: string | null;
   profileVisible: boolean;
   slug: string;
@@ -42,23 +26,14 @@ export function SettingsClient() {
   const [stripeError, setStripeError] = useState<string | null>(null);
   const [showStripeGuide, setShowStripeGuide] = useState(true);
   const [saveMessage, setSaveMessage] = useState<{ ok: boolean; text: string } | null>(null);
-  const [uploadingProfile, setUploadingProfile] = useState(false);
-  const [uploadingBackdrop, setUploadingBackdrop] = useState(false);
-  const profileInputRef = useRef<HTMLInputElement>(null);
-  const backdropInputRef = useRef<HTMLInputElement>(null);
 
   const fetchSettings = useCallback(async () => {
     const res = await fetch('/api/settings');
-    if (res.ok) {
-      const data = await res.json();
-      setSettings(data);
-    }
+    if (res.ok) setSettings(await res.json());
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
 
   useEffect(() => {
     if (stripeStatus === 'complete') {
@@ -66,35 +41,8 @@ export function SettingsClient() {
     }
   }, [stripeStatus, fetchSettings]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     setSettings((prev) => prev ? { ...prev, [e.target.name]: e.target.value } : prev);
-  }
-
-  async function handlePhotoUpload(
-    file: File,
-    field: 'profilePhotoUrl' | 'backgroundPhotoUrl',
-    setUploading: (v: boolean) => void,
-  ) {
-    setUploading(true);
-    const body = new FormData();
-    body.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body });
-    if (res.ok) {
-      const { url } = await res.json();
-      // Update local state
-      setSettings((prev) => prev ? { ...prev, [field]: url } : prev);
-      // Auto-save immediately so it shows on the public page right away
-      await fetch('/api/settings', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: url }),
-      });
-      setSaveMessage({ ok: true, text: 'Photo saved.' });
-    } else {
-      const data = await res.json().catch(() => ({}));
-      alert(data.error ?? 'Upload failed. Please try again.');
-    }
-    setUploading(false);
   }
 
   function handleToggleVisible() {
@@ -110,13 +58,16 @@ export function SettingsClient() {
     const res = await fetch('/api/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...settings, profileVisible: settings.profileVisible }),
+      body: JSON.stringify({
+        thankYouTemplate: settings.thankYouTemplate,
+        profileVisible: settings.profileVisible,
+      }),
     });
 
     if (res.ok) {
-      setSaveMessage({ ok: true, text: 'Settings saved successfully.' });
+      setSaveMessage({ ok: true, text: 'Settings saved.' });
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setSaveMessage({ ok: false, text: data.error ?? 'Failed to save.' });
     }
     setSaving(false);
@@ -150,7 +101,7 @@ export function SettingsClient() {
       <div className="mb-8">
         <h1 className="font-cormorant text-4xl font-light text-burgundy-800">Settings</h1>
         <p className="font-inter text-sm text-near-black/50 mt-1">
-          Manage your profile, photos, and Stripe connection.
+          Thank-you template, public page, and Stripe connection.
         </p>
       </div>
 
@@ -158,9 +109,7 @@ export function SettingsClient() {
         <div className="mb-6 bg-green-50 border border-green-200 rounded-sm px-5 py-4 flex items-start gap-3">
           <CheckCircle className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
           <div>
-            <p className="font-inter text-sm font-medium text-green-800">
-              You&apos;re almost set!
-            </p>
+            <p className="font-inter text-sm font-medium text-green-800">You&apos;re almost set!</p>
             <p className="font-inter text-sm text-green-700 mt-0.5">
               Stripe is verifying your information. This usually takes a few minutes.
               Once approved, donations will be deposited to your bank account daily.
@@ -184,187 +133,6 @@ export function SettingsClient() {
       )}
 
       <form onSubmit={handleSave} className="space-y-8">
-        {/* Profile */}
-        <section className="bg-white border border-near-black/10 rounded-sm p-6">
-          <h2 className="font-cormorant text-2xl text-burgundy-800 mb-5">Profile</h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input id="firstName" name="firstName" value={settings.firstName} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input id="lastName" name="lastName" value={settings.lastName} onChange={handleChange} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currentTitle">Current Title</Label>
-              <select
-                id="currentTitle"
-                name="currentTitle"
-                value={settings.currentTitle}
-                onChange={(e) => setSettings((prev) => prev ? { ...prev, currentTitle: e.target.value } : prev)}
-                className="w-full border border-near-black/20 rounded-sm px-3 py-2 font-inter text-sm bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800 text-near-black"
-              >
-                <option value="Seminarian">Seminarian</option>
-                <option value="Transitional Deacon">Transitional Deacon</option>
-                <option value="Deacon">Deacon</option>
-              </select>
-              <p className="font-inter text-xs text-near-black/40">
-                Your title advances to &ldquo;Fr.&rdquo; automatically on your ordination date. You cannot self-select Father.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" name="phone" type="tel" value={settings.phone ?? ''} onChange={handleChange} placeholder="(555) 555-5555" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="seminary">Seminary</Label>
-                <Input id="seminary" name="seminary" value={settings.seminary ?? ''} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="diocese">Diocese</Label>
-                <Input id="diocese" name="diocese" value={settings.diocese ?? ''} onChange={handleChange} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="parish">Parish</Label>
-              <Input id="parish" name="parish" value={settings.parish ?? ''} onChange={handleChange} />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="ordinationDate">Ordination Date</Label>
-                <Input id="ordinationDate" name="ordinationDate" type="date" value={settings.ordinationDate ?? ''} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="firstMassDate">First Mass Date</Label>
-                <Input id="firstMassDate" name="firstMassDate" type="date" value={settings.firstMassDate ?? ''} onChange={handleChange} />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="bio">Biography</Label>
-              <Textarea
-                id="bio"
-                name="bio"
-                value={settings.bio ?? ''}
-                onChange={handleChange}
-                rows={6}
-                placeholder="Share your vocation story, your journey to the priesthood, and what this ordination means to you…"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* Photos */}
-        <section className="bg-white border border-near-black/10 rounded-sm p-6">
-          <h2 className="font-cormorant text-2xl text-burgundy-800 mb-1">Photos</h2>
-          <p className="font-inter text-xs text-near-black/40 mb-5">
-            Upload a profile photo and a backdrop image for your public page. Max 8 MB each — JPEG, PNG, or WebP.
-          </p>
-          <div className="space-y-6">
-            {/* Profile Photo */}
-            <div>
-              <Label className="mb-2 block">Profile Photo</Label>
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full border-2 border-near-black/10 bg-near-black/5 overflow-hidden shrink-0 flex items-center justify-center">
-                  {settings.profilePhotoUrl ? (
-                    <Image src={settings.profilePhotoUrl} alt="Profile" width={80} height={80} className="object-cover w-full h-full" />
-                  ) : (
-                    <span className="font-cormorant text-2xl text-near-black/30">
-                      {settings.firstName?.[0]}{settings.lastName?.[0]}
-                    </span>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  <input
-                    ref={profileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) handlePhotoUpload(f, 'profilePhotoUrl', setUploadingProfile);
-                      e.target.value = '';
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={uploadingProfile}
-                    onClick={() => profileInputRef.current?.click()}
-                  >
-                    <Upload className="w-3.5 h-3.5 mr-1.5" />
-                    {uploadingProfile ? 'Uploading…' : 'Upload Photo'}
-                  </Button>
-                  {settings.profilePhotoUrl && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                      onClick={() => setSettings((prev) => prev ? { ...prev, profilePhotoUrl: null } : prev)}
-                    >
-                      <X className="w-3.5 h-3.5 mr-1.5" />
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Backdrop Photo */}
-            <div>
-              <Label className="mb-2 block">Backdrop / Header Photo</Label>
-              <div className="rounded-sm border-2 border-near-black/10 bg-near-black/5 overflow-hidden h-28 w-full relative mb-2">
-                {settings.backgroundPhotoUrl ? (
-                  <Image src={settings.backgroundPhotoUrl} alt="Backdrop" fill className="object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="font-inter text-xs text-near-black/30">No backdrop set — default will be used</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  ref={backdropInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handlePhotoUpload(f, 'backgroundPhotoUrl', setUploadingBackdrop);
-                    e.target.value = '';
-                  }}
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={uploadingBackdrop}
-                  onClick={() => backdropInputRef.current?.click()}
-                >
-                  <Upload className="w-3.5 h-3.5 mr-1.5" />
-                  {uploadingBackdrop ? 'Uploading…' : 'Upload Backdrop'}
-                </Button>
-                {settings.backgroundPhotoUrl && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                    onClick={() => setSettings((prev) => prev ? { ...prev, backgroundPhotoUrl: null } : prev)}
-                  >
-                    <X className="w-3.5 h-3.5 mr-1.5" />
-                    Remove
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Thank You Template */}
         <section className="bg-white border border-near-black/10 rounded-sm p-6">
@@ -387,7 +155,7 @@ export function SettingsClient() {
             className="font-mono text-sm"
           />
           <p className="font-inter text-xs text-near-black/30 mt-2">
-            For anonymous donors, <code>{'{donor_name}'}</code> will be replaced with "Dear Friend".
+            For anonymous donors, <code>{'{donor_name}'}</code> will be replaced with &ldquo;Dear Friend&rdquo;.
           </p>
         </section>
 
@@ -414,7 +182,11 @@ export function SettingsClient() {
             <div>
               <p className="font-inter text-sm font-medium text-near-black">Show in public directory</p>
               <p className="font-inter text-xs text-near-black/40 mt-0.5">
-                Appear on the <a href="/directory" target="_blank" className="underline hover:text-near-black/70">/directory</a> page so donors can discover your registry. Your page is always accessible via direct link regardless of this setting.
+                Appear on the{' '}
+                <a href="/directory" target="_blank" className="underline hover:text-near-black/70">
+                  /directory
+                </a>{' '}
+                page so donors can discover your registry. Your page is always accessible via direct link regardless of this setting.
               </p>
             </div>
             <button
@@ -461,7 +233,7 @@ export function SettingsClient() {
           {settings.stripeOnboardingComplete ? (
             <Badge variant="success" className="gap-1.5">
               <CheckCircle className="w-3 h-3" />
-              Connected & Active
+              Connected &amp; Active
             </Badge>
           ) : settings.stripeAccountId ? (
             <Badge variant="muted" className="gap-1.5">
@@ -473,7 +245,6 @@ export function SettingsClient() {
           )}
         </div>
 
-        {/* Pre-connect guide — only shown until fully connected */}
         {!settings.stripeOnboardingComplete && (
           <div className="mb-5">
             <button
@@ -487,7 +258,6 @@ export function SettingsClient() {
 
             {showStripeGuide && (
               <div className="mt-3 border border-burgundy-100 bg-burgundy-50 rounded-sm overflow-hidden">
-                {/* Guide header */}
                 <div className="px-5 py-4 border-b border-burgundy-100">
                   <p className="font-cormorant text-lg text-burgundy-900 font-light">
                     Before you connect your bank account, here&apos;s what Stripe will ask you.
@@ -496,99 +266,64 @@ export function SettingsClient() {
                     Don&apos;t worry — this takes about 5 minutes.
                   </p>
                 </div>
-
-                {/* Steps */}
                 <div className="divide-y divide-burgundy-100">
-                  {/* Step 1 */}
-                  <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</div>
-                    <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Account Type</p>
-                      <ul className="mt-1.5 space-y-1">
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          Select <strong>&ldquo;Individual&rdquo;</strong> (not Business)
-                        </li>
-                      </ul>
+                  {[
+                    {
+                      n: 1, title: 'Account Type',
+                      items: ['Select "Individual" (not Business)'],
+                    },
+                    {
+                      n: 2, title: 'Business Details',
+                      subtitle: "this is normal, don't worry",
+                      items: [
+                        'Industry: select "Charities or social service organizations"',
+                        'Website: your Ad Altare page URL is already pre-filled — just click Continue',
+                      ],
+                    },
+                    {
+                      n: 3, title: 'Personal Information',
+                      items: [
+                        'Legal name (as on your ID), date of birth, home address',
+                        'Last 4 digits of SSN — required by federal law to receive payments. Encrypted and stored only by Stripe.',
+                      ],
+                    },
+                    {
+                      n: 4, title: 'Bank Account',
+                      items: [
+                        'Personal checking: routing number + account number',
+                        'Donations will be deposited here daily',
+                      ],
+                    },
+                    {
+                      n: 5, title: 'Phone Verification',
+                      items: ['Stripe texts you a verification code — enter it to finish'],
+                    },
+                  ].map(({ n, title, subtitle, items }) => (
+                    <div key={n} className="px-5 py-4 flex gap-4">
+                      <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
+                        {n}
+                      </div>
+                      <div>
+                        <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
+                          {title}
+                          {subtitle && (
+                            <span className="normal-case font-normal text-near-black/40 text-xs ml-2">
+                              — {subtitle}
+                            </span>
+                          )}
+                        </p>
+                        <ul className="mt-1.5 space-y-1.5">
+                          {items.map((item, i) => (
+                            <li key={i} className="font-inter text-xs text-near-black/70 flex gap-2">
+                              <span className="text-gold-600 shrink-0">→</span>
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Step 2 */}
-                  <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</div>
-                    <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">
-                        Business Details{' '}
-                        <span className="normal-case font-normal text-near-black/40 text-xs">— this is normal, don&apos;t worry</span>
-                      </p>
-                      <p className="font-inter text-xs text-near-black/60 mt-1 leading-relaxed">
-                        Stripe shows this step for everyone, even individuals. Here&apos;s exactly what to enter:
-                      </p>
-                      <ul className="mt-1.5 space-y-1.5">
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          <span><strong>Industry:</strong> select <strong>&ldquo;Charities or social service organizations&rdquo;</strong></span>
-                        </li>
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          <span><strong>Website:</strong> your Ad Altare page URL is already pre-filled — just click Continue</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Step 3 */}
-                  <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</div>
-                    <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Personal Information</p>
-                      <ul className="mt-1.5 space-y-1">
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          Legal name (as on your ID), date of birth, home address
-                        </li>
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          <span><strong>Last 4 digits of SSN</strong> — required by federal law to receive payments. Encrypted and stored only by Stripe.</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Step 4 */}
-                  <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">4</div>
-                    <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Bank Account</p>
-                      <ul className="mt-1.5 space-y-1">
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          Personal checking: routing number + account number
-                        </li>
-                        <li className="font-inter text-xs text-near-black/60 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          Donations will be deposited here daily
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-
-                  {/* Step 5 */}
-                  <div className="px-5 py-4 flex gap-4">
-                    <div className="w-6 h-6 rounded-full bg-burgundy-800 text-cream font-inter text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">5</div>
-                    <div>
-                      <p className="font-inter text-sm font-semibold text-near-black uppercase tracking-wide">Phone Verification</p>
-                      <ul className="mt-1.5 space-y-1">
-                        <li className="font-inter text-xs text-near-black/70 flex gap-2">
-                          <span className="text-gold-600 shrink-0">→</span>
-                          Stripe texts you a verification code — enter it to finish
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-
-                {/* Security note */}
                 <div className="px-5 py-3 bg-burgundy-100/50 flex items-start gap-2.5">
                   <Lock className="w-3.5 h-3.5 text-burgundy-700 shrink-0 mt-0.5" />
                   <p className="font-inter text-xs text-burgundy-800 leading-relaxed">
