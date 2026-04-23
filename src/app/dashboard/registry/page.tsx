@@ -441,7 +441,7 @@ export default function RegistryPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="font-cormorant text-4xl font-light text-burgundy-800">Registry</h1>
           <p className="font-inter text-sm text-near-black/50 mt-1">
@@ -453,6 +453,18 @@ export default function RegistryPage() {
             <Plus className="w-4 h-4 mr-1" /> Add Item
           </Button>
         )}
+      </div>
+
+      {/* Platform notice */}
+      <div className="mb-8 bg-burgundy-50 border border-burgundy-100 rounded-sm px-5 py-4">
+        <p className="font-cormorant text-lg text-burgundy-900 font-light mb-1">
+          This platform is made possible by seminarians and priests who set up campaigns.
+        </p>
+        <p className="font-inter text-sm text-burgundy-800/70 leading-relaxed">
+          Hosting, payments, and infrastructure cost real money to run. Adding at least one
+          campaign to your registry — with a minimum goal of <strong>$25</strong> — helps
+          keep Ad Altare free and available for everyone. Thank you for your support.
+        </p>
       </div>
 
       {/* Add Form */}
