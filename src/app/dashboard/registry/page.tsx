@@ -45,7 +45,6 @@ export default function RegistryPage() {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Registry Links state
   const [links, setLinks] = useState<RegistryLink[]>([]);
   const [linksLoading, setLinksLoading] = useState(true);
   const [linkLabel, setLinkLabel] = useState('');
@@ -55,19 +54,13 @@ export default function RegistryPage() {
 
   const fetchItems = useCallback(async () => {
     const res = await fetch('/api/registry');
-    if (res.ok) {
-      const data = await res.json();
-      setItems(data);
-    }
+    if (res.ok) setItems(await res.json());
     setLoading(false);
   }, []);
 
   const fetchLinks = useCallback(async () => {
     const res = await fetch('/api/registry-links');
-    if (res.ok) {
-      const data = await res.json();
-      setLinks(data);
-    }
+    if (res.ok) setLinks(await res.json());
     setLinksLoading(false);
   }, []);
 
@@ -76,7 +69,7 @@ export default function RegistryPage() {
     fetchLinks();
   }, [fetchItems, fetchLinks]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
@@ -84,12 +77,7 @@ export default function RegistryPage() {
 
   function handleItemTypeChange(newType: 'campaign' | 'wishlist') {
     if (newType === 'wishlist' && !hasCampaign) return;
-    setForm((prev) => ({
-      ...prev,
-      itemType: newType,
-      goalAmount: '',
-      externalUrl: '',
-    }));
+    setForm((prev) => ({ ...prev, itemType: newType, goalAmount: '', externalUrl: '' }));
   }
 
   async function handleImageUpload(file: File) {
@@ -132,17 +120,12 @@ export default function RegistryPage() {
     setSaving(true);
     setError(null);
 
-    let goalCents = 0;
-    if (form.goalAmount) {
-      goalCents = Math.round(parseFloat(form.goalAmount) * 100);
-    }
+    const goalCents = form.goalAmount ? Math.round(parseFloat(form.goalAmount) * 100) : 0;
 
-    if (form.itemType === 'campaign') {
-      if (!goalCents || goalCents < 100) {
-        setError('Goal amount must be at least $1');
-        setSaving(false);
-        return;
-      }
+    if (form.itemType === 'campaign' && (!goalCents || goalCents < 100)) {
+      setError('Goal amount must be at least $1');
+      setSaving(false);
+      return;
     }
 
     const res = await fetch('/api/registry', {
@@ -176,10 +159,7 @@ export default function RegistryPage() {
     setSaving(true);
     setError(null);
 
-    let goalCents = 0;
-    if (form.goalAmount) {
-      goalCents = Math.round(parseFloat(form.goalAmount) * 100);
-    }
+    const goalCents = form.goalAmount ? Math.round(parseFloat(form.goalAmount) * 100) : 0;
 
     const res = await fetch(`/api/registry/${editingId}`, {
       method: 'PATCH',
@@ -256,9 +236,92 @@ export default function RegistryPage() {
     if (res.ok) await fetchLinks();
   }
 
-  // Shared image upload field used in both add and edit forms
-  function ImageUploadField() {
-    return (
+  // Inlined form fields JSX — NOT a component, just a variable, to avoid remount-on-render focus loss
+  const formFields = (
+    <>
+      {/* Item type selector */}
+      <div className="space-y-2">
+        <Label>Item Type</Label>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => handleItemTypeChange('campaign')}
+            className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+              form.itemType === 'campaign'
+                ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+            }`}
+          >
+            Campaign
+          </button>
+          <button
+            type="button"
+            onClick={() => handleItemTypeChange('wishlist')}
+            disabled={!hasCampaign}
+            title={!hasCampaign ? 'Add a Campaign item first before adding Wishlist items.' : undefined}
+            className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+              form.itemType === 'wishlist'
+                ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                : !hasCampaign
+                ? 'border-near-black/10 text-near-black/30 cursor-not-allowed'
+                : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+            }`}
+          >
+            Wishlist
+          </button>
+        </div>
+        {!hasCampaign ? (
+          <p className="font-inter text-xs text-amber-600">
+            Add at least one Campaign item before you can add Wishlist items.
+          </p>
+        ) : (
+          <p className="font-inter text-xs text-near-black/40">
+            {form.itemType === 'campaign'
+              ? 'Donors contribute funds toward this item through the platform.'
+              : 'Link donors to an external site where they can purchase it directly.'}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Item Name *</Label>
+        <Input
+          id="name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          placeholder="e.g. Chalice, Roman Missal, Stole"
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="category">Category</Label>
+        <select
+          id="category"
+          name="category"
+          value={form.category}
+          onChange={handleChange}
+          className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+        >
+          <option value="">Select a category…</option>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+          placeholder="Tell donors what this item means for your ministry…"
+          rows={3}
+        />
+      </div>
+
+      {/* Image upload */}
       <div className="space-y-2">
         <Label>Item Photo <span className="text-near-black/30 font-normal">(optional)</span></Label>
         <div className="flex items-center gap-3">
@@ -304,139 +367,51 @@ export default function RegistryPage() {
           </div>
         </div>
       </div>
-    );
-  }
 
-  // Shared form fields for both Add and Edit
-  function FormFields() {
-    return (
-      <>
-        {/* Item type selector */}
+      {form.itemType === 'campaign' ? (
         <div className="space-y-2">
-          <Label>Item Type</Label>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => handleItemTypeChange('campaign')}
-              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
-                form.itemType === 'campaign'
-                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
-                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
-              }`}
-            >
-              Campaign
-            </button>
-            <button
-              type="button"
-              onClick={() => handleItemTypeChange('wishlist')}
-              disabled={!hasCampaign}
-              title={!hasCampaign ? 'Add a Campaign item first before adding Wishlist items.' : undefined}
-              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
-                form.itemType === 'wishlist'
-                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
-                  : !hasCampaign
-                  ? 'border-near-black/10 text-near-black/30 cursor-not-allowed'
-                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
-              }`}
-            >
-              Wishlist
-            </button>
-          </div>
-          {!hasCampaign ? (
-            <p className="font-inter text-xs text-amber-600">
-              Add at least one Campaign item before you can add Wishlist items.
-            </p>
-          ) : (
-            <p className="font-inter text-xs text-near-black/40">
-              {form.itemType === 'campaign'
-                ? 'Donors contribute funds toward this item through the platform.'
-                : 'Link donors to an external site where they can purchase it directly.'}
-            </p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="name">Item Name *</Label>
+          <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
           <Input
-            id="name"
-            name="name"
-            value={form.name}
+            id="goalAmount"
+            name="goalAmount"
+            type="number"
+            min="1"
+            step="0.01"
+            value={form.goalAmount}
             onChange={handleChange}
-            placeholder="e.g. Chalice, Roman Missal, Stole"
+            placeholder="250.00"
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <select
-            id="category"
-            name="category"
-            value={form.category}
-            onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-            className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
-          >
-            <option value="">Select a category…</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Tell donors what this item means for your ministry…"
-            rows={3}
-          />
-        </div>
-        <ImageUploadField />
-
-        {form.itemType === 'campaign' ? (
+      ) : (
+        <>
           <div className="space-y-2">
-            <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
+            <Label htmlFor="goalAmount">Estimated Price ($) <span className="text-near-black/30 font-normal">(optional)</span></Label>
             <Input
               id="goalAmount"
               name="goalAmount"
               type="number"
-              min="1"
               step="0.01"
               value={form.goalAmount}
               onChange={handleChange}
-              placeholder="250.00"
-              required
+              placeholder="49.99"
             />
           </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="goalAmount">Estimated Price ($) <span className="text-near-black/30 font-normal">(optional)</span></Label>
-              <Input
-                id="goalAmount"
-                name="goalAmount"
-                type="number"
-                step="0.01"
-                value={form.goalAmount}
-                onChange={handleChange}
-                placeholder="49.99"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="externalUrl">Product Link <span className="text-near-black/30 font-normal">(optional)</span></Label>
-              <Input
-                id="externalUrl"
-                name="externalUrl"
-                type="url"
-                value={form.externalUrl}
-                onChange={handleChange}
-                placeholder="https://www.amazon.com/dp/..."
-              />
-            </div>
-          </>
-        )}
-      </>
-    );
-  }
+          <div className="space-y-2">
+            <Label htmlFor="externalUrl">Product Link <span className="text-near-black/30 font-normal">(optional)</span></Label>
+            <Input
+              id="externalUrl"
+              name="externalUrl"
+              type="url"
+              value={form.externalUrl}
+              onChange={handleChange}
+              placeholder="https://www.amazon.com/dp/..."
+            />
+          </div>
+        </>
+      )}
+    </>
+  );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -478,7 +453,7 @@ export default function RegistryPage() {
             </button>
           </div>
           <form onSubmit={handleAdd} className="space-y-4">
-            <FormFields />
+            {formFields}
             {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
             <div className="flex gap-3">
               <Button type="submit" disabled={saving || uploading}>
@@ -518,7 +493,7 @@ export default function RegistryPage() {
               return (
                 <div key={item.id} className="bg-white border border-burgundy-200 rounded-sm p-6">
                   <form onSubmit={handleUpdate} className="space-y-4">
-                    <FormFields />
+                    {formFields}
                     {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
                     <div className="flex gap-3">
                       <Button type="submit" size="sm" disabled={saving || uploading}>
@@ -538,7 +513,6 @@ export default function RegistryPage() {
                 className={`bg-white border rounded-sm p-5 ${item.isActive ? 'border-near-black/10' : 'border-near-black/5 opacity-60'}`}
               >
                 <div className="flex items-start justify-between gap-4">
-                  {/* Item photo thumbnail */}
                   {item.imageUrl && (
                     <div className="w-16 h-16 rounded-sm border border-near-black/10 overflow-hidden shrink-0">
                       <Image src={item.imageUrl} alt={item.name} width={64} height={64} className="object-cover w-full h-full" />
@@ -557,10 +531,10 @@ export default function RegistryPage() {
                       {!item.isActive && <Badge variant="muted">Hidden</Badge>}
                       {!isWishlist && item.amountRaised >= item.goalAmount && <Badge variant="gold">Funded</Badge>}
                       {isWishlist && item.isPurchased && (
-                      <Badge variant="gold">
-                        Purchased{item.purchasedAnonymous ? ' (Anonymous)' : item.purchasedByName ? ` by ${item.purchasedByName}` : ''}
-                      </Badge>
-                    )}
+                        <Badge variant="gold">
+                          Purchased{item.purchasedAnonymous ? ' (Anonymous)' : item.purchasedByName ? ` by ${item.purchasedByName}` : ''}
+                        </Badge>
+                      )}
                     </div>
                     {item.description && (
                       <p className="font-inter text-sm text-near-black/50 mb-3">{item.description}</p>
@@ -568,9 +542,7 @@ export default function RegistryPage() {
                     {isWishlist ? (
                       <div className="space-y-1">
                         {item.goalAmount > 0 && (
-                          <p className="font-inter text-xs text-near-black/40">
-                            Est. Price: {formatCurrency(item.goalAmount)}
-                          </p>
+                          <p className="font-inter text-xs text-near-black/40">Est. Price: {formatCurrency(item.goalAmount)}</p>
                         )}
                         {item.externalUrl && (
                           <a
@@ -584,19 +556,13 @@ export default function RegistryPage() {
                           </a>
                         )}
                         {item.isPurchased && !item.purchasedAnonymous && item.purchasedByEmail && (
-                          <p className="font-inter text-xs text-near-black/40">
-                            Email: {item.purchasedByEmail}
-                          </p>
+                          <p className="font-inter text-xs text-near-black/40">Email: {item.purchasedByEmail}</p>
                         )}
                         {item.isPurchased && !item.purchasedAnonymous && item.purchasedByPhone && (
-                          <p className="font-inter text-xs text-near-black/40">
-                            Phone: {item.purchasedByPhone}
-                          </p>
+                          <p className="font-inter text-xs text-near-black/40">Phone: {item.purchasedByPhone}</p>
                         )}
                         {item.isPurchased && !item.purchasedAnonymous && item.purchasedByAddress && (
-                          <p className="font-inter text-xs text-near-black/40">
-                            Address: {item.purchasedByAddress}
-                          </p>
+                          <p className="font-inter text-xs text-near-black/40">Address: {item.purchasedByAddress}</p>
                         )}
                       </div>
                     ) : (
@@ -647,7 +613,6 @@ export default function RegistryPage() {
           </p>
         </div>
 
-        {/* Add link form */}
         <form onSubmit={handleAddLink} className="bg-white border border-near-black/10 rounded-sm p-5 mb-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1 space-y-1">
@@ -680,7 +645,6 @@ export default function RegistryPage() {
           {linkError && <p className="text-red-600 text-sm font-inter mt-2">{linkError}</p>}
         </form>
 
-        {/* Links list */}
         {linksLoading ? (
           <p className="font-inter text-sm text-near-black/40">Loading…</p>
         ) : links.length === 0 ? (
@@ -703,12 +667,7 @@ export default function RegistryPage() {
                     </a>
                   </div>
                 </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => handleDeleteLink(link.id)}
-                  title="Delete link"
-                >
+                <Button size="icon" variant="ghost" onClick={() => handleDeleteLink(link.id)} title="Delete link">
                   <Trash2 className="w-3.5 h-3.5 text-red-500" />
                 </Button>
               </div>
