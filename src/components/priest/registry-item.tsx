@@ -56,7 +56,7 @@ function buildAddress(form: PurchaserForm): string {
   return parts.join(', ');
 }
 
-function WishlistItemCard({ item }: { item: RegistryItem }) {
+function WishlistItemCard({ item, stripeReady }: { item: RegistryItem; stripeReady: boolean }) {
   const [purchased, setPurchased] = useState(item.isPurchased);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<PurchaserForm>(emptyPurchaserForm);
@@ -143,7 +143,16 @@ function WishlistItemCard({ item }: { item: RegistryItem }) {
           )}
 
           {/* Buttons */}
-          {purchased ? (
+          {!stripeReady ? (
+            <div className="space-y-2">
+              <Button className="w-full" disabled variant="secondary">
+                Registry Coming Soon
+              </Button>
+              <p className="font-inter text-xs text-near-black/40 text-center">
+                This priest is still setting up their registry.
+              </p>
+            </div>
+          ) : purchased ? (
             <Button className="w-full" disabled variant="secondary">
               Already Purchased ✓
             </Button>
@@ -334,7 +343,7 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
 
   // ── Wishlist item rendering ──────────────────────────────────────────────
   if (item.itemType === 'wishlist') {
-    return <WishlistItemCard item={item} />;
+    return <WishlistItemCard item={item} stripeReady={stripeReady} />;
   }
 
   // ── Campaign item rendering ──────────────────────────────────────────────

@@ -122,7 +122,12 @@ export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {registryItems.map((item) => (
+                  {[...registryItems]
+                    .sort((a, b) => {
+                      if (a.itemType === b.itemType) return 0;
+                      return a.itemType === 'campaign' ? -1 : 1;
+                    })
+                    .map((item) => (
                     <RegistryItemCard
                       key={item.id}
                       item={item}
