@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Users, TrendingUp, DollarSign, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
 import { getStripe } from '@/lib/stripe';
+import { DirectoryToggle } from './directory-toggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -185,7 +186,7 @@ export default async function AdminPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-near-black/10">
-                  {['Name', 'Diocese / Seminary', 'Ordination', 'Stripe', 'Fee', 'Total Raised', 'Joined', ''].map((h) => (
+                  {['Name', 'Diocese / Seminary', 'Ordination', 'Stripe', 'Fee', 'Directory', 'Total Raised', 'Joined', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left font-inter text-xs uppercase tracking-widest text-near-black/40">
                       {h}
                     </th>
@@ -227,6 +228,9 @@ export default async function AdminPage() {
                       ) : (
                         <Badge variant="gold">{priest.platformFeeOverride}%</Badge>
                       )}
+                    </td>
+                    <td className="px-5 py-4">
+                      <DirectoryToggle priestId={priest.id} profileVisible={priest.profileVisible} />
                     </td>
                     <td className="px-5 py-4">
                       <span className="font-inter text-sm font-medium text-burgundy-800">

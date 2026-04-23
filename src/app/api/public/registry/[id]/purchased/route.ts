@@ -6,7 +6,9 @@ import { z } from 'zod';
 
 const purchasedSchema = z.object({
   purchasedByName: z.string().max(200).optional(),
+  purchasedByEmail: z.union([z.string().email(), z.literal(''), z.null()]).optional(),
   purchasedByPhone: z.string().max(30).optional(),
+  purchasedByAddress: z.string().max(500).optional(),
   purchasedAnonymous: z.boolean().default(false),
 });
 
@@ -37,15 +39,17 @@ export async function POST(
     return NextResponse.json({ error: 'Item is already marked as purchased' }, { status: 409 });
   }
 
-  const { purchasedAnonymous, purchasedByName, purchasedByPhone } = parsed.data;
+  const { purchasedAnonymous, purchasedByName, purchasedByEmail, purchasedByPhone, purchasedByAddress } = parsed.data;
 
   const [updated] = await db
     .update(registryItems)
     .set({
       isPurchased: true,
       purchasedAnonymous,
-      purchasedByName: purchasedAnonymous ? null : (purchasedByName ?? null),
-      purchasedByPhone: purchasedAnonymous ? null : (purchasedByPhone ?? null),
+      purchasedByName: purchasedAnonymous ? null : (purchasedByName || null),
+      purchasedByEmail: purchasedAnonymous ? null : (purchasedByEmail || null),
+      purchasedByPhone: purchasedAnonymous ? null : (purchasedByPhone || null),
+      purchasedByAddress: purchasedAnonymous ? null : (purchasedByAddress || null),
     })
     .where(eq(registryItems.id, params.id))
     .returning({ id: registryItems.id });

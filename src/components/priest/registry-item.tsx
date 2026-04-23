@@ -5,6 +5,16 @@ import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
 import type { RegistryItem } from '@/db/schema';
 
@@ -15,32 +25,80 @@ interface RegistryItemCardProps {
   stripeReady: boolean;
 }
 
+interface PurchaserForm {
+  name: string;
+  email: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  isAnonymous: boolean;
+}
+
+const emptyPurchaserForm: PurchaserForm = {
+  name: '',
+  email: '',
+  streetAddress: '',
+  city: '',
+  state: '',
+  zip: '',
+  phone: '',
+  isAnonymous: false,
+};
+
+function buildAddress(form: PurchaserForm): string {
+  const parts = [
+    form.streetAddress,
+    form.city,
+    form.state && form.zip ? `${form.state} ${form.zip}` : (form.state || form.zip),
+  ].filter(Boolean);
+  return parts.join(', ');
+}
+
 function WishlistItemCard({ item }: { item: RegistryItem }) {
   const [purchased, setPurchased] = useState(item.isPurchased);
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [anonymous, setAnonymous] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form, setForm] = useState<PurchaserForm>(emptyPurchaserForm);
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleMarkPurchased() {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  }
+
+  function openModal() {
+    setForm(emptyPurchaserForm);
+    setError(null);
+    setSuccess(false);
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setSubmitting(true);
     setError(null);
+
     const res = await fetch(`/api/public/registry/${item.id}/purchased`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        purchasedAnonymous: anonymous,
-        purchasedByName: anonymous ? undefined : name || undefined,
-        purchasedByPhone: anonymous ? undefined : phone || undefined,
+        purchasedAnonymous: form.isAnonymous,
+        purchasedByName: form.isAnonymous ? undefined : form.name || undefined,
+        purchasedByEmail: form.isAnonymous ? undefined : form.email || undefined,
+        purchasedByPhone: form.isAnonymous ? undefined : form.phone || undefined,
+        purchasedByAddress: form.isAnonymous ? undefined : buildAddress(form) || undefined,
       }),
     });
+
     if (res.ok) {
       setPurchased(true);
-      setSubmitted(true);
-      setShowForm(false);
+      setSuccess(true);
     } else {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? 'Something went wrong. Please try again.');
@@ -49,141 +107,223 @@ function WishlistItemCard({ item }: { item: RegistryItem }) {
   }
 
   return (
-    <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
-      {item.imageUrl && (
-        <div className="relative w-full h-48 bg-near-black/5">
-          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
-        </div>
-      )}
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-3">
-          <div>
-            <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800">{item.name}</h3>
-            {item.category && (
-              <span className="font-inter text-xs uppercase tracking-widest text-near-black/40 mt-0.5 block">
-                {item.category}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-col items-end gap-1 shrink-0">
-            <Badge variant="muted">Wishlist</Badge>
-            {purchased && <Badge variant="gold">Purchased</Badge>}
-          </div>
-        </div>
-
-        {item.description && (
-          <p className="font-inter text-sm text-near-black/60 mb-4 leading-relaxed">{item.description}</p>
-        )}
-
-        {item.goalAmount > 0 && (
-          <div className="mb-4">
-            <span className="font-inter text-xs uppercase tracking-widest text-near-black/40">Est. Price</span>
-            <p className="font-cormorant text-xl text-burgundy-800 mt-0.5">{formatCurrency(item.goalAmount)}</p>
+    <>
+      <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
+        {item.imageUrl && (
+          <div className="relative w-full h-48 bg-near-black/5">
+            <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
           </div>
         )}
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800">{item.name}</h3>
+              {item.category && (
+                <span className="font-inter text-xs uppercase tracking-widest text-near-black/40 mt-0.5 block">
+                  {item.category}
+                </span>
+              )}
+            </div>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <Badge variant="muted">Wishlist</Badge>
+              {purchased && <Badge variant="gold">Purchased</Badge>}
+            </div>
+          </div>
 
-        {/* Already purchased */}
-        {purchased ? (
-          <div className="space-y-2">
+          {item.description && (
+            <p className="font-inter text-sm text-near-black/60 mb-4 leading-relaxed">{item.description}</p>
+          )}
+
+          {item.goalAmount > 0 && (
+            <div className="mb-4">
+              <span className="font-inter text-xs uppercase tracking-widest text-near-black/40">Est. Price</span>
+              <p className="font-cormorant text-xl text-burgundy-800 mt-0.5">{formatCurrency(item.goalAmount)}</p>
+            </div>
+          )}
+
+          {/* Buttons */}
+          {purchased ? (
             <Button className="w-full" disabled variant="secondary">
               Already Purchased ✓
             </Button>
-            {submitted && (
-              <p className="font-inter text-xs text-center text-near-black/50">
-                Thank you for letting us know! The priest will be so grateful.
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {/* External link button */}
-            {item.externalUrl ? (
-              <a href={item.externalUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
-                <Button className="w-full">View &amp; Purchase →</Button>
-              </a>
-            ) : (
-              <p className="font-inter text-sm text-near-black/30 italic text-center py-2">Link coming soon</p>
-            )}
+          ) : (
+            <div className="space-y-3">
+              {item.externalUrl ? (
+                <a href={item.externalUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
+                  <Button className="w-full">View &amp; Purchase →</Button>
+                </a>
+              ) : (
+                <p className="font-inter text-sm text-near-black/30 italic text-center py-2">Link coming soon</p>
+              )}
 
-            {/* Mark as purchased section */}
-            {!showForm ? (
               <button
                 type="button"
-                onClick={() => setShowForm(true)}
+                onClick={openModal}
                 className="w-full font-inter text-xs text-near-black/40 hover:text-burgundy-800 transition-colors text-center py-1 underline underline-offset-2"
               >
                 Already purchased this? Let the priest know →
               </button>
-            ) : (
-              <div className="border border-near-black/10 rounded-sm p-4 space-y-3">
-                <p className="font-inter text-sm font-medium text-near-black">
-                  Mark as Purchased
-                </p>
-                <p className="font-inter text-xs text-near-black/50">
-                  Optionally share your name and phone so the priest can send a thank-you note.
-                </p>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={anonymous}
-                    onChange={(e) => setAnonymous(e.target.checked)}
-                    className="rounded border-near-black/20"
-                  />
-                  <span className="font-inter text-sm text-near-black/70">Stay anonymous</span>
-                </label>
-
-                {!anonymous && (
-                  <>
-                    <div className="space-y-1">
-                      <label className="font-inter text-xs text-near-black/50">
-                        Your name <span className="text-near-black/30">(optional)</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="First and last name"
-                        className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter focus:outline-none focus:ring-2 focus:ring-burgundy-800"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="font-inter text-xs text-near-black/50">
-                        Phone number <span className="text-near-black/30">(optional)</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="(555) 000-0000"
-                        className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter focus:outline-none focus:ring-2 focus:ring-burgundy-800"
-                      />
-                    </div>
-                  </>
-                )}
-
-                {error && <p className="font-inter text-xs text-red-600">{error}</p>}
-
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={handleMarkPurchased} disabled={submitting}>
-                    {submitting ? 'Saving…' : 'Confirm Purchase'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => { setShowForm(false); setError(null); }}
-                    disabled={submitting}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Purchased confirmation modal */}
+      <Dialog open={modalOpen} onOpenChange={(o) => !o && closeModal()}>
+        <DialogContent className="p-0 overflow-y-auto max-h-[90vh]">
+          <DialogHeader className="p-6 pb-2 border-b border-near-black/10">
+            <DialogTitle>
+              {success ? 'Thank You!' : 'Mark as Purchased'}
+            </DialogTitle>
+            {!success && (
+              <DialogDescription>
+                {item.name} — let the priest know you purchased this so he can send a thank-you.
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          {success ? (
+            <div className="p-8 text-center space-y-4">
+              <div className="w-16 h-16 bg-gold-100 rounded-full flex items-center justify-center mx-auto">
+                <svg className="w-8 h-8 text-gold-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="font-cormorant text-2xl text-burgundy-800">
+                God bless your generosity
+              </h3>
+              <p className="font-inter text-sm text-near-black/60 leading-relaxed">
+                Thank you for letting us know! The priest will be so grateful for your gift.
+              </p>
+              <Button onClick={closeModal} variant="secondary" className="mt-2">
+                Close
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+
+              {/* Anonymous toggle — at the top, controls what shows below */}
+              <div className="flex items-center gap-3 pb-1 border-b border-near-black/5">
+                <Switch
+                  id="isAnonymous"
+                  checked={form.isAnonymous}
+                  onCheckedChange={(checked) =>
+                    setForm((prev) => ({ ...prev, isAnonymous: checked, name: checked ? '' : prev.name }))
+                  }
+                />
+                <Label htmlFor="isAnonymous" className="cursor-pointer normal-case text-sm text-near-black/70">
+                  Stay anonymous
+                </Label>
+              </div>
+
+              {!form.isAnonymous && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">
+                      Full Name <span className="text-near-black/30 font-normal">(optional)</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={form.name}
+                      onChange={handleChange}
+                      placeholder="Your name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">
+                      Email Address <span className="text-near-black/30 font-normal">(optional)</span>
+                    </Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="your@email.com"
+                    />
+                    <p className="text-xs font-inter text-near-black/40">
+                      So the priest can send a thank-you email.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="streetAddress">
+                      Street Address <span className="text-near-black/30 font-normal">(optional)</span>
+                    </Label>
+                    <Input
+                      id="streetAddress"
+                      name="streetAddress"
+                      value={form.streetAddress}
+                      onChange={handleChange}
+                      placeholder="123 Main St"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      <Input
+                        id="city"
+                        name="city"
+                        value={form.city}
+                        onChange={handleChange}
+                        placeholder="Boston"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State</Label>
+                      <Input
+                        id="state"
+                        name="state"
+                        value={form.state}
+                        onChange={handleChange}
+                        placeholder="MA"
+                        maxLength={2}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="zip">ZIP Code</Label>
+                    <Input
+                      id="zip"
+                      name="zip"
+                      value={form.zip}
+                      onChange={handleChange}
+                      placeholder="02101"
+                      maxLength={10}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">
+                      Phone Number <span className="text-near-black/30 font-normal">(optional)</span>
+                    </Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={form.phone}
+                      onChange={handleChange}
+                      placeholder="(555) 555-5555"
+                    />
+                  </div>
+                </>
+              )}
+
+              {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
+
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? 'Saving…' : 'Save'}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

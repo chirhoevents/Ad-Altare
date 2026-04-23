@@ -570,9 +570,19 @@ export default function RegistryPage() {
                             {item.externalUrl.length > 50 ? item.externalUrl.slice(0, 50) + '…' : item.externalUrl}
                           </a>
                         )}
+                        {item.isPurchased && !item.purchasedAnonymous && item.purchasedByEmail && (
+                          <p className="font-inter text-xs text-near-black/40">
+                            Email: {item.purchasedByEmail}
+                          </p>
+                        )}
                         {item.isPurchased && !item.purchasedAnonymous && item.purchasedByPhone && (
                           <p className="font-inter text-xs text-near-black/40">
                             Phone: {item.purchasedByPhone}
+                          </p>
+                        )}
+                        {item.isPurchased && !item.purchasedAnonymous && item.purchasedByAddress && (
+                          <p className="font-inter text-xs text-near-black/40">
+                            Address: {item.purchasedByAddress}
                           </p>
                         )}
                       </div>

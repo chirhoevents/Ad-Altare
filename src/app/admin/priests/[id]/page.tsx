@@ -9,7 +9,8 @@ import { formatCurrency, formatDate, formatPriestName } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Pencil, Eye } from 'lucide-react';
-import { AdminPriestActions, AdminFeeActions, AdminVisibilityToggle } from './actions-client';
+import { AdminPriestActions, AdminFeeActions } from './actions-client';
+import { DirectoryToggle } from '../../directory-toggle';
 
 interface Props {
   params: { id: string };
@@ -134,7 +135,9 @@ export default async function AdminPriestDetailPage({ params }: Props) {
         <p className="font-inter text-xs text-near-black/40 mb-2">
           Controls whether this priest appears on the public search directory. Priests with Stripe fully connected are always shown regardless of this setting.
         </p>
-        <AdminVisibilityToggle priestId={priest.id} profileVisible={priest.profileVisible} />
+        <div className="mt-4">
+          <DirectoryToggle priestId={priest.id} profileVisible={priest.profileVisible} />
+        </div>
       </section>
 
       {/* Platform Fee */}
@@ -208,11 +211,13 @@ export default async function AdminPriestDetailPage({ params }: Props) {
                     {item.itemType === 'wishlist' && item.isPurchased ? (
                       item.purchasedAnonymous
                         ? <span className="italic text-near-black/40">Anonymous</span>
-                        : item.purchasedByName
+                        : (item.purchasedByName || item.purchasedByEmail || item.purchasedByPhone)
                         ? (
-                          <div>
-                            <p>{item.purchasedByName}</p>
+                          <div className="space-y-0.5">
+                            {item.purchasedByName && <p className="font-medium">{item.purchasedByName}</p>}
+                            {item.purchasedByEmail && <p className="text-xs text-near-black/40">{item.purchasedByEmail}</p>}
                             {item.purchasedByPhone && <p className="text-xs text-near-black/40">{item.purchasedByPhone}</p>}
+                            {item.purchasedByAddress && <p className="text-xs text-near-black/40">{item.purchasedByAddress}</p>}
                           </div>
                         )
                         : <span className="text-near-black/30">—</span>
