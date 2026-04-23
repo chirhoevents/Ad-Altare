@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
@@ -6,9 +6,11 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 async function assertAdmin() {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
   if (!userId) return false;
-  const role = (sessionClaims?.publicMetadata as { role?: string })?.role;
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  const role = user.publicMetadata?.role as string | undefined;
   return role === 'admin';
 }
 

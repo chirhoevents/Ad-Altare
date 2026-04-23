@@ -4,13 +4,18 @@ import { registryItems } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
-const purchasedSchema = z.object({
-  purchasedByName: z.string().max(200).optional(),
-  purchasedByEmail: z.union([z.string().email(), z.literal(''), z.null()]).optional(),
-  purchasedByPhone: z.string().max(30).optional(),
-  purchasedByAddress: z.string().max(500).optional(),
-  purchasedAnonymous: z.boolean().default(false),
-});
+const purchasedSchema = z
+  .object({
+    purchasedByName: z.string().max(200).optional(),
+    purchasedByEmail: z.union([z.string().email(), z.literal(''), z.null()]).optional(),
+    purchasedByPhone: z.string().max(30).optional(),
+    purchasedByAddress: z.string().max(500).optional(),
+    purchasedAnonymous: z.boolean().default(false),
+  })
+  .refine(
+    (d) => d.purchasedAnonymous || (!!d.purchasedByName?.trim() && !!d.purchasedByEmail?.trim()),
+    { message: 'Name and email are required unless submitting anonymously.' }
+  );
 
 export async function POST(
   req: Request,

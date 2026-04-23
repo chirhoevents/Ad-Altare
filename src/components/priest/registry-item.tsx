@@ -220,22 +220,19 @@ function WishlistItemCard({ item }: { item: RegistryItem }) {
               {!form.isAnonymous && (
                 <>
                   <div className="space-y-2">
-                    <Label htmlFor="name">
-                      Full Name <span className="text-near-black/30 font-normal">(optional)</span>
-                    </Label>
+                    <Label htmlFor="name">Full Name *</Label>
                     <Input
                       id="name"
                       name="name"
                       value={form.name}
                       onChange={handleChange}
                       placeholder="Your name"
+                      required
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">
-                      Email Address <span className="text-near-black/30 font-normal">(optional)</span>
-                    </Label>
+                    <Label htmlFor="email">Email Address *</Label>
                     <Input
                       id="email"
                       name="email"
@@ -243,6 +240,7 @@ function WishlistItemCard({ item }: { item: RegistryItem }) {
                       value={form.email}
                       onChange={handleChange}
                       placeholder="your@email.com"
+                      required
                     />
                     <p className="text-xs font-inter text-near-black/40">
                       So the priest can send a thank-you email.
@@ -316,7 +314,11 @@ function WishlistItemCard({ item }: { item: RegistryItem }) {
 
               {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
 
-              <Button type="submit" className="w-full" disabled={submitting}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitting || (!form.isAnonymous && (!form.name.trim() || !form.email.trim()))}
+              >
                 {submitting ? 'Saving…' : 'Save'}
               </Button>
             </form>
