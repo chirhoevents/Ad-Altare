@@ -80,7 +80,10 @@ export default function RegistryPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  const hasCampaign = items.some((i) => i.itemType === 'campaign');
+
   function handleItemTypeChange(newType: 'campaign' | 'wishlist') {
+    if (newType === 'wishlist' && !hasCampaign) return;
     setForm((prev) => ({
       ...prev,
       itemType: newType,
@@ -326,20 +329,30 @@ export default function RegistryPage() {
             <button
               type="button"
               onClick={() => handleItemTypeChange('wishlist')}
+              disabled={!hasCampaign}
+              title={!hasCampaign ? 'Add a Campaign item first before adding Wishlist items.' : undefined}
               className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
                 form.itemType === 'wishlist'
                   ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                  : !hasCampaign
+                  ? 'border-near-black/10 text-near-black/30 cursor-not-allowed'
                   : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
               }`}
             >
               Wishlist
             </button>
           </div>
-          <p className="font-inter text-xs text-near-black/40">
-            {form.itemType === 'campaign'
-              ? 'Donors contribute funds toward this item through the platform.'
-              : 'Link donors to an external site where they can purchase it directly.'}
-          </p>
+          {!hasCampaign ? (
+            <p className="font-inter text-xs text-amber-600">
+              Add at least one Campaign item before you can add Wishlist items.
+            </p>
+          ) : (
+            <p className="font-inter text-xs text-near-black/40">
+              {form.itemType === 'campaign'
+                ? 'Donors contribute funds toward this item through the platform.'
+                : 'Link donors to an external site where they can purchase it directly.'}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -530,7 +543,11 @@ export default function RegistryPage() {
                       {item.category && <Badge variant="muted">{item.category}</Badge>}
                       {!item.isActive && <Badge variant="muted">Hidden</Badge>}
                       {!isWishlist && item.amountRaised >= item.goalAmount && <Badge variant="gold">Funded</Badge>}
-                      {isWishlist && item.isPurchased && <Badge variant="gold">Purchased</Badge>}
+                      {isWishlist && item.isPurchased && (
+                      <Badge variant="gold">
+                        Purchased{item.purchasedAnonymous ? ' (Anonymous)' : item.purchasedByName ? ` by ${item.purchasedByName}` : ''}
+                      </Badge>
+                    )}
                     </div>
                     {item.description && (
                       <p className="font-inter text-sm text-near-black/50 mb-3">{item.description}</p>
@@ -552,6 +569,11 @@ export default function RegistryPage() {
                             <LinkIcon className="w-3 h-3" />
                             {item.externalUrl.length > 50 ? item.externalUrl.slice(0, 50) + '…' : item.externalUrl}
                           </a>
+                        )}
+                        {item.isPurchased && !item.purchasedAnonymous && item.purchasedByPhone && (
+                          <p className="font-inter text-xs text-near-black/40">
+                            Phone: {item.purchasedByPhone}
+                          </p>
                         )}
                       </div>
                     ) : (

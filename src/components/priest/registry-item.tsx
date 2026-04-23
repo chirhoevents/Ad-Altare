@@ -15,80 +15,184 @@ interface RegistryItemCardProps {
   stripeReady: boolean;
 }
 
+function WishlistItemCard({ item }: { item: RegistryItem }) {
+  const [purchased, setPurchased] = useState(item.isPurchased);
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [anonymous, setAnonymous] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleMarkPurchased() {
+    setSubmitting(true);
+    setError(null);
+    const res = await fetch(`/api/public/registry/${item.id}/purchased`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        purchasedAnonymous: anonymous,
+        purchasedByName: anonymous ? undefined : name || undefined,
+        purchasedByPhone: anonymous ? undefined : phone || undefined,
+      }),
+    });
+    if (res.ok) {
+      setPurchased(true);
+      setSubmitted(true);
+      setShowForm(false);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? 'Something went wrong. Please try again.');
+    }
+    setSubmitting(false);
+  }
+
+  return (
+    <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
+      {item.imageUrl && (
+        <div className="relative w-full h-48 bg-near-black/5">
+          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+        </div>
+      )}
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800">{item.name}</h3>
+            {item.category && (
+              <span className="font-inter text-xs uppercase tracking-widest text-near-black/40 mt-0.5 block">
+                {item.category}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <Badge variant="muted">Wishlist</Badge>
+            {purchased && <Badge variant="gold">Purchased</Badge>}
+          </div>
+        </div>
+
+        {item.description && (
+          <p className="font-inter text-sm text-near-black/60 mb-4 leading-relaxed">{item.description}</p>
+        )}
+
+        {item.goalAmount > 0 && (
+          <div className="mb-4">
+            <span className="font-inter text-xs uppercase tracking-widest text-near-black/40">Est. Price</span>
+            <p className="font-cormorant text-xl text-burgundy-800 mt-0.5">{formatCurrency(item.goalAmount)}</p>
+          </div>
+        )}
+
+        {/* Already purchased */}
+        {purchased ? (
+          <div className="space-y-2">
+            <Button className="w-full" disabled variant="secondary">
+              Already Purchased ✓
+            </Button>
+            {submitted && (
+              <p className="font-inter text-xs text-center text-near-black/50">
+                Thank you for letting us know! The priest will be so grateful.
+              </p>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {/* External link button */}
+            {item.externalUrl ? (
+              <a href={item.externalUrl} target="_blank" rel="noopener noreferrer" className="block w-full">
+                <Button className="w-full">View &amp; Purchase →</Button>
+              </a>
+            ) : (
+              <p className="font-inter text-sm text-near-black/30 italic text-center py-2">Link coming soon</p>
+            )}
+
+            {/* Mark as purchased section */}
+            {!showForm ? (
+              <button
+                type="button"
+                onClick={() => setShowForm(true)}
+                className="w-full font-inter text-xs text-near-black/40 hover:text-burgundy-800 transition-colors text-center py-1 underline underline-offset-2"
+              >
+                Already purchased this? Let the priest know →
+              </button>
+            ) : (
+              <div className="border border-near-black/10 rounded-sm p-4 space-y-3">
+                <p className="font-inter text-sm font-medium text-near-black">
+                  Mark as Purchased
+                </p>
+                <p className="font-inter text-xs text-near-black/50">
+                  Optionally share your name and phone so the priest can send a thank-you note.
+                </p>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={anonymous}
+                    onChange={(e) => setAnonymous(e.target.checked)}
+                    className="rounded border-near-black/20"
+                  />
+                  <span className="font-inter text-sm text-near-black/70">Stay anonymous</span>
+                </label>
+
+                {!anonymous && (
+                  <>
+                    <div className="space-y-1">
+                      <label className="font-inter text-xs text-near-black/50">
+                        Your name <span className="text-near-black/30">(optional)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="First and last name"
+                        className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-inter text-xs text-near-black/50">
+                        Phone number <span className="text-near-black/30">(optional)</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="(555) 000-0000"
+                        className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {error && <p className="font-inter text-xs text-red-600">{error}</p>}
+
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleMarkPurchased} disabled={submitting}>
+                    {submitting ? 'Saving…' : 'Confirm Purchase'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => { setShowForm(false); setError(null); }}
+                    disabled={submitting}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady }: RegistryItemCardProps) {
   const [customAmount, setCustomAmount] = useState('');
 
   // ── Wishlist item rendering ──────────────────────────────────────────────
   if (item.itemType === 'wishlist') {
-    return (
-      <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
-        {item.imageUrl && (
-          <div className="relative w-full h-48 bg-near-black/5">
-            <Image
-              src={item.imageUrl}
-              alt={item.name}
-              fill
-              className="object-cover"
-            />
-          </div>
-        )}
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between gap-4 mb-3">
-            <div>
-              <h3 className="font-cormorant text-2xl font-semibold text-burgundy-800">
-                {item.name}
-              </h3>
-              {item.category && (
-                <span className="font-inter text-xs uppercase tracking-widest text-near-black/40 mt-0.5 block">
-                  {item.category}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <Badge variant="muted">Wishlist</Badge>
-              {item.isPurchased && <Badge variant="gold">Purchased</Badge>}
-            </div>
-          </div>
-
-          {item.description && (
-            <p className="font-inter text-sm text-near-black/60 mb-4 leading-relaxed">
-              {item.description}
-            </p>
-          )}
-
-          {/* Estimated price */}
-          {item.goalAmount > 0 && (
-            <div className="mb-4">
-              <span className="font-inter text-xs uppercase tracking-widest text-near-black/40">Est. Price</span>
-              <p className="font-cormorant text-xl text-burgundy-800 mt-0.5">{formatCurrency(item.goalAmount)}</p>
-            </div>
-          )}
-
-          {/* Purchase button */}
-          {item.isPurchased ? (
-            <Button className="w-full" disabled variant="secondary">
-              Already Purchased
-            </Button>
-          ) : item.externalUrl ? (
-            <a
-              href={item.externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full"
-            >
-              <Button className="w-full">
-                View &amp; Purchase →
-              </Button>
-            </a>
-          ) : (
-            <p className="font-inter text-sm text-near-black/30 italic text-center py-2">
-              Link coming soon
-            </p>
-          )}
-        </div>
-      </div>
-    );
+    return <WishlistItemCard item={item} />;
   }
 
   // ── Campaign item rendering ──────────────────────────────────────────────

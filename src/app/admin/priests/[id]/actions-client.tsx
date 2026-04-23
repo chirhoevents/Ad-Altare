@@ -66,6 +66,52 @@ export function AdminPriestActions({ priestId, stripeOnboardingComplete }: Actio
   );
 }
 
+// ─── Directory visibility toggle ─────────────────────────────────────────────
+
+interface VisibilityProps {
+  priestId: string;
+  profileVisible: boolean;
+}
+
+export function AdminVisibilityToggle({ priestId, profileVisible }: VisibilityProps) {
+  const router = useRouter();
+  const [visible, setVisible] = useState(profileVisible);
+  const [saving, setSaving] = useState(false);
+
+  async function handleToggle() {
+    setSaving(true);
+    const res = await fetch(`/api/admin/priests/${priestId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileVisible: !visible }),
+    });
+    if (res.ok) {
+      setVisible((v) => !v);
+      router.refresh();
+    }
+    setSaving(false);
+  }
+
+  return (
+    <div className="mt-4 flex items-center gap-4 flex-wrap">
+      <Button
+        size="sm"
+        variant={visible ? 'outline' : 'default'}
+        onClick={handleToggle}
+        disabled={saving}
+        className={visible ? 'text-red-600 border-red-200 hover:bg-red-50' : ''}
+      >
+        {saving ? 'Saving…' : visible ? 'Remove from Directory' : 'Show in Directory'}
+      </Button>
+      <p className="font-inter text-xs text-near-black/40">
+        {visible
+          ? 'This priest is currently listed in the public directory.'
+          : 'This priest is hidden from the public directory.'}
+      </p>
+    </div>
+  );
+}
+
 // ─── Fee management ───────────────────────────────────────────────────────────
 
 interface FeeActionsProps {

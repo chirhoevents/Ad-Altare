@@ -25,6 +25,7 @@ const patchSchema = z.object({
   bio: z.string().max(5000).optional(),
   stripeOnboardingComplete: z.boolean().optional(),
   platformFeeOverride: z.number().int().min(0).max(100).nullable().optional(), // null=1% default, 0=waived, N=N%
+  profileVisible: z.boolean().optional(),
 });
 
 export async function GET(
@@ -77,6 +78,7 @@ export async function PATCH(
   if (data.firstMassDate !== undefined) updates.firstMassDate = data.firstMassDate || null;
   if (data.bio !== undefined) updates.bio = data.bio || null;
   if (data.stripeOnboardingComplete !== undefined) updates.stripeOnboardingComplete = data.stripeOnboardingComplete;
+  if (data.profileVisible !== undefined) updates.profileVisible = data.profileVisible;
   // platformFeeOverride can be null (restore default), 0 (waive), or 1-100 (custom %)
   if (Object.prototype.hasOwnProperty.call(data, 'platformFeeOverride')) {
     updates.platformFeeOverride = data.platformFeeOverride ?? null;

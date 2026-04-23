@@ -9,7 +9,7 @@ import { formatCurrency, formatDate, formatPriestName } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Pencil, Eye } from 'lucide-react';
-import { AdminPriestActions, AdminFeeActions } from './actions-client';
+import { AdminPriestActions, AdminFeeActions, AdminVisibilityToggle } from './actions-client';
 
 interface Props {
   params: { id: string };
@@ -121,6 +121,22 @@ export default async function AdminPriestDetailPage({ params }: Props) {
         />
       </section>
 
+      {/* Directory Visibility */}
+      <section className="bg-white border border-near-black/10 rounded-sm p-6">
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="font-cormorant text-2xl text-burgundy-800">Directory Visibility</h2>
+          {priest.profileVisible ? (
+            <Badge variant="success">Visible</Badge>
+          ) : (
+            <Badge variant="muted">Hidden</Badge>
+          )}
+        </div>
+        <p className="font-inter text-xs text-near-black/40 mb-2">
+          Controls whether this priest appears on the public search directory. Priests with Stripe fully connected are always shown regardless of this setting.
+        </p>
+        <AdminVisibilityToggle priestId={priest.id} profileVisible={priest.profileVisible} />
+      </section>
+
       {/* Platform Fee */}
       <section className="bg-white border border-near-black/10 rounded-sm p-6">
         <div className="flex items-center gap-3 mb-1">
@@ -157,7 +173,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-near-black/10">
-                {['Item', 'Category', 'Raised', 'Goal', 'Status'].map((h) => (
+                {['Item', 'Type', 'Category', 'Raised / Price', 'Status', 'Purchased By'].map((h) => (
                   <th key={h} className="px-5 py-3 text-left font-inter text-xs uppercase tracking-widest text-near-black/40">{h}</th>
                 ))}
               </tr>
@@ -166,16 +182,42 @@ export default async function AdminPriestDetailPage({ params }: Props) {
               {items.map((item) => (
                 <tr key={item.id} className="border-b border-near-black/5 last:border-0">
                   <td className="px-5 py-3 font-inter text-sm text-near-black">{item.name}</td>
-                  <td className="px-5 py-3 font-inter text-sm text-near-black/50">{item.category ?? '—'}</td>
-                  <td className="px-5 py-3 font-inter text-sm text-burgundy-800">{formatCurrency(item.amountRaised)}</td>
-                  <td className="px-5 py-3 font-inter text-sm text-near-black/60">{formatCurrency(item.goalAmount)}</td>
                   <td className="px-5 py-3">
-                    {item.amountRaised >= item.goalAmount ? (
+                    <Badge variant={item.itemType === 'campaign' ? 'success' : 'muted'}>
+                      {item.itemType === 'campaign' ? 'Campaign' : 'Wishlist'}
+                    </Badge>
+                  </td>
+                  <td className="px-5 py-3 font-inter text-sm text-near-black/50">{item.category ?? '—'}</td>
+                  <td className="px-5 py-3 font-inter text-sm text-burgundy-800">
+                    {item.itemType === 'campaign'
+                      ? `${formatCurrency(item.amountRaised)} / ${formatCurrency(item.goalAmount)}`
+                      : item.goalAmount > 0 ? formatCurrency(item.goalAmount) : '—'}
+                  </td>
+                  <td className="px-5 py-3">
+                    {item.itemType === 'wishlist' ? (
+                      item.isPurchased ? <Badge variant="gold">Purchased</Badge> : <Badge variant="muted">{item.isActive ? 'Active' : 'Hidden'}</Badge>
+                    ) : item.amountRaised >= item.goalAmount ? (
                       <Badge variant="gold">Funded</Badge>
                     ) : item.isActive ? (
                       <Badge variant="success">Active</Badge>
                     ) : (
                       <Badge variant="muted">Hidden</Badge>
+                    )}
+                  </td>
+                  <td className="px-5 py-3 font-inter text-sm text-near-black/60">
+                    {item.itemType === 'wishlist' && item.isPurchased ? (
+                      item.purchasedAnonymous
+                        ? <span className="italic text-near-black/40">Anonymous</span>
+                        : item.purchasedByName
+                        ? (
+                          <div>
+                            <p>{item.purchasedByName}</p>
+                            {item.purchasedByPhone && <p className="text-xs text-near-black/40">{item.purchasedByPhone}</p>}
+                          </div>
+                        )
+                        : <span className="text-near-black/30">—</span>
+                    ) : (
+                      <span className="text-near-black/20">—</span>
                     )}
                   </td>
                 </tr>

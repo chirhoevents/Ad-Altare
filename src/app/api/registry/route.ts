@@ -2,7 +2,7 @@ import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { priests, registryItems } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 
 const createSchema = z.object({
@@ -45,6 +45,23 @@ export async function POST(req: Request) {
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+  }
+
+  // Wishlist items require at least one campaign item to exist first
+  if (parsed.data.itemType === 'wishlist') {
+    const campaignCount = await db.query.registryItems.findFirst({
+      where: and(
+        eq(registryItems.priestId, priest.id),
+        eq(registryItems.itemType, 'campaign')
+      ),
+      columns: { id: true },
+    });
+    if (!campaignCount) {
+      return NextResponse.json(
+        { error: 'You must add at least one Campaign item before adding Wishlist items.' },
+        { status: 400 }
+      );
+    }
   }
 
   const [item] = await db

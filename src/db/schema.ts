@@ -55,6 +55,9 @@ export const registryItems = pgTable('registry_items', {
   itemType: text('item_type').default('campaign').notNull(), // 'campaign' | 'wishlist'
   externalUrl: text('external_url'),
   isPurchased: boolean('is_purchased').default(false).notNull(),
+  purchasedByName: text('purchased_by_name'),
+  purchasedByPhone: text('purchased_by_phone'),
+  purchasedAnonymous: boolean('purchased_anonymous').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
