@@ -462,8 +462,9 @@ export default function RegistryPage() {
         </p>
         <p className="font-inter text-sm text-burgundy-800/70 leading-relaxed">
           Hosting, payments, and infrastructure cost real money to run. Adding at least one
-          campaign to your registry — with a minimum goal of <strong>$25</strong> — helps
-          keep Ad Altare free and available for everyone. Thank you for your support.
+          campaign to your registry — we suggest a goal of <strong>$50</strong>, though
+          campaigns can be as small as <strong>$25</strong> — helps keep Ad Altare free
+          and available for everyone. Thank you for your support.
         </p>
       </div>
 
