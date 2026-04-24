@@ -39,9 +39,8 @@ export function generateBaseSlug(firstName: string, lastName: string): string {
  * and self-reported current title.
  *
  * - On/after ordination date → 'Fr.'
- * - Within 3 months before ordination → 'Soon-to-be Fr.'
- * - Earlier, title=Transitional Deacon or Deacon → 'Dcn.'
- * - Earlier, title=Seminarian → '' (no prefix)
+ * - Before ordination, title=Transitional Deacon or Deacon → 'Dcn.'
+ * - Before ordination, title=Seminarian → '' (no prefix)
  */
 export function getTitleForDisplay(priest: {
   currentTitle?: string | null;
@@ -55,9 +54,6 @@ export function getTitleForDisplay(priest: {
 
     if (today >= ordDate) return 'Fr.';
 
-    const threeMonthsBefore = new Date(ordDate);
-    threeMonthsBefore.setMonth(threeMonthsBefore.getMonth() - 3);
-    if (today >= threeMonthsBefore) return 'Soon-to-be Fr.';
   }
 
   switch (priest.currentTitle) {
