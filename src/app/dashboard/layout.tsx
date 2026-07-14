@@ -4,7 +4,6 @@ import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { Sidebar } from '@/components/dashboard/sidebar';
-import { SetupWizard } from '@/components/dashboard/setup-wizard';
 
 export default async function DashboardLayout({
   children,
@@ -39,13 +38,6 @@ export default async function DashboardLayout({
       <main className="flex-1 overflow-auto pt-14 lg:pt-0 min-w-0">
         {children}
       </main>
-
-      {/* Setup wizard — pops up on every visit until Stripe is connected */}
-      <SetupWizard
-        stripeConnected={priest.stripeOnboardingComplete}
-        profileVisible={priest.profileVisible}
-        slug={priest.slug}
-      />
     </div>
   );
 }

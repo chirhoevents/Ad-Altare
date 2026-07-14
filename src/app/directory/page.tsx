@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
-import { or, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { DirectoryClient } from './directory-client';
 import { DirectoryNavAuth } from '@/components/directory/directory-nav-auth';
 
@@ -16,10 +16,7 @@ export const metadata: Metadata = {
 
 export default async function DirectoryPage() {
   const visiblePriests = await db.query.priests.findMany({
-    where: or(
-      eq(priests.stripeOnboardingComplete, true),
-      eq(priests.profileVisible, true)
-    ),
+    where: eq(priests.profileVisible, true),
     columns: {
       id: true,
       firstName: true,
