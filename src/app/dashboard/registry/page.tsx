@@ -30,7 +30,7 @@ const emptyForm: ItemForm = {
   description: '',
   imageUrl: '',
   goalAmount: '',
-  itemType: 'campaign',
+  itemType: 'wishlist',
   externalUrl: '',
 };
 
