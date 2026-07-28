@@ -34,6 +34,199 @@ const emptyForm: ItemForm = {
   externalUrl: '',
 };
 
+function ImageUploadField({
+  imageUrl,
+  uploading,
+  fileInputRef,
+  onFile,
+  onRemove,
+}: {
+  imageUrl: string;
+  uploading: boolean;
+  fileInputRef: React.RefObject<HTMLInputElement>;
+  onFile: (file: File) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label>Item Photo <span className="text-near-black/30 font-normal">(optional)</span></Label>
+      <div className="flex items-center gap-3">
+        {imageUrl && (
+          <div className="w-16 h-16 rounded-sm border border-near-black/10 overflow-hidden shrink-0">
+            <Image src={imageUrl} alt="" width={64} height={64} className="object-cover w-full h-full" />
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onFile(f);
+              e.target.value = '';
+            }}
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="w-3.5 h-3.5 mr-1.5" />
+            {uploading ? 'Uploading…' : imageUrl ? 'Change Photo' : 'Upload Photo'}
+          </Button>
+          {imageUrl && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="text-red-600 border-red-200"
+              onClick={onRemove}
+            >
+              <X className="w-3.5 h-3.5 mr-1.5" />
+              Remove
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FormFields({
+  form,
+  onChange,
+  onItemTypeChange,
+  onCategoryChange,
+  imageField,
+}: {
+  form: ItemForm;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onItemTypeChange: (t: 'campaign' | 'wishlist') => void;
+  onCategoryChange: (category: string) => void;
+  imageField: React.ReactNode;
+}) {
+  return (
+    <>
+      <div className="space-y-2">
+        <Label>Item Type</Label>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => onItemTypeChange('campaign')}
+            className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+              form.itemType === 'campaign'
+                ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+            }`}
+          >
+            Campaign
+          </button>
+          <button
+            type="button"
+            onClick={() => onItemTypeChange('wishlist')}
+            className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+              form.itemType === 'wishlist'
+                ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+            }`}
+          >
+            Wishlist
+          </button>
+        </div>
+        <p className="font-inter text-xs text-near-black/40">
+          {form.itemType === 'campaign'
+            ? 'Donors contribute funds toward this item through the platform.'
+            : 'Link donors to an external site where they can purchase it directly.'}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="name">Item Name *</Label>
+        <Input
+          id="name"
+          name="name"
+          value={form.name}
+          onChange={onChange}
+          placeholder="e.g. Chalice, Roman Missal, Stole"
+          required
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="category">Category</Label>
+        <select
+          id="category"
+          name="category"
+          value={form.category}
+          onChange={(e) => onCategoryChange(e.target.value)}
+          className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+        >
+          <option value="">Select a category…</option>
+          {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
+          name="description"
+          value={form.description}
+          onChange={onChange}
+          placeholder="Tell donors what this item means for your ministry…"
+          rows={3}
+        />
+      </div>
+      {imageField}
+
+      {form.itemType === 'campaign' ? (
+        <div className="space-y-2">
+          <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
+          <Input
+            id="goalAmount"
+            name="goalAmount"
+            type="number"
+            min="1"
+            step="0.01"
+            value={form.goalAmount}
+            onChange={onChange}
+            placeholder="250.00"
+            required
+          />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="goalAmount">Estimated Price ($) <span className="text-near-black/30 font-normal">(optional)</span></Label>
+            <Input
+              id="goalAmount"
+              name="goalAmount"
+              type="number"
+              step="0.01"
+              value={form.goalAmount}
+              onChange={onChange}
+              placeholder="49.99"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="externalUrl">Product Link <span className="text-near-black/30 font-normal">(optional)</span></Label>
+            <Input
+              id="externalUrl"
+              name="externalUrl"
+              type="url"
+              value={form.externalUrl}
+              onChange={onChange}
+              placeholder="https://www.amazon.com/dp/..."
+            />
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 export default function RegistryPage() {
   const [items, setItems] = useState<RegistryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -253,177 +446,23 @@ export default function RegistryPage() {
     if (res.ok) await fetchLinks();
   }
 
-  // Shared image upload field used in both add and edit forms
-  function ImageUploadField() {
-    return (
-      <div className="space-y-2">
-        <Label>Item Photo <span className="text-near-black/30 font-normal">(optional)</span></Label>
-        <div className="flex items-center gap-3">
-          {form.imageUrl && (
-            <div className="w-16 h-16 rounded-sm border border-near-black/10 overflow-hidden shrink-0">
-              <Image src={form.imageUrl} alt="" width={64} height={64} className="object-cover w-full h-full" />
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleImageUpload(f);
-                e.target.value = '';
-              }}
-            />
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={uploading}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="w-3.5 h-3.5 mr-1.5" />
-              {uploading ? 'Uploading…' : form.imageUrl ? 'Change Photo' : 'Upload Photo'}
-            </Button>
-            {form.imageUrl && (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="text-red-600 border-red-200"
-                onClick={() => setForm((p) => ({ ...p, imageUrl: '' }))}
-              >
-                <X className="w-3.5 h-3.5 mr-1.5" />
-                Remove
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Shared form fields for both Add and Edit
-  function FormFields() {
-    return (
-      <>
-        {/* Item type selector */}
-        <div className="space-y-2">
-          <Label>Item Type</Label>
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => handleItemTypeChange('campaign')}
-              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
-                form.itemType === 'campaign'
-                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
-                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
-              }`}
-            >
-              Campaign
-            </button>
-            <button
-              type="button"
-              onClick={() => handleItemTypeChange('wishlist')}
-              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
-                form.itemType === 'wishlist'
-                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
-                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
-              }`}
-            >
-              Wishlist
-            </button>
-          </div>
-          <p className="font-inter text-xs text-near-black/40">
-            {form.itemType === 'campaign'
-              ? 'Donors contribute funds toward this item through the platform.'
-              : 'Link donors to an external site where they can purchase it directly.'}
-          </p>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="name">Item Name *</Label>
-          <Input
-            id="name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="e.g. Chalice, Roman Missal, Stole"
-            required
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">Category</Label>
-          <select
-            id="category"
-            name="category"
-            value={form.category}
-            onChange={(e) => setForm((prev) => ({ ...prev, category: e.target.value }))}
-            className="w-full border border-near-black/20 rounded-sm px-3 py-2 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
-          >
-            <option value="">Select a category…</option>
-            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            placeholder="Tell donors what this item means for your ministry…"
-            rows={3}
-          />
-        </div>
-        <ImageUploadField />
-
-        {form.itemType === 'campaign' ? (
-          <div className="space-y-2">
-            <Label htmlFor="goalAmount">Goal Amount ($) *</Label>
-            <Input
-              id="goalAmount"
-              name="goalAmount"
-              type="number"
-              min="1"
-              step="0.01"
-              value={form.goalAmount}
-              onChange={handleChange}
-              placeholder="250.00"
-              required
-            />
-          </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="goalAmount">Estimated Price ($) <span className="text-near-black/30 font-normal">(optional)</span></Label>
-              <Input
-                id="goalAmount"
-                name="goalAmount"
-                type="number"
-                step="0.01"
-                value={form.goalAmount}
-                onChange={handleChange}
-                placeholder="49.99"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="externalUrl">Product Link <span className="text-near-black/30 font-normal">(optional)</span></Label>
-              <Input
-                id="externalUrl"
-                name="externalUrl"
-                type="url"
-                value={form.externalUrl}
-                onChange={handleChange}
-                placeholder="https://www.amazon.com/dp/..."
-              />
-            </div>
-          </>
-        )}
-      </>
-    );
-  }
+  const formFields = (
+    <FormFields
+      form={form}
+      onChange={handleChange}
+      onItemTypeChange={handleItemTypeChange}
+      onCategoryChange={(cat) => setForm((prev) => ({ ...prev, category: cat }))}
+      imageField={
+        <ImageUploadField
+          imageUrl={form.imageUrl}
+          uploading={uploading}
+          fileInputRef={fileInputRef}
+          onFile={handleImageUpload}
+          onRemove={() => setForm((p) => ({ ...p, imageUrl: '' }))}
+        />
+      }
+    />
+  );
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl">
@@ -452,7 +491,7 @@ export default function RegistryPage() {
             </button>
           </div>
           <form onSubmit={handleAdd} className="space-y-4">
-            <FormFields />
+            {formFields}
             {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
             <div className="flex gap-3">
               <Button type="submit" disabled={saving || uploading}>
@@ -492,7 +531,7 @@ export default function RegistryPage() {
               return (
                 <div key={item.id} className="bg-white border border-burgundy-200 rounded-sm p-6">
                   <form onSubmit={handleUpdate} className="space-y-4">
-                    <FormFields />
+                    {formFields}
                     {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
                     <div className="flex gap-3">
                       <Button type="submit" size="sm" disabled={saving || uploading}>
