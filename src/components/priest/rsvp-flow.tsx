@@ -32,8 +32,6 @@ interface FoundGuest {
   firstName: string;
   lastName: string;
   inviteCount: number;
-  address: string | null;
-  phone: string | null;
 }
 
 interface EventResponse {
@@ -56,6 +54,7 @@ export function RsvpFlow({ priestId, priestName }: Props) {
   const [responses, setResponses] = useState<Record<string, EventResponse>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [lookupError, setLookupError] = useState('');
   // Contact info collected during RSVP
   const [guestAddress, setGuestAddress] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -64,20 +63,28 @@ export function RsvpFlow({ priestId, priestName }: Props) {
     e.preventDefault();
     setSearching(true);
     setNotFound(false);
+    setLookupError('');
 
-    const [lookupRes, eventsRes] = await Promise.all([
-      fetch('/api/public/rsvp/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priestId, firstName: firstName.trim(), lastName: lastName.trim() }),
-      }),
-      fetch(`/api/public/rsvp/events?priestId=${priestId}`),
-    ]);
-
-    const lookupData = await lookupRes.json();
-    const eventsData = await eventsRes.json();
-
-    setSearching(false);
+    let lookupData;
+    let eventsData;
+    try {
+      const [lookupRes, eventsRes] = await Promise.all([
+        fetch('/api/public/rsvp/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priestId, firstName: firstName.trim(), lastName: lastName.trim() }),
+        }),
+        fetch(`/api/public/rsvp/events?priestId=${priestId}`),
+      ]);
+      if (!lookupRes.ok || !eventsRes.ok) throw new Error('lookup failed');
+      lookupData = await lookupRes.json();
+      eventsData = await eventsRes.json();
+    } catch {
+      setLookupError('Something went wrong. Please try again.');
+      return;
+    } finally {
+      setSearching(false);
+    }
 
     if (!lookupData.found) {
       setNotFound(true);
@@ -91,9 +98,6 @@ export function RsvpFlow({ priestId, priestName }: Props) {
 
     const foundGuest = lookupData.guest as FoundGuest;
     setGuest(foundGuest);
-    // Pre-fill contact info if already on file
-    setGuestAddress(foundGuest.address ?? '');
-    setGuestPhone(foundGuest.phone ?? '');
     setEvents(eventsData.events ?? []);
 
     const init: Record<string, EventResponse> = {};
@@ -140,7 +144,7 @@ export function RsvpFlow({ priestId, priestName }: Props) {
     if (res.ok) {
       setStep('success');
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setSubmitError(data.error ?? 'Something went wrong. Please try again.');
     }
     setSubmitting(false);
@@ -201,6 +205,9 @@ export function RsvpFlow({ priestId, priestName }: Props) {
                 Please contact {priestName} directly to be added.
               </p>
             </div>
+          )}
+          {lookupError && (
+            <p className="font-inter text-sm text-red-600 text-center">{lookupError}</p>
           )}
           <Button type="submit" className="w-full" disabled={searching}>
             {searching ? 'Searching…' : 'Find My Invitation →'}
@@ -327,7 +334,8 @@ export function RsvpFlow({ priestId, priestName }: Props) {
           <div>
             <h4 className="font-inter text-sm font-medium text-near-black mb-0.5">Contact Information</h4>
             <p className="font-inter text-xs text-near-black/40">
-              Optional — helps {priestName} send you a personal thank-you.
+              Optional — helps {priestName} send you a personal thank-you. Leave blank to keep
+              anything you&apos;ve shared before.
             </p>
           </div>
           <div className="space-y-3">

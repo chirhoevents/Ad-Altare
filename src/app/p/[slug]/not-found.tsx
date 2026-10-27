@@ -14,7 +14,7 @@ export default function PriestNotFound() {
         Registry Not Found
       </h1>
       <p className="font-inter text-near-black/50 max-w-md mx-auto mb-8">
-        This ordination registry doesn't exist or the link may be incorrect.
+        This ordination registry doesn’t exist or the link may be incorrect.
       </p>
       <Button asChild>
         <Link href="/">Go to Ad Altare</Link>

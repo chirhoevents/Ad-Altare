@@ -11,7 +11,7 @@ export default function NotFound() {
           Page Not Found
         </h1>
         <p className="font-inter text-near-black/50 text-base max-w-md mx-auto mb-8">
-          The page you're looking for doesn't exist or may have been moved.
+          The page you’re looking for doesn’t exist or may have been moved.
         </p>
         <div className="flex gap-4 justify-center">
           <Button asChild>
@@ -23,7 +23,7 @@ export default function NotFound() {
         </div>
       </div>
       <p className="font-cormorant text-xl text-near-black/20 italic mt-8">
-        "Trust in the Lord with all your heart." — Proverbs 3:5
+        “Trust in the Lord with all your heart.” — Proverbs 3:5
       </p>
     </div>
   );

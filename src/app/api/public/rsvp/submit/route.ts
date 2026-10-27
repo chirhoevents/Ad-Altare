@@ -3,6 +3,7 @@ import { db } from '@/db';
 import { guestList, events, rsvps } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { todayForDeadlines } from '@/lib/utils';
 
 const schema = z.object({
   guestId: z.string().uuid(),
@@ -31,7 +32,8 @@ export async function POST(req: Request) {
   });
   if (!guest) return NextResponse.json({ error: 'Guest not found' }, { status: 404 });
 
-  const today = new Date().toISOString().split('T')[0];
+  // Deadline day stays open until midnight Pacific (see todayForDeadlines)
+  const today = todayForDeadlines();
 
   // Validate each response
   for (const r of responses) {

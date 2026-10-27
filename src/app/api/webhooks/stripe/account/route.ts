@@ -30,12 +30,15 @@ export async function POST(request: Request) {
   if (event.type === 'account.updated') {
     const account = event.data.object as Stripe.Account;
 
-    if (account.charges_enabled) {
-      await db
-        .update(priests)
-        .set({ stripeOnboardingComplete: true })
-        .where(eq(priests.stripeAccountId, account.id));
-    }
+    // Mirror Stripe both ways: if Stripe disables charges (e.g. missing
+    // verification), stop offering donations until it's resolved.
+    await db
+      .update(priests)
+      .set({
+        stripeOnboardingComplete: !!(account.charges_enabled && account.details_submitted),
+        updatedAt: new Date(),
+      })
+      .where(eq(priests.stripeAccountId, account.id));
   }
 
   return new Response(JSON.stringify({ received: true }), {

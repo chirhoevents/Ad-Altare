@@ -44,6 +44,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
+  const nextType = parsed.data.itemType ?? item.itemType;
+  const nextGoal = parsed.data.goalAmount ?? item.goalAmount;
+  if (nextType === 'campaign' && nextGoal < 100) {
+    return NextResponse.json({ error: 'Goal amount must be at least $1' }, { status: 400 });
+  }
 
   const updates: Partial<typeof item> = {};
   if (parsed.data.name !== undefined) updates.name = parsed.data.name;

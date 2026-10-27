@@ -13,10 +13,10 @@ async function getPriest() {
 
 const createSchema = z.object({
   name: z.string().min(1).max(200),
-  date: z.string(), // ISO datetime string
+  date: z.string().datetime({ offset: true }), // ISO instant, converted from local time in the browser
   location: z.string().min(1).max(500),
   rsvpEnabled: z.boolean().default(false),
-  rsvpDeadline: z.string().optional().nullable(),
+  rsvpDeadline: z.string().date().optional().nullable(),
 });
 
 export async function GET() {

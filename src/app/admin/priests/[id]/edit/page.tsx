@@ -168,7 +168,7 @@ export default function AdminPriestEditPage() {
             <option value="Father">Father</option>
           </select>
           <p className="font-inter text-xs text-near-black/40">
-            Admins can set any title. Title displays as "Fr." automatically on/after ordination date.
+            Admins can set any title. Title displays as “Fr.” automatically on/after ordination date.
           </p>
         </div>
 

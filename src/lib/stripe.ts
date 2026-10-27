@@ -14,8 +14,7 @@ export function getStripe(): Stripe {
 
 // Convenience alias for backwards compat with route imports
 export const stripe = new Proxy({} as Stripe, {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get(_target, prop) {
+    get(_target, prop) {
     return (getStripe() as any)[prop];
   },
 });

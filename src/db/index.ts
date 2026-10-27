@@ -14,11 +14,9 @@ function getDb(): NeonHttpDatabase<Schema> {
   return _db;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const db = new Proxy({} as NeonHttpDatabase<Schema>, {
   get(_target, prop) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (getDb() as any)[prop];
+        return (getDb() as any)[prop];
   },
 });
 

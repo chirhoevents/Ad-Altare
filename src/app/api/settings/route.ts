@@ -11,13 +11,14 @@ const SELF_SELECTABLE_TITLES = ['Seminarian', 'Transitional Deacon', 'Deacon'] a
 const patchSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
-  currentTitle: z.enum(SELF_SELECTABLE_TITLES).optional(),
+  // 'Father' is accepted (the settings form echoes back an admin-set title) but never applied.
+  currentTitle: z.enum([...SELF_SELECTABLE_TITLES, 'Father']).optional(),
   phone: z.string().max(30).nullish(),
   seminary: z.string().max(200).nullish(),
   diocese: z.string().max(200).nullish(),
   parish: z.string().max(200).nullish(),
-  ordinationDate: z.string().nullish(),
-  firstMassDate: z.string().nullish(),
+  ordinationDate: z.union([z.string().date(), z.literal('')]).nullish(),
+  firstMassDate: z.union([z.string().date(), z.literal('')]).nullish(),
   bio: z.string().max(5000).nullish(),
   profilePhotoUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
   backgroundPhotoUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
@@ -57,7 +58,9 @@ export async function PATCH(req: Request) {
 
   if (data.firstName !== undefined) updates.firstName = data.firstName;
   if (data.lastName !== undefined) updates.lastName = data.lastName;
-  if (data.currentTitle !== undefined) updates.currentTitle = data.currentTitle;
+  if (data.currentTitle !== undefined && data.currentTitle !== 'Father' && priest.currentTitle !== 'Father') {
+    updates.currentTitle = data.currentTitle;
+  }
   if (data.phone !== undefined) updates.phone = data.phone || null;
   if (data.seminary !== undefined) updates.seminary = data.seminary || null;
   if (data.diocese !== undefined) updates.diocese = data.diocese || null;

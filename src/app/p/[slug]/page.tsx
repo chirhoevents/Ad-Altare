@@ -15,6 +15,9 @@ import { PriestPageNav } from '@/components/priest/priest-page-nav';
 
 interface Props {
   params: { slug: string };
+  // Stripe appends redirect_status when a donor returns from a redirect-based
+  // payment method (bank authentication, etc.)
+  searchParams?: { redirect_status?: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -33,7 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PriestPage({ params }: Props) {
+export default async function PriestPage({ params, searchParams }: Props) {
   const priest = await db.query.priests.findFirst({
     where: eq(priests.slug, params.slug),
   });
@@ -158,7 +161,13 @@ export default async function PriestPage({ params }: Props) {
       </div>
 
       {/* Client content (tabs, registry, donation modal) */}
-      <PriestPageClient priest={publicPriest} registryItems={items} registryLinks={links} hasRsvp={rsvpEvents.length > 0} />
+      <PriestPageClient
+        priest={publicPriest}
+        registryItems={items}
+        registryLinks={links}
+        hasRsvp={rsvpEvents.length > 0}
+        paymentReturnStatus={searchParams?.redirect_status ?? null}
+      />
 
       {/* Footer */}
       <div className="border-t border-near-black/10 mt-16 py-6 text-center">

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { RegistryItemCard } from './registry-item';
 import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
@@ -25,13 +25,27 @@ interface PriestPageClientProps {
   registryItems: RegistryItem[];
   registryLinks: RegistryLink[];
   hasRsvp?: boolean;
+  paymentReturnStatus?: string | null;
 }
 
 type ActiveTab = 'about' | 'registry' | 'rsvp';
 
-export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp = false }: PriestPageClientProps) {
+export function PriestPageClient({
+  priest,
+  registryItems,
+  registryLinks,
+  hasRsvp = false,
+  paymentReturnStatus = null,
+}: PriestPageClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('about');
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<ActiveTab>(paymentReturnStatus ? 'registry' : 'about');
+  const [returnBanner, setReturnBanner] = useState(paymentReturnStatus);
+
+  // Strip Stripe's return params so a refresh doesn't re-show the banner.
+  useEffect(() => {
+    if (paymentReturnStatus) router.replace(pathname, { scroll: false });
+  }, [paymentReturnStatus, pathname, router]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RegistryItem | null>(null);
   const [donationAmount, setDonationAmount] = useState(0);
@@ -73,6 +87,30 @@ export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10">
+        {returnBanner && (
+          <div
+            className={`mb-8 rounded-sm border px-4 py-3 flex items-start justify-between gap-4 ${
+              returnBanner === 'failed'
+                ? 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-gold-50 border-gold-200 text-near-black'
+            }`}
+          >
+            <p className="font-inter text-sm">
+              {returnBanner === 'succeeded'
+                ? 'Thank you! Your donation was received. A confirmation email is on its way.'
+                : returnBanner === 'processing'
+                  ? 'Thank you! Your payment is processing — you\'ll receive a confirmation email once it completes.'
+                  : 'Your payment was not completed and you have not been charged. Please try again.'}
+            </p>
+            <button
+              onClick={() => setReturnBanner(null)}
+              className="font-inter text-xs text-near-black/50 hover:text-near-black shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* About Tab */}
         {activeTab === 'about' && (
           <div className="max-w-2xl">

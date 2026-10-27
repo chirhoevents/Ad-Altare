@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { formatDate } from '@/lib/utils';
 import { Plus, Trash2, ChevronDown, ChevronUp, X, Check, Download, Upload } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -56,27 +57,62 @@ interface EventSummary {
 
 function escapeCSV(v: string) { return `"${v.replace(/"/g, '""')}"`; }
 
+/** Split CSV text into rows of fields, honouring quotes ("123 Main St, Boston"). */
+function splitCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') inQuotes = false;
+      else field += c;
+    } else if (c === '"') inQuotes = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.some((f) => f.trim())) rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  row.push(field);
+  if (row.some((f) => f.trim())) rows.push(row);
+  return rows;
+}
+
+const MAX_GUESTS_PER_IMPORT = 500;
+
 function parseCSV(text: string): { rows: Partial<Guest>[]; errors: string[] } {
-  const lines = text.trim().split('\n');
+  const lines = splitCSV(text.replace(/^\uFEFF/, '')); // strip Excel BOM
   if (lines.length < 2) return { rows: [], errors: ['File is empty or has no data rows.'] };
   // skip header
   const rows: Partial<Guest>[] = [];
   const errors: string[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const parts = lines[i].split(',').map((p) => p.trim().replace(/^"|"$/g, ''));
-    const [firstName, lastName, inviteCountRaw, address, phone] = parts;
+    const [firstName, lastName, inviteCountRaw, address, phone] = lines[i].map((p) => p.trim());
     if (!firstName || !lastName) {
       errors.push(`Row ${i + 1}: missing first_name or last_name`);
       continue;
     }
-    const inviteCount = parseInt(inviteCountRaw ?? '1', 10);
+    if (firstName.length > 100 || lastName.length > 100 || (address?.length ?? 0) > 500 || (phone?.length ?? 0) > 30) {
+      errors.push(`Row ${i + 1}: a field is too long (names ≤ 100, address ≤ 500, phone ≤ 30 characters)`);
+      continue;
+    }
+    const inviteCount = parseInt(inviteCountRaw || '1', 10);
     rows.push({
       firstName,
       lastName,
-      inviteCount: isNaN(inviteCount) || inviteCount < 1 ? 1 : inviteCount,
+      inviteCount: isNaN(inviteCount) || inviteCount < 1 ? 1 : Math.min(inviteCount, 50),
       address: address || null,
       phone: phone || null,
     });
+  }
+  if (rows.length > MAX_GUESTS_PER_IMPORT) {
+    errors.push(`Only ${MAX_GUESTS_PER_IMPORT} guests can be imported at once — split the file and upload the rest separately.`);
+    rows.length = MAX_GUESTS_PER_IMPORT;
   }
   return { rows, errors };
 }
@@ -90,6 +126,7 @@ function EventsSection() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: '', date: '', location: '', rsvpEnabled: false, rsvpDeadline: '' });
   const [saving, setSaving] = useState(false);
+  const [addError, setAddError] = useState('');
 
   const load = useCallback(async () => {
     const res = await fetch('/api/rsvp/events');
@@ -102,12 +139,20 @@ function EventsSection() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setAddError('');
     const res = await fetch('/api/rsvp/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, rsvpDeadline: form.rsvpDeadline || null }),
+      body: JSON.stringify({
+        ...form,
+        // datetime-local has no timezone; convert in the browser so 10:00 AM
+        // means 10:00 AM where the priest is, not 10:00 UTC on the server.
+        date: new Date(form.date).toISOString(),
+        rsvpDeadline: form.rsvpDeadline || null,
+      }),
     });
     if (res.ok) { setShowAdd(false); setForm({ name: '', date: '', location: '', rsvpEnabled: false, rsvpDeadline: '' }); load(); }
+    else setAddError('Could not save the event. Please check the fields and try again.');
     setSaving(false);
   }
 
@@ -160,6 +205,7 @@ function EventsSection() {
               <span className="font-inter text-sm text-near-black/70">Enable RSVP</span>
             </div>
           </div>
+          {addError && <p className="font-inter text-sm text-red-600">{addError}</p>}
           <div className="flex gap-3">
             <Button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add Event'}</Button>
             <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
@@ -181,7 +227,7 @@ function EventsSection() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-cormorant text-lg text-burgundy-800">{ev.name}</h3>
                       {ev.rsvpEnabled ? <Badge variant="success">RSVP On</Badge> : <Badge variant="muted">RSVP Off</Badge>}
-                      {ev.rsvpDeadline && <span className="font-inter text-xs text-near-black/40">Deadline: {ev.rsvpDeadline}</span>}
+                      {ev.rsvpDeadline && <span className="font-inter text-xs text-near-black/40">Deadline: {formatDate(ev.rsvpDeadline)} (end of day, Pacific)</span>}
                     </div>
                     <p className="font-inter text-sm text-near-black/50 mt-0.5">
                       {new Date(ev.date).toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })} · {ev.location}
@@ -410,11 +456,16 @@ function GuestsSection() {
   async function confirmImport() {
     if (!bulkPreview?.length) return;
     setImporting(true);
-    await fetch('/api/rsvp/guests/bulk', {
+    const res = await fetch('/api/rsvp/guests/bulk', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ guests: bulkPreview }),
     });
+    if (!res.ok) {
+      setBulkErrors(['Import failed — no guests were added. Please check the file and try again.']);
+      setImporting(false);
+      return;
+    }
     setBulkPreview(null);
     setBulkErrors([]);
     setShowBulk(false);
