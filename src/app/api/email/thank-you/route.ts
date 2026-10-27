@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendThankYouEmail } from '@/lib/resend';
-import { applyMergeTagsToTemplate, formatCurrency, formatPriestName, getTitleForDisplay } from '@/lib/utils';
+import { applyMergeTagsToTemplate, escapeHtml, formatCurrency, formatPriestName } from '@/lib/utils';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
   const bodyHtml = body_text
     .split('\n')
     .filter((line) => line.trim())
-    .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
+    .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
     .join('');
 
   try {

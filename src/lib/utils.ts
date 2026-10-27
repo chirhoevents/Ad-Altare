@@ -61,6 +61,8 @@ export function getTitleForDisplay(priest: {
   }
 
   switch (priest.currentTitle) {
+    case 'Father':
+      return 'Fr.'; // admin-set; no ordination date required
     case 'Transitional Deacon':
     case 'Deacon':
       return 'Dcn.';
@@ -80,6 +82,16 @@ export function formatPriestName(priest: {
   return title
     ? `${title} ${priest.firstName} ${priest.lastName}`
     : `${priest.firstName} ${priest.lastName}`;
+}
+
+/** Escape user-supplied text before interpolating it into email HTML. */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function computePlatformFee(grossCents: number): number {

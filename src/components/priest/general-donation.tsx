@@ -27,7 +27,7 @@ export function GeneralDonation({ onDonate, stripeReady, priestName }: GeneralDo
         General Fund
       </h3>
       <p className="font-inter text-sm text-near-black/60">
-        Support Fr. {priestName}&apos;s ordination with a general contribution.
+        Support {priestName}&apos;s ordination with a general contribution.
       </p>
 
       {!stripeReady ? (

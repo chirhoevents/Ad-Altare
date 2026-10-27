@@ -387,7 +387,7 @@ export function SettingsClient() {
             className="font-mono text-sm"
           />
           <p className="font-inter text-xs text-near-black/30 mt-2">
-            For anonymous donors, <code>{'{donor_name}'}</code> will be replaced with "Dear Friend".
+            For anonymous donors, <code>{'{donor_name}'}</code> will be replaced with &ldquo;Friend&rdquo;.
           </p>
         </section>
 

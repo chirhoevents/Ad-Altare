@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { donations, registryItems, priests } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
-import { formatCurrency, applyMergeTagsToTemplate } from '@/lib/utils';
+import { formatCurrency, applyMergeTagsToTemplate, escapeHtml, formatPriestName } from '@/lib/utils';
 import {
   sendDonorConfirmationEmail,
   sendThankYouEmail,
@@ -111,7 +111,10 @@ export async function POST(request: Request) {
       revalidatePath(`/p/${priest.slug}`);
     }
 
-    const priestName = priest ? `${priest.firstName} ${priest.lastName}` : 'the priest';
+    // Title-aware name ("Fr. John Smith", "Dcn. John Smith", "John Smith") for email copy.
+    const priestName = priest ? formatPriestName(priest) : 'the priest';
+    // Templates already contain their own "Fr." prefix, so merge in the bare name.
+    const templatePriestName = priest ? `${priest.firstName} ${priest.lastName}` : 'the priest';
     const amountFormatted = formatCurrency(amountGross);
     const donorDisplayName = isAnonymous ? 'Anonymous' : (donorName ?? 'A donor');
 
@@ -132,17 +135,17 @@ export async function POST(request: Request) {
       const bodyText = applyMergeTagsToTemplate(template, {
         donor_name: 'Friend',
         item_name: itemName ?? undefined,
-        priest_name: priestName,
+        priest_name: templatePriestName,
         amount: amountFormatted,
       });
       const bodyHtml = bodyText
         .split('\n')
         .filter((line) => line.trim())
-        .map((line) => `<p style="margin-bottom:12px;">${line}</p>`)
+        .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
         .join('');
       await sendThankYouEmail({
         donorEmail,
-        subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
+        subject: `Thank you for supporting ${priestName}'s ordination`,
         bodyHtml,
       }).catch((err) => console.error('[connect webhook] anonymous thank-you email failed:', err));
     }

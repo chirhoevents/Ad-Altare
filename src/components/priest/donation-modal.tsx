@@ -199,7 +199,7 @@ export function DonationModal({
       <DialogContent className="p-0 overflow-y-auto max-h-[90vh]">
         <DialogHeader className="p-6 pb-2 border-b border-near-black/10">
           <DialogTitle>
-            {step === 'success' ? 'Thank You!' : `Support Fr. ${priestName}`}
+            {step === 'success' ? 'Thank You!' : `Support ${priestName}`}
           </DialogTitle>
           {item && step === 'form' && (
             <DialogDescription>

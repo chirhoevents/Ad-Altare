@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { escapeHtml } from './utils';
 
 let _resend: Resend | null = null;
 
@@ -35,18 +36,19 @@ export async function sendDonorConfirmationEmail({
   itemName?: string | null;
   isAnonymous: boolean;
 }) {
-  const displayName = isAnonymous ? 'Friend' : (donorName ?? 'Friend');
+  const displayName = escapeHtml(isAnonymous ? 'Friend' : (donorName ?? 'Friend'));
+  const safePriestName = escapeHtml(priestName);
   const itemLine = itemName
-    ? `<p>Your donation has been directed toward: <strong>${itemName}</strong></p>`
+    ? `<p>Your donation has been directed toward: <strong>${escapeHtml(itemName)}</strong></p>`
     : '';
   const anonymousLine = isAnonymous
-    ? `<p><em>Your donation has been recorded anonymously. ${priestName} will know only that a generous donor has contributed.</em></p>`
+    ? `<p><em>Your donation has been recorded anonymously. ${safePriestName} will know only that a generous donor has contributed.</em></p>`
     : '';
 
   await send({
     from: FROM_ADDRESS,
     to: donorEmail,
-    subject: `Thank you for supporting Fr. ${priestName}'s ordination`,
+    subject: `Thank you for supporting ${priestName}'s ordination`,
     html: `
       <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1C1E;">
         <div style="background-color: #6B1E2E; padding: 32px; text-align: center;">
@@ -55,10 +57,10 @@ export async function sendDonorConfirmationEmail({
         </div>
         <div style="padding: 32px; background-color: #FAF7F2;">
           <p>Dear ${displayName},</p>
-          <p>Your generous gift of <strong>${amountFormatted}</strong> in support of Fr. ${priestName}'s ordination has been received.</p>
+          <p>Your generous gift of <strong>${amountFormatted}</strong> in support of ${safePriestName}'s ordination has been received.</p>
           ${itemLine}
           ${anonymousLine}
-          <p>Your support helps make possible what God has called Fr. ${priestName} to — a life of sacred service at the altar.</p>
+          <p>Your support helps make possible what God has called ${safePriestName} to — a life of sacred service at the altar.</p>
           <p style="margin-top: 32px;">With gratitude,<br/>The Ad Altare Team</p>
         </div>
         <div style="background-color: #1C1C1E; padding: 16px; text-align: center;">
@@ -83,7 +85,7 @@ export async function sendPriestNotificationEmail({
   itemName?: string | null;
 }) {
   const itemLine = itemName
-    ? `<p><strong>Item:</strong> ${itemName}</p>`
+    ? `<p><strong>Item:</strong> ${escapeHtml(itemName)}</p>`
     : `<p><strong>Item:</strong> General Fund</p>`;
 
   await send({
@@ -97,11 +99,11 @@ export async function sendPriestNotificationEmail({
           <p style="color: #B8960C; margin: 8px 0 0; font-style: italic;">To the Altar</p>
         </div>
         <div style="padding: 32px; background-color: #FAF7F2;">
-          <p>Dear Fr. ${priestName},</p>
+          <p>Dear ${escapeHtml(priestName)},</p>
           <p>You have received a new donation for your ordination registry.</p>
           <div style="background: white; border-left: 4px solid #B8960C; padding: 16px; margin: 24px 0;">
             <p><strong>Amount:</strong> ${amountFormatted}</p>
-            <p><strong>From:</strong> ${donorDisplayName}</p>
+            <p><strong>From:</strong> ${escapeHtml(donorDisplayName)}</p>
             ${itemLine}
           </div>
           <p>You can view all donations and send thank-you notes from your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/donors" style="color: #6B1E2E;">donor dashboard</a>.</p>
