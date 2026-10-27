@@ -1,4 +1,4 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { inArray } from 'drizzle-orm';
@@ -55,11 +55,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'No priests match that audience.' }, { status: 400 });
   }
 
-  // Replies go to the admin who sent the message.
-  const client = await clerkClient();
-  const admin = await client.users.getUser(userId!);
-  const replyTo = admin.primaryEmailAddress?.emailAddress ?? undefined;
-
   const { sent, failed } = await sendAdminEmails(
     recipients.map((p) => {
       const vars = { firstName: p.firstName, slug: p.slug, name: formatPriestNameForEmail(p) };
@@ -69,7 +64,6 @@ export async function POST(req: Request) {
         bodyHtml: textToHtmlParagraphs(personalize(message, vars)),
       };
     }),
-    replyTo,
   );
 
   if (sent === 0) {

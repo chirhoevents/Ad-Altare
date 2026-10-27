@@ -12,9 +12,11 @@ function getResend(): Resend {
 }
 
 const FROM_ADDRESS = 'Ad Altare <noreply@ad-altare.com>';
+/** Every email's replies go to the team inbox. */
+const REPLY_TO = 'chirhoevents@gmail.com';
 
 async function send(payload: Parameters<Resend['emails']['send']>[0]): Promise<void> {
-  const { data, error } = await getResend().emails.send(payload);
+  const { data, error } = await getResend().emails.send({ reply_to: REPLY_TO, ...payload });
   if (error) {
     throw new Error(`Resend error: ${error.message} (name: ${error.name})`);
   }
@@ -317,12 +319,10 @@ export async function sendThankYouEmail({
 
 /**
  * Admin → priest emails. Sent through Resend's batch API (max 100 per call) so a
- * message to every priest doesn't trip the per-second rate limit. Replies go to
- * the admin who sent it.
+ * message to every priest doesn't trip the per-second rate limit.
  */
 export async function sendAdminEmails(
   messages: { to: string; subject: string; bodyHtml: string }[],
-  replyTo?: string,
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -336,7 +336,7 @@ export async function sendAdminEmails(
         ...render(m.bodyHtml, {
           footerNote: `You're receiving this because you have an account on Ad Altare. Just reply to reach us.`,
         }),
-        ...(replyTo ? { reply_to: replyTo } : {}),
+        reply_to: REPLY_TO,
       })),
     );
     if (error) {
@@ -385,6 +385,5 @@ export async function sendWelcomeEmail({ to, firstName }: { to: string; firstNam
           footerNote: `You're receiving this because you just created an Ad Altare account.`,
         },
       ),
-    reply_to: 'support@ad-altare.com',
   });
 }
