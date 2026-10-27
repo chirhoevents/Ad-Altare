@@ -5,7 +5,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 import { db } from '@/db';
 import { priests, registryItems, donations } from '@/db/schema';
-import { eq, sum, count, desc } from 'drizzle-orm';
+import { eq, count, sql } from 'drizzle-orm';
 import { formatCurrency, formatDate, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,8 +21,9 @@ export default async function DashboardPage() {
   if (!priest) redirect('/onboarding');
 
   // Stats
+  // Gross minus refunds — matches the per-item progress bars and the donations list.
   const [totalRaisedResult] = await db
-    .select({ total: sum(donations.amountNet) })
+    .select({ total: sql<string>`coalesce(sum(${donations.amountGross} - ${donations.amountRefunded}), 0)` })
     .from(donations)
     .where(eq(donations.priestId, priest.id));
 
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
                 : `Welcome, ${priest.firstName}`}
             </h1>
             <p className="font-inter text-sm text-near-black/50 mt-1">
-              Here's an overview of your ordination registry.
+              Here&apos;s an overview of your ordination registry.
             </p>
           </div>
           <Button asChild variant="secondary" size="sm">

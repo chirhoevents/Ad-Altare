@@ -18,8 +18,6 @@ export default async function DashboardLayout({
   const clerkUser = await client.users.getUser(userId);
   const role = clerkUser?.publicMetadata?.role as string | undefined;
 
-  console.log(`[dashboard layout] userId=${userId} role=${role}`);
-
   if (role === 'admin') redirect('/admin');
 
   const priest = await db.query.priests.findFirst({

@@ -10,7 +10,7 @@ import { DirectoryNavAuth } from '@/components/directory/directory-nav-auth';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Find a Priest — Ad Altare',
+  title: 'Find a Priest',
   description: 'Browse and support Catholic priests preparing for their ordination.',
 };
 

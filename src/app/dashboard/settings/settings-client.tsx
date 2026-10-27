@@ -210,6 +210,9 @@ export function SettingsClient() {
                 <option value="Seminarian">Seminarian</option>
                 <option value="Transitional Deacon">Transitional Deacon</option>
                 <option value="Deacon">Deacon</option>
+                {settings.currentTitle === 'Father' && (
+                  <option value="Father" disabled>Father (set by Ad Altare)</option>
+                )}
               </select>
               <p className="font-inter text-xs text-near-black/40">
                 Your title advances to &ldquo;Fr.&rdquo; automatically on your ordination date. You cannot self-select Father.
@@ -387,7 +390,9 @@ export function SettingsClient() {
             className="font-mono text-sm"
           />
           <p className="font-inter text-xs text-near-black/30 mt-2">
-            For anonymous donors, <code>{'{donor_name}'}</code> will be replaced with "Dear Friend".
+            <code>{'{priest_name}'}</code> includes your title automatically (e.g. &ldquo;Fr. John Smith&rdquo;
+            from three months before your ordination onward), so you don&apos;t need to type &ldquo;Fr.&rdquo; in front of it.
+            For anonymous donors, <code>{'{donor_name}'}</code> will be replaced with &ldquo;Friend&rdquo;.
           </p>
         </section>
 

@@ -15,14 +15,14 @@ export function WhyAdAltare() {
         <div className="space-y-6 font-inter text-cream/70 text-base sm:text-lg leading-relaxed text-left max-w-2xl mx-auto">
           <p>
             The weeks surrounding an ordination are among the most sacred — and most
-            logistically overwhelming — of a priest's life. Between final exams, retreat,
-            liturgical rehearsals, and the emotional weight of a lifetime's calling, there
+            logistically overwhelming — of a priest’s life. Between final exams, retreat,
+            liturgical rehearsals, and the emotional weight of a lifetime’s calling, there
             is precious little time to manage gift registries, coordinate thank-you notes,
             or keep track of who gave what.
           </p>
           <p>
             We built Ad Altare to remove that burden entirely. A newly ordained priest
-            shouldn't have to think about spreadsheets. He should be thinking about the
+            shouldn’t have to think about spreadsheets. He should be thinking about the
             Mass.
           </p>
           <p>
@@ -31,7 +31,7 @@ export function WhyAdAltare() {
             the payment flow — was chosen to reflect the dignity of the vocation it serves.
           </p>
           <p className="text-cream/90 font-medium italic font-cormorant text-xl">
-            "It is no longer I who live, but Christ who lives in me."
+            “It is no longer I who live, but Christ who lives in me.”
           </p>
           <p className="text-cream/40 text-sm">— Galatians 2:20</p>
         </div>

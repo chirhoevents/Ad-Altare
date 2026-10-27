@@ -91,7 +91,7 @@ export function Footer() {
             </ul>
             <div className="mt-6">
               <p className="font-inter text-xs text-cream/30 leading-relaxed italic font-cormorant text-base">
-                "Thou art a priest forever, after the order of Melchizedek."
+                “Thou art a priest forever, after the order of Melchizedek.”
               </p>
               <p className="font-inter text-xs text-cream/20 mt-1">— Psalm 110:4</p>
             </div>

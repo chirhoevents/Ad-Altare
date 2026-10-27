@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { db } from '@/db';
 import { priests, registryItems, donations } from '@/db/schema';
-import { eq, sum, count } from 'drizzle-orm';
+import { eq, count, sql } from 'drizzle-orm';
 import { formatCurrency, formatDate, formatPriestName, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ export default async function AdminPreviewPage({ params }: Props) {
   const [totalRaisedResult, donationCountResult, itemCountResult, recentDonations, items] =
     await Promise.all([
       db
-        .select({ total: sum(donations.amountNet) })
+        .select({ total: sql<string>`coalesce(sum(${donations.amountGross} - ${donations.amountRefunded}), 0)` })
         .from(donations)
         .where(eq(donations.priestId, priest.id)),
       db

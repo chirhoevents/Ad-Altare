@@ -71,16 +71,11 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
               Already Purchased
             </Button>
           ) : item.externalUrl ? (
-            <a
-              href={item.externalUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full"
-            >
-              <Button className="w-full">
+            <Button asChild className="w-full">
+              <a href={item.externalUrl} target="_blank" rel="noopener noreferrer">
                 View &amp; Purchase →
-              </Button>
-            </a>
+              </a>
+            </Button>
           ) : (
             <p className="font-inter text-sm text-near-black/30 italic text-center py-2">
               Link coming soon
@@ -95,11 +90,13 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
   const pct = Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100));
   const isFunded = item.amountRaised >= item.goalAmount;
   const remaining = item.goalAmount - item.amountRaised;
+  // Stripe/our minimum is $1, so a sliver under $1 left is rounded up to $1.
+  const fullyFundAmount = Math.max(remaining, 100);
   const hasStarted = item.amountRaised > 0;
 
   function handleFullyFund() {
     if (isFunded) return;
-    onDonate(item, remaining);
+    onDonate(item, fullyFundAmount);
   }
 
   function handleCustomDonate() {
@@ -183,7 +180,7 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
             ) : (
               <Button onClick={handleFullyFund} className="w-full">
                 {hasStarted
-                  ? `Fully Fund (${formatCurrency(remaining)} remaining)`
+                  ? `Fully Fund (${formatCurrency(fullyFundAmount)} remaining)`
                   : `Fully Fund (${formatCurrency(item.goalAmount)})`}
               </Button>
             )}

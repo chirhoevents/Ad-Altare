@@ -24,8 +24,7 @@ interface RsvpEvent {
 
 interface Props {
   priestId: string;
-  priestFirstName: string;
-  priestLastName: string;
+  priestName: string; // title-formatted, e.g. "Fr. John Smith"
 }
 
 interface FoundGuest {
@@ -33,8 +32,6 @@ interface FoundGuest {
   firstName: string;
   lastName: string;
   inviteCount: number;
-  address: string | null;
-  phone: string | null;
 }
 
 interface EventResponse {
@@ -46,7 +43,7 @@ interface EventResponse {
 
 type Step = 'lookup' | 'form' | 'success' | 'closed';
 
-export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
+export function RsvpFlow({ priestId, priestName }: Props) {
   const [step, setStep] = useState<Step>('lookup');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -57,6 +54,7 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
   const [responses, setResponses] = useState<Record<string, EventResponse>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [lookupError, setLookupError] = useState('');
   // Contact info collected during RSVP
   const [guestAddress, setGuestAddress] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -65,20 +63,28 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
     e.preventDefault();
     setSearching(true);
     setNotFound(false);
+    setLookupError('');
 
-    const [lookupRes, eventsRes] = await Promise.all([
-      fetch('/api/public/rsvp/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priestId, firstName: firstName.trim(), lastName: lastName.trim() }),
-      }),
-      fetch(`/api/public/rsvp/events?priestId=${priestId}`),
-    ]);
-
-    const lookupData = await lookupRes.json();
-    const eventsData = await eventsRes.json();
-
-    setSearching(false);
+    let lookupData;
+    let eventsData;
+    try {
+      const [lookupRes, eventsRes] = await Promise.all([
+        fetch('/api/public/rsvp/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ priestId, firstName: firstName.trim(), lastName: lastName.trim() }),
+        }),
+        fetch(`/api/public/rsvp/events?priestId=${priestId}`),
+      ]);
+      if (!lookupRes.ok || !eventsRes.ok) throw new Error('lookup failed');
+      lookupData = await lookupRes.json();
+      eventsData = await eventsRes.json();
+    } catch {
+      setLookupError('Something went wrong. Please try again.');
+      return;
+    } finally {
+      setSearching(false);
+    }
 
     if (!lookupData.found) {
       setNotFound(true);
@@ -92,9 +98,6 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
 
     const foundGuest = lookupData.guest as FoundGuest;
     setGuest(foundGuest);
-    // Pre-fill contact info if already on file
-    setGuestAddress(foundGuest.address ?? '');
-    setGuestPhone(foundGuest.phone ?? '');
     setEvents(eventsData.events ?? []);
 
     const init: Record<string, EventResponse> = {};
@@ -141,7 +144,7 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
     if (res.ok) {
       setStep('success');
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setSubmitError(data.error ?? 'Something went wrong. Please try again.');
     }
     setSubmitting(false);
@@ -153,7 +156,7 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
       <div className="text-center py-10 px-4">
         <p className="font-cormorant text-2xl text-near-black/60 mb-2">RSVP is now closed</p>
         <p className="font-inter text-sm text-near-black/50">
-          Please contact Fr. {priestFirstName} {priestLastName} directly.
+          Please contact {priestName} directly.
         </p>
       </div>
     );
@@ -168,7 +171,7 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
         </div>
         <h3 className="font-cormorant text-3xl text-burgundy-800 mb-2">You&apos;re all set!</h3>
         <p className="font-inter text-sm text-near-black/60">
-          Fr. {priestFirstName} has been notified of your RSVP.
+          Your RSVP has been recorded. Thank you!
         </p>
       </div>
     );
@@ -199,9 +202,12 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
                 We couldn&apos;t find your name on the guest list.
               </p>
               <p className="font-inter text-sm text-amber-700 mt-1">
-                Please contact Fr. {priestFirstName} {priestLastName} directly to be added.
+                Please contact {priestName} directly to be added.
               </p>
             </div>
+          )}
+          {lookupError && (
+            <p className="font-inter text-sm text-red-600 text-center">{lookupError}</p>
           )}
           <Button type="submit" className="w-full" disabled={searching}>
             {searching ? 'Searching…' : 'Find My Invitation →'}
@@ -328,7 +334,8 @@ export function RsvpFlow({ priestId, priestFirstName, priestLastName }: Props) {
           <div>
             <h4 className="font-inter text-sm font-medium text-near-black mb-0.5">Contact Information</h4>
             <p className="font-inter text-xs text-near-black/40">
-              Optional — helps Fr. {priestFirstName} send you a personal thank-you.
+              Optional — helps {priestName} send you a personal thank-you. Leave blank to keep
+              anything you&apos;ve shared before.
             </p>
           </div>
           <div className="space-y-3">

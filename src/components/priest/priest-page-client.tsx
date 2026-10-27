@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { RegistryItemCard } from './registry-item';
 import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
@@ -25,13 +25,27 @@ interface PriestPageClientProps {
   registryItems: RegistryItem[];
   registryLinks: RegistryLink[];
   hasRsvp?: boolean;
+  paymentReturnStatus?: string | null;
 }
 
 type ActiveTab = 'about' | 'registry' | 'rsvp';
 
-export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp = false }: PriestPageClientProps) {
+export function PriestPageClient({
+  priest,
+  registryItems,
+  registryLinks,
+  hasRsvp = false,
+  paymentReturnStatus = null,
+}: PriestPageClientProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<ActiveTab>('about');
+  const pathname = usePathname();
+  const [activeTab, setActiveTab] = useState<ActiveTab>(paymentReturnStatus ? 'registry' : 'about');
+  const [returnBanner, setReturnBanner] = useState(paymentReturnStatus);
+
+  // Strip Stripe's return params so a refresh doesn't re-show the banner.
+  useEffect(() => {
+    if (paymentReturnStatus) router.replace(pathname, { scroll: false });
+  }, [paymentReturnStatus, pathname, router]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RegistryItem | null>(null);
   const [donationAmount, setDonationAmount] = useState(0);
@@ -73,6 +87,30 @@ export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp
       </div>
 
       <div className="max-w-4xl mx-auto px-4 py-10">
+        {returnBanner && (
+          <div
+            className={`mb-8 rounded-sm border px-4 py-3 flex items-start justify-between gap-4 ${
+              returnBanner === 'failed'
+                ? 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-gold-50 border-gold-200 text-near-black'
+            }`}
+          >
+            <p className="font-inter text-sm">
+              {returnBanner === 'succeeded'
+                ? 'Thank you! Your donation was received. A confirmation email is on its way.'
+                : returnBanner === 'processing'
+                  ? 'Thank you! Your payment is processing — you\'ll receive a confirmation email once it completes.'
+                  : 'Your payment was not completed and you have not been charged. Please try again.'}
+            </p>
+            <button
+              onClick={() => setReturnBanner(null)}
+              className="font-inter text-xs text-near-black/50 hover:text-near-black shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* About Tab */}
         {activeTab === 'about' && (
           <div className="max-w-2xl">
@@ -86,7 +124,7 @@ export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp
               </div>
             ) : (
               <p className="font-inter text-near-black/40 italic">
-                {priestName} hasn't added a bio yet.
+                {priestName} hasn&apos;t added a bio yet.
               </p>
             )}
           </div>
@@ -95,54 +133,54 @@ export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp
         {/* Registry Tab */}
         {activeTab === 'registry' && (
           <div className="space-y-6">
+            {/* External registry links (Amazon, Target, …) show even with no items */}
+            {registryLinks.length > 0 && (
+              <div className="flex flex-wrap gap-3 mb-6">
+                {registryLinks.map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 font-inter text-sm border border-burgundy-800/30 text-burgundy-800 px-4 py-2 rounded-sm hover:bg-burgundy-800 hover:text-cream transition-colors"
+                  >
+                    {link.label} →
+                  </a>
+                ))}
+              </div>
+            )}
+
             {registryItems.length === 0 ? (
               <div className="text-center py-16">
                 <p className="font-cormorant text-2xl text-near-black/40 mb-2">
                   No items yet
                 </p>
                 <p className="font-inter text-sm text-near-black/30">
-                  {priestName} hasn't added any registry items.
+                  {priestName} hasn&apos;t added any registry items.
                 </p>
               </div>
             ) : (
-              <>
-                {registryLinks.length > 0 && (
-                  <div className="flex flex-wrap gap-3 mb-6">
-                    {registryLinks.map((link) => (
-                      <a
-                        key={link.id}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 font-inter text-sm border border-burgundy-800/30 text-burgundy-800 px-4 py-2 rounded-sm hover:bg-burgundy-800 hover:text-cream transition-colors"
-                      >
-                        {link.label} →
-                      </a>
-                    ))}
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {registryItems.map((item) => (
-                    <RegistryItemCard
-                      key={item.id}
-                      item={item}
-                      priestFirstName={priest.firstName}
-                      onDonate={(item, amount) => handleDonate(item, amount)}
-                      stripeReady={stripeReady}
-                    />
-                  ))}
-                </div>
-
-                {/* General Fund */}
-                <div className="mt-8 pt-8 border-t border-near-black/10">
-                  <GeneralDonation
-                    onDonate={(amount) => handleDonate(null, amount)}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {registryItems.map((item) => (
+                  <RegistryItemCard
+                    key={item.id}
+                    item={item}
+                    priestFirstName={priest.firstName}
+                    onDonate={(item, amount) => handleDonate(item, amount)}
                     stripeReady={stripeReady}
-                    priestName={priestName}
                   />
-                </div>
-              </>
+                ))}
+              </div>
             )}
+
+            {/* General Fund — always available so donors can give without a specific item */}
+            <div className="mt-8 pt-8 border-t border-near-black/10">
+              <GeneralDonation
+                onDonate={(amount) => handleDonate(null, amount)}
+                stripeReady={stripeReady}
+                priestName={priestName}
+              />
+            </div>
           </div>
         )}
 
@@ -150,8 +188,7 @@ export function PriestPageClient({ priest, registryItems, registryLinks, hasRsvp
         {activeTab === 'rsvp' && (
           <RsvpFlow
             priestId={priest.id}
-            priestFirstName={priest.firstName}
-            priestLastName={priest.lastName}
+            priestName={priestName}
           />
         )}
       </div>

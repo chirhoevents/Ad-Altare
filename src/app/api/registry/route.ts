@@ -46,6 +46,9 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
+  if (parsed.data.itemType === 'campaign' && parsed.data.goalAmount < 100) {
+    return NextResponse.json({ error: 'Goal amount must be at least $1' }, { status: 400 });
+  }
 
   const [item] = await db
     .insert(registryItems)

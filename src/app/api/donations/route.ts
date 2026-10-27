@@ -19,5 +19,11 @@ export async function GET() {
     orderBy: (donations, { desc }) => [desc(donations.createdAt)],
   });
 
-  return NextResponse.json(rows);
+  // Anonymous donors' contact details stay server-side; the priest only sees
+  // that an anonymous gift was made.
+  const safeRows = rows.map((d) =>
+    d.isAnonymous ? { ...d, donorEmail: '', donorAddress: null, donorPhone: null } : d
+  );
+
+  return NextResponse.json(safeRows);
 }

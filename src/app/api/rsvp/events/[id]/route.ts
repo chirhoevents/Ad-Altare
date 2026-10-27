@@ -13,10 +13,10 @@ async function getPriest() {
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  date: z.string().optional(),
+  date: z.string().datetime({ offset: true }).optional(),
   location: z.string().min(1).max(500).optional(),
   rsvpEnabled: z.boolean().optional(),
-  rsvpDeadline: z.string().nullable().optional(),
+  rsvpDeadline: z.string().date().nullable().optional(),
 });
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {

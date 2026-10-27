@@ -14,6 +14,7 @@ interface DonationRow {
   donorPhone: string | null;
   isAnonymous: boolean;
   amountGross: number;
+  amountRefunded: number;
   thankYouSent: boolean;
   createdAt: string;
   registryItem: { name: string } | null;
@@ -26,7 +27,7 @@ function escapeCSV(value: string): string {
 function exportToCSV(rows: DonationRow[]) {
   const headers = [
     'Date', 'Donor Name', 'Email', 'Address', 'Phone',
-    'Item', 'Amount', 'Anonymous', 'Thank You Sent',
+    'Item', 'Amount', 'Refunded', 'Anonymous', 'Thank You Sent',
   ];
   const lines = rows.map((d) =>
     [
@@ -37,6 +38,7 @@ function exportToCSV(rows: DonationRow[]) {
       d.isAnonymous ? '' : (d.donorPhone ?? ''),
       d.registryItem?.name ?? 'General Fund',
       (d.amountGross / 100).toFixed(2),
+      (d.amountRefunded / 100).toFixed(2),
       d.isAnonymous ? 'Yes' : 'No',
       d.thankYouSent ? 'Yes' : 'No',
     ].map(escapeCSV).join(',')
@@ -91,7 +93,7 @@ export default function DonorsPage() {
     setSending(null);
   }
 
-  const total = donations.reduce((sum, d) => sum + d.amountGross, 0);
+  const total = donations.reduce((sum, d) => sum + d.amountGross - d.amountRefunded, 0);
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl">
@@ -187,6 +189,13 @@ export default function DonorsPage() {
                       <span className="font-inter text-sm font-medium text-burgundy-800">
                         {formatCurrency(d.amountGross)}
                       </span>
+                      {d.amountRefunded > 0 && (
+                        <span className="block font-inter text-xs text-red-600">
+                          {d.amountRefunded >= d.amountGross
+                            ? 'Refunded'
+                            : `${formatCurrency(d.amountRefunded)} refunded`}
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-4 font-inter text-sm text-near-black/50">
                       {new Date(d.createdAt).toLocaleDateString('en-US', {

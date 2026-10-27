@@ -2,14 +2,19 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { priests, events } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { z } from 'zod';
+import { todayForDeadlines } from '@/lib/utils';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const priestId = url.searchParams.get('priestId');
 
-  if (!priestId) return NextResponse.json({ error: 'priestId required' }, { status: 400 });
+  if (!priestId || !z.string().uuid().safeParse(priestId).success) {
+    return NextResponse.json({ error: 'Valid priestId required' }, { status: 400 });
+  }
 
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  // Deadline day stays open until midnight Pacific (see todayForDeadlines)
+  const today = todayForDeadlines();
 
   const allEnabled = await db.query.events.findMany({
     where: and(eq(events.priestId, priestId), eq(events.rsvpEnabled, true)),

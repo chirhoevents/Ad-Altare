@@ -34,7 +34,7 @@ export const priests = pgTable('priests', {
   platformFeeOverride: integer('platform_fee_override'), // null = default 1%, 0 = waived, N = N%
   profileVisible: boolean('profile_visible').default(false).notNull(),
   thankYouTemplate: text('thank_you_template').default(
-    'Dear {donor_name},\n\nThank you so much for your generous gift of {amount} in support of my ordination. Your contribution toward {item_name} is a true blessing and means more than words can express.\n\nPlease know that you will be remembered in my prayers, especially at my First Mass.\n\nIn Christ,\nFr. {priest_name}'
+    'Dear {donor_name},\n\nThank you so much for your generous gift of {amount} in support of my ordination. Your contribution toward {item_name} is a true blessing and means more than words can express.\n\nPlease know that you will be remembered in my prayers, especially at my First Mass.\n\nIn Christ,\n{priest_name}'
   ),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
@@ -75,10 +75,13 @@ export const donations = pgTable('donations', {
   registryItemId: uuid('registry_item_id').references(() => registryItems.id, {
     onDelete: 'set null',
   }),
-  stripePaymentIntentId: text('stripe_payment_intent_id').notNull(),
+  // Unique: Stripe can deliver the same event more than once (retries, two
+  // webhook endpoints) — the database guarantees one row per payment.
+  stripePaymentIntentId: text('stripe_payment_intent_id').notNull().unique(),
   amountGross: integer('amount_gross').notNull(), // cents
   platformFee: integer('platform_fee').notNull(), // cents (1% of gross)
   amountNet: integer('amount_net').notNull(), // cents
+  amountRefunded: integer('amount_refunded').default(0).notNull(), // cents, kept in sync by charge.refunded webhook
   donorName: text('donor_name'),
   donorEmail: text('donor_email').notNull(),
   donorAddress: text('donor_address'),

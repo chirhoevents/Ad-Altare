@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
@@ -6,10 +6,13 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 async function assertAdmin() {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
   if (!userId) return false;
-  const role = (sessionClaims?.publicMetadata as { role?: string })?.role;
-  return role === 'admin';
+  // Read live metadata from Clerk (same as the admin layout). The default session
+  // token does not include publicMetadata, so sessionClaims would never show the role.
+  const client = await clerkClient();
+  const user = await client.users.getUser(userId);
+  return (user.publicMetadata?.role as string | undefined) === 'admin';
 }
 
 const patchSchema = z.object({
