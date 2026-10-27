@@ -39,7 +39,7 @@ const forPriests: FaqItem[] = [
   },
   {
     q: 'How is my title shown?',
-    a: 'Choose Seminarian, Transitional Deacon, or Deacon in Settings. In the three months before your ordination date your page shows "Soon-to-be Fr." and thank-you emails are signed "Fr.", and from your ordination day on you are shown as "Fr." everywhere automatically.',
+    a: 'Choose Seminarian, Transitional Deacon, or Deacon in Settings: seminarians are shown as "Mr." and deacons as "Deacon". In the three months before your ordination date your page shows "Soon-to-be Fr." and thank-you emails are signed "Fr.", and from your ordination day on you are shown as "Fr." everywhere automatically.',
   },
   {
     q: 'How does RSVP work?',
