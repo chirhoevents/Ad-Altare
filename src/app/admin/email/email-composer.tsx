@@ -22,16 +22,10 @@ const TEMPLATES: Record<string, { label: string; subject: string; message: strin
       'Dear {name},\n\nThank you for being part of Ad Altare. It is a joy to walk alongside you on the road to the altar, and we are praying for you.\n\nIf there is anything we can do to make your page or registry easier to use, just reply to this email.\n\nIn Christ,\nThe Ad Altare Team',
   },
   stripe: {
-    label: 'Finish Stripe setup',
-    subject: 'One quick step to start receiving gifts',
+    label: 'About direct gifts (Stripe)',
+    subject: 'An option for receiving gifts directly',
     message:
-      'Dear {name},\n\nYour Ad Altare page is almost ready! To receive gifts from family and friends, please connect your bank account through Stripe. It takes about five minutes:\n\n1. Sign in to Ad Altare and open Settings.\n2. Click "Connect with Stripe" and follow the steps.\n\nIf you get stuck, just reply to this email and we will help.\n\nIn Christ,\nThe Ad Altare Team',
-  },
-  hidden: {
-    label: 'Make page public',
-    subject: 'Your Ad Altare page is still hidden',
-    message:
-      'Dear {name},\n\nYour page is currently hidden, so family and friends cannot see it, give, or RSVP yet. When you are ready, sign in, open Settings, and turn on "Make my page public".\n\nYour page link: {page_link}\n\nIn Christ,\nThe Ad Altare Team',
+      'Dear {name},\n\nThank you for using Ad Altare! Your wishlist and RSVP are completely free, and there is nothing more you need to do.\n\nIf you would also like family and friends to be able to give money directly — toward specific items or a general fund — you can connect a free Stripe account from Settings ("Connect with Stripe"). It takes about five minutes, gifts go straight to your bank account, and a small 1% fee helps keep Ad Altare running.\n\nIt is entirely optional. If you have any questions, just reply to this email.\n\nIn Christ,\nThe Ad Altare Team',
   },
   congrats: {
     label: 'Ordination congratulations',

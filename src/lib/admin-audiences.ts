@@ -3,8 +3,8 @@ import { todayForDeadlines } from '@/lib/utils';
 
 export const AUDIENCES = {
   all: 'All priests',
-  stripe_pending: 'Not yet connected to Stripe',
-  hidden: 'Page hidden (not public yet)',
+  stripe_pending: 'Not using Stripe (wishlist only)',
+  hidden: 'Unlisted (link only)',
   upcoming: 'Ordination in the next 60 days',
   recently_ordained: 'Ordained in the last 30 days',
 } as const;

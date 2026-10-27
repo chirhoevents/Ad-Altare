@@ -417,11 +417,12 @@ export function SettingsClient() {
           {/* Directory visibility */}
           <div className="mt-5 pt-5 border-t border-near-black/10 flex items-start justify-between gap-4">
             <div>
-              <p className="font-inter text-sm font-medium text-near-black">Make my page public</p>
+              <p className="font-inter text-sm font-medium text-near-black">List me in the Find a Priest directory</p>
               <p className="font-inter text-xs text-near-black/40 mt-0.5">
-                When on, anyone with your link can view your page, give, and RSVP, and you appear in
-                the <a href="/directory" target="_blank" className="underline hover:text-near-black/70">Find a Priest</a> directory.
-                When off, your page is hidden from everyone but you — handy while you&apos;re still setting up.
+                When on, people can discover your page on the{' '}
+                <a href="/directory" target="_blank" className="underline hover:text-near-black/70">Find a Priest</a> directory.
+                When off, you&apos;re unlisted: your page still works for anyone you send the link to
+                (they can give and RSVP as normal), it just isn&apos;t listed or shown in search engines.
               </p>
             </div>
             <button
@@ -460,9 +461,11 @@ export function SettingsClient() {
       <div className="mt-8 bg-white border border-near-black/10 rounded-sm p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
           <div>
-            <h2 className="font-cormorant text-2xl text-burgundy-800 mb-1">Stripe Connect</h2>
-            <p className="font-inter text-sm text-near-black/50">
-              Connect a bank account to receive donations directly.
+            <h2 className="font-cormorant text-2xl text-burgundy-800 mb-1">Receive Gifts Directly (Optional)</h2>
+            <p className="font-inter text-sm text-near-black/50 max-w-xl">
+              Your page, wishlist, and RSVPs are free and work without this. Connect a Stripe account only
+              if you&apos;d also like people to give money directly — toward cash-gift items or your General
+              Fund — deposited straight into your bank account. Setup takes about five minutes.
             </p>
           </div>
           {settings.stripeOnboardingComplete ? (
@@ -639,7 +642,7 @@ export function SettingsClient() {
         )}
 
         <p className="font-inter text-xs text-near-black/30 mt-4">
-          Ad Altare retains 1% of each donation as a platform fee; Stripe retains their processing fee (~2.9% + 30¢). You receive the remainder.
+          Only applies to gifts made through Stripe: Ad Altare keeps 1% to help cover the cost of running the site, and Stripe keeps its processing fee (~2.9% + 30¢). You receive the rest. Wishlist items and RSVPs never have a fee.
         </p>
       </div>
     </div>

@@ -200,9 +200,9 @@ export default function AdminPriestEditPage() {
             onChange={(e) => setForm((prev) => ({ ...prev, profileVisible: e.target.checked }))}
           />
           <span>
-            <span className="font-inter text-sm font-medium text-near-black block">Page is public</span>
+            <span className="font-inter text-sm font-medium text-near-black block">Listed in directory</span>
             <span className="font-inter text-xs text-near-black/40">
-              When off, the page, donations, and RSVPs are hidden from everyone but the priest and admins.
+              When off, the priest is unlisted — the page still works by direct link, but it isn&apos;t in the directory or search engines.
             </span>
           </span>
         </label>

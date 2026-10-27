@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { isAdminUser } from '@/lib/visibility';
+import { isAdminUser } from '@/lib/admin';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';

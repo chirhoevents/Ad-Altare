@@ -74,8 +74,8 @@ export default async function AdminPage({ searchParams }: Props) {
 
   // "Needs attention" — each links to a pre-filled email for that group
   const attention = [
-    { audience: 'stripe_pending' as const, template: 'stripe', action: 'Send Stripe reminder' },
-    { audience: 'hidden' as const, template: 'hidden', action: 'Send "make it public" reminder' },
+    { audience: 'stripe_pending' as const, template: 'stripe', action: 'Tell them about direct gifts' },
+    { audience: 'hidden' as const, template: 'thanks', action: 'Send a note' },
     { audience: 'upcoming' as const, template: 'thanks', action: 'Send a note of support' },
     { audience: 'recently_ordained' as const, template: 'congrats', action: 'Send congratulations' },
   ].map((a) => ({ ...a, count: allPriests.filter((p) => matchesAudience(p, a.audience)).length }));
@@ -269,7 +269,7 @@ export default async function AdminPage({ searchParams }: Props) {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-near-black/10">
-                  {['Name', 'Diocese / Seminary', 'Ordination', 'Page', 'Stripe', 'Fee', 'Total Raised', 'Joined', ''].map((h) => (
+                  {['Name', 'Diocese / Seminary', 'Ordination', 'Directory', 'Stripe', 'Fee', 'Total Raised', 'Joined', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left font-inter text-xs uppercase tracking-widest text-near-black/40">
                       {h}
                     </th>
@@ -296,9 +296,9 @@ export default async function AdminPage({ searchParams }: Props) {
                     </td>
                     <td className="px-5 py-4">
                       {priest.profileVisible ? (
-                        <Badge variant="success">Public</Badge>
+                        <Badge variant="success">Listed</Badge>
                       ) : (
-                        <Badge variant="muted">Hidden</Badge>
+                        <Badge variant="muted">Unlisted</Badge>
                       )}
                     </td>
                     <td className="px-5 py-4">

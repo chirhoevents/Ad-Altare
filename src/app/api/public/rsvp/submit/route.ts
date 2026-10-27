@@ -4,7 +4,6 @@ import { guestList, events, rsvps } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { todayForDeadlines } from '@/lib/utils';
-import { isPriestPublic } from '@/lib/visibility';
 
 const schema = z.object({
   guestId: z.string().uuid(),
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
   const guest = await db.query.guestList.findFirst({
     where: eq(guestList.id, guestId),
   });
-  if (!guest || !(await isPriestPublic(guest.priestId))) {
+  if (!guest) {
     return NextResponse.json({ error: 'Guest not found' }, { status: 404 });
   }
 

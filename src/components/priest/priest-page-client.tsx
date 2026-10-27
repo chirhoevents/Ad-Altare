@@ -173,14 +173,16 @@ export function PriestPageClient({
               </div>
             )}
 
-            {/* General Fund — always available so donors can give without a specific item */}
-            <div className="mt-8 pt-8 border-t border-near-black/10">
-              <GeneralDonation
-                onDonate={(amount) => handleDonate(null, amount)}
-                stripeReady={stripeReady}
-                priestName={priestName}
-              />
-            </div>
+            {/* General Fund — only when the priest accepts gifts directly (Stripe) */}
+            {stripeReady && (
+              <div className="mt-8 pt-8 border-t border-near-black/10">
+                <GeneralDonation
+                  onDonate={(amount) => handleDonate(null, amount)}
+                  stripeReady={stripeReady}
+                  priestName={priestName}
+                />
+              </div>
+            )}
           </div>
         )}
 

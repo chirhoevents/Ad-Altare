@@ -50,7 +50,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
           </h1>
           <p className="font-inter text-sm text-near-black/50 mt-1 flex items-center gap-2 flex-wrap">
             {priest.email}
-            {priest.profileVisible ? <Badge variant="success">Page public</Badge> : <Badge variant="muted">Page hidden</Badge>}
+            {priest.profileVisible ? <Badge variant="success">In directory</Badge> : <Badge variant="muted">Unlisted</Badge>}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">

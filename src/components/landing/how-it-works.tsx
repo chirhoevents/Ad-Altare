@@ -9,13 +9,13 @@ const steps = [
     number: '02',
     title: 'Build your registry',
     description:
-      'Add the sacred vessels, vestments, books, and items you need to begin your ministry. Set a goal for each, and watch the community respond.',
+      'Add the sacred vessels, vestments, books, and items you need to begin your ministry — as a free wishlist people buy from, or, if you connect Stripe, as cash gifts with a goal.',
   },
   {
     number: '03',
     title: 'Share your page',
     description:
-      'Send your personal link to family, friends, and parishioners. Donations go directly to your connected bank account via Stripe. You handle the gratitude; we handle the rest.',
+      'Send your personal link to family, friends, and parishioners. They see what you need, RSVP to your events, and — if you’ve set up Stripe — give directly to your bank account.',
   },
 ];
 
