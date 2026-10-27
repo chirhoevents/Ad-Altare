@@ -48,8 +48,13 @@ export function textToHtmlParagraphs(text: string): string {
   return text
     .split('\n')
     .filter((line) => line.trim())
-    .map((line) => p(escapeHtml(line)))
+    .map((line) => p(linkify(escapeHtml(line))))
     .join('');
+}
+
+/** Turn bare URLs in already-escaped text into links (trailing punctuation stays outside). */
+function linkify(escaped: string): string {
+  return escaped.replace(/https?:\/\/[^\s<]+?(?=[.,;:!?)]*(?:\s|$))/g, (url) => `<a href="${url}" style="color: ${BURGUNDY};">${url}</a>`);
 }
 
 /** Bulletproof button: a table cell with a background, so it shows in Outlook too. */
@@ -155,7 +160,7 @@ function brandedLayout(
               <div style="font-style: italic;">Serving the Church with dignity</div>
               <div style="margin-top: 10px;"><a href="${site}" style="color: ${MUTED}; text-decoration: underline;">${escapeHtml(site.replace(/^https?:\/\//, ''))}</a></div>
               ${footerNote ? `<div style="margin-top: 14px; color: #9A908A;">${footerNote}</div>` : ''}
-              <div style="margin-top: 14px; font-size: 11px; color: #9A908A;">Powered by <a href="https://chirhoevents.com" target="_blank" style="color: #9A908A; text-decoration: underline;">Chirho technology</a></div>
+              <div style="margin-top: 14px; font-size: 11px; color: #9A908A;">Powered by <a href="https://chirhoevents.com" target="_blank" style="color: #9A908A; text-decoration: underline;">ChiRho Technologies</a></div>
             </td>
           </tr>
         </table>
