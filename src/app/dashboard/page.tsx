@@ -10,6 +10,7 @@ import { formatCurrency, formatDate, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, DollarSign, Gift, Users } from 'lucide-react';
+import { HiddenPageBanner, CopyLinkButton } from '@/components/dashboard/page-status';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -47,6 +48,7 @@ export default async function DashboardPage() {
   const totalRaised = Number(totalRaisedResult?.total ?? 0);
   const donationCount = Number(donationCountResult?.count ?? 0);
   const itemCount = Number(itemCountResult?.count ?? 0);
+  const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/p/${priest.slug}`;
 
   const stats = [
     {
@@ -99,6 +101,8 @@ export default async function DashboardPage() {
 
       </div>
 
+      {!priest.profileVisible && <HiddenPageBanner />}
+
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (
@@ -122,10 +126,11 @@ export default async function DashboardPage() {
       {/* Public Page Info */}
       <div className="bg-white border border-near-black/10 rounded-sm p-5 mb-6">
         <h2 className="font-cormorant text-xl text-burgundy-800 mb-3">Your Public Page</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <code className="font-inter text-sm text-near-black/60 bg-near-black/5 px-3 py-1.5 rounded-sm flex-1 truncate">
-            {process.env.NEXT_PUBLIC_APP_URL}/p/{priest.slug}
+            {publicUrl}
           </code>
+          <CopyLinkButton url={publicUrl} />
           <Button asChild size="sm" variant="outline">
             <a
               href={`/p/${priest.slug}`}

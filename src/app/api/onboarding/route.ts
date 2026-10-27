@@ -5,6 +5,7 @@ import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateUniqueSlug } from '@/lib/slug';
 import { z } from 'zod';
+import { sendWelcomeEmail } from '@/lib/resend';
 
 const SELF_SELECTABLE_TITLES = ['Seminarian', 'Transitional Deacon', 'Deacon'] as const;
 
@@ -60,6 +61,12 @@ export async function POST(req: Request) {
     firstMassDate: firstMassDate || null,
     slug,
   });
+
+  if (email) {
+    await sendWelcomeEmail({ to: email, firstName }).catch((err) =>
+      console.error('[onboarding] welcome email failed:', err)
+    );
+  }
 
   return NextResponse.json({ success: true, slug });
 }

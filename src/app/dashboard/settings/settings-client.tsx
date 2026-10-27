@@ -417,9 +417,11 @@ export function SettingsClient() {
           {/* Directory visibility */}
           <div className="mt-5 pt-5 border-t border-near-black/10 flex items-start justify-between gap-4">
             <div>
-              <p className="font-inter text-sm font-medium text-near-black">Show in public directory</p>
+              <p className="font-inter text-sm font-medium text-near-black">Make my page public</p>
               <p className="font-inter text-xs text-near-black/40 mt-0.5">
-                Appear on the <a href="/directory" target="_blank" className="underline hover:text-near-black/70">/directory</a> page so donors can discover your registry. Your page is always accessible via direct link regardless of this setting.
+                When on, anyone with your link can view your page, give, and RSVP, and you appear in
+                the <a href="/directory" target="_blank" className="underline hover:text-near-black/70">Find a Priest</a> directory.
+                When off, your page is hidden from everyone but you — handy while you&apos;re still setting up.
               </p>
             </div>
             <button

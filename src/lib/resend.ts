@@ -143,3 +143,85 @@ export async function sendThankYouEmail({
     `,
   });
 }
+
+/** Plain text (as typed by an admin) → escaped HTML paragraphs. */
+export function textToHtmlParagraphs(text: string): string {
+  return text
+    .split('\n')
+    .filter((line) => line.trim())
+    .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
+    .join('');
+}
+
+function brandedLayout(bodyHtml: string): string {
+  return `
+      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1C1E;">
+        <div style="background-color: #6B1E2E; padding: 32px; text-align: center;">
+          <h1 style="color: #FAF7F2; font-size: 28px; margin: 0;">Ad Altare</h1>
+          <p style="color: #B8960C; margin: 8px 0 0; font-style: italic;">To the Altar</p>
+        </div>
+        <div style="padding: 32px; background-color: #FAF7F2;">
+          ${bodyHtml}
+        </div>
+        <div style="background-color: #1C1C1E; padding: 16px; text-align: center;">
+          <p style="color: #FAF7F2; font-size: 12px; margin: 0;">Ad Altare · Serving the Church with dignity</p>
+        </div>
+      </div>
+    `;
+}
+
+/**
+ * Admin → priest emails. Sent through Resend's batch API (max 100 per call) so a
+ * message to every priest doesn't trip the per-second rate limit. Replies go to
+ * the admin who sent it.
+ */
+export async function sendAdminEmails(
+  messages: { to: string; subject: string; bodyHtml: string }[],
+  replyTo?: string,
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+  for (let i = 0; i < messages.length; i += 100) {
+    const chunk = messages.slice(i, i + 100);
+    const { error } = await getResend().batch.send(
+      chunk.map((m) => ({
+        from: FROM_ADDRESS,
+        to: m.to,
+        subject: m.subject,
+        html: brandedLayout(m.bodyHtml),
+        ...(replyTo ? { reply_to: replyTo } : {}),
+      })),
+    );
+    if (error) {
+      console.error('[resend] admin batch failed:', error);
+      failed += chunk.length;
+    } else {
+      sent += chunk.length;
+    }
+  }
+  return { sent, failed };
+}
+
+/** Sent once after onboarding: what to do next. */
+export async function sendWelcomeEmail({ to, firstName }: { to: string; firstName: string }) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  await send({
+    from: FROM_ADDRESS,
+    to,
+    subject: 'Welcome to Ad Altare',
+    html: brandedLayout(`
+      <p>Dear ${escapeHtml(firstName)},</p>
+      <p>Welcome to Ad Altare! We're honored to walk with you on the road to the altar. Here's how to get your page ready:</p>
+      <ol style="padding-left: 20px; line-height: 1.7;">
+        <li><strong>Tell your story</strong> — add a bio and photos in Settings.</li>
+        <li><strong>Build your registry</strong> — add the items you need for your ministry.</li>
+        <li><strong>Connect Stripe</strong> — so gifts go straight to your bank account.</li>
+        <li><strong>Make your page public</strong> — then copy your link from the dashboard and share it.</li>
+      </ol>
+      <p><a href="${appUrl}/dashboard" style="color: #6B1E2E;">Go to your dashboard →</a></p>
+      <p>Questions? Just reply to this email.</p>
+      <p style="margin-top: 32px;">In Christ,<br/>The Ad Altare Team</p>
+    `),
+    reply_to: 'support@adaltare.com',
+  });
+}

@@ -1,18 +1,17 @@
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { isAdminUser } from '@/lib/visibility';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
 async function assertAdmin() {
+  // Live Clerk metadata (same as the admin layout); the default session token
+  // does not include publicMetadata.
   const { userId } = await auth();
-  if (!userId) return false;
-  // Read live metadata from Clerk (same as the admin layout). The default session
-  // token does not include publicMetadata, so sessionClaims would never show the role.
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  return (user.publicMetadata?.role as string | undefined) === 'admin';
+  return isAdminUser(userId);
 }
 
 const patchSchema = z.object({
@@ -23,9 +22,12 @@ const patchSchema = z.object({
   seminary: z.string().max(200).optional(),
   diocese: z.string().max(200).optional(),
   parish: z.string().max(200).optional(),
-  ordinationDate: z.string().optional(),
-  firstMassDate: z.string().optional(),
+  ordinationDate: z.union([z.string().date(), z.literal('')]).optional(),
+  firstMassDate: z.union([z.string().date(), z.literal('')]).optional(),
   bio: z.string().max(5000).optional(),
+  email: z.string().email().optional(),
+  profileVisible: z.boolean().optional(),
+  thankYouTemplate: z.string().max(3000).optional(),
   stripeOnboardingComplete: z.boolean().optional(),
   platformFeeOverride: z.number().int().min(0).max(100).nullable().optional(), // null=1% default, 0=waived, N=N%
 });
@@ -61,10 +63,10 @@ export async function PATCH(
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const body = await req.json();
-  const parsed = patchSchema.safeParse(body);
+  const parsed = patchSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    const field = parsed.error.issues[0]?.path[0];
+    return NextResponse.json({ error: field ? `Invalid value for ${String(field)}` : 'Invalid input' }, { status: 400 });
   }
 
   const data = parsed.data;
@@ -79,6 +81,9 @@ export async function PATCH(
   if (data.ordinationDate !== undefined) updates.ordinationDate = data.ordinationDate || null;
   if (data.firstMassDate !== undefined) updates.firstMassDate = data.firstMassDate || null;
   if (data.bio !== undefined) updates.bio = data.bio || null;
+  if (data.email !== undefined) updates.email = data.email;
+  if (data.profileVisible !== undefined) updates.profileVisible = data.profileVisible;
+  if (data.thankYouTemplate !== undefined) updates.thankYouTemplate = data.thankYouTemplate || null;
   if (data.stripeOnboardingComplete !== undefined) updates.stripeOnboardingComplete = data.stripeOnboardingComplete;
   // platformFeeOverride can be null (restore default), 0 (waive), or 1-100 (custom %)
   if (Object.prototype.hasOwnProperty.call(data, 'platformFeeOverride')) {
@@ -92,6 +97,8 @@ export async function PATCH(
     .returning();
 
   if (!updated) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  revalidatePath(`/p/${updated.slug}`);
+  revalidatePath('/directory');
   return NextResponse.json(updated);
 }
 

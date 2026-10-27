@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     where: eq(priests.id, priestId),
   });
 
-  if (!priest) {
+  if (!priest || !priest.profileVisible) {
     return NextResponse.json({ error: 'Priest not found' }, { status: 404 });
   }
 
