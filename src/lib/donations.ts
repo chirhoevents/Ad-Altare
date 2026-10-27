@@ -6,7 +6,6 @@ import { donations, registryItems, priests } from '@/db/schema';
 import {
   formatCurrency,
   applyMergeTagsToTemplate,
-  escapeHtml,
   formatPriestNameForEmail,
   FALLBACK_THANK_YOU_TEMPLATE,
 } from '@/lib/utils';
@@ -14,6 +13,7 @@ import {
   sendDonorConfirmationEmail,
   sendThankYouEmail,
   sendPriestNotificationEmail,
+  textToHtmlParagraphs,
 } from '@/lib/resend';
 
 /**
@@ -124,11 +124,7 @@ export async function recordSucceededPayment(pi: Stripe.PaymentIntent, logTag: s
       priest_name: priestName,
       amount: amountFormatted,
     });
-    const bodyHtml = bodyText
-      .split('\n')
-      .filter((line) => line.trim())
-      .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
-      .join('');
+    const bodyHtml = textToHtmlParagraphs(bodyText);
     try {
       await sendThankYouEmail({
         donorEmail,

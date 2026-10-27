@@ -3,10 +3,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { sendThankYouEmail } from '@/lib/resend';
+import { sendThankYouEmail, textToHtmlParagraphs } from '@/lib/resend';
 import {
   applyMergeTagsToTemplate,
-  escapeHtml,
   formatCurrency,
   formatPriestNameForEmail,
   FALLBACK_THANK_YOU_TEMPLATE,
@@ -62,11 +61,7 @@ export async function POST(req: Request) {
   });
 
   // Convert newlines to HTML paragraphs
-  const bodyHtml = body_text
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
-    .join('');
+  const bodyHtml = textToHtmlParagraphs(body_text);
 
   try {
     await sendThankYouEmail({
