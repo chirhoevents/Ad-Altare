@@ -88,6 +88,14 @@ export function Footer() {
                   support@adaltare.com
                 </a>
               </li>
+              <li>
+                <Link
+                  href="/support"
+                  className="font-inter text-sm hover:text-cream transition-colors font-medium text-cream/80"
+                >
+                  Support Ad Altare ♥
+                </Link>
+              </li>
             </ul>
             <div className="mt-6">
               <p className="font-inter text-xs text-cream/30 leading-relaxed italic font-cormorant text-base">
@@ -101,7 +109,7 @@ export function Footer() {
         {/* Divider */}
         <div className="border-t border-cream/10 pt-6 flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center">
           <p className="font-inter text-xs text-cream/30">
-            © {new Date().getFullYear()} Ad Altare. All rights reserved.
+            © {new Date().getFullYear()} Ad Altare, a ChiRho Technologies project. All rights reserved.
           </p>
           <div className="flex items-center gap-4 sm:gap-6">
             <p className="font-inter text-xs text-cream/20 hidden sm:block">

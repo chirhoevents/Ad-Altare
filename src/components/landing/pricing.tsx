@@ -84,6 +84,12 @@ export function Pricing() {
           Stripe processing fees are typically 2.9% + 30¢ per transaction and are
           deducted automatically. The priest receives the remainder.
         </p>
+        <p className="text-center mt-4 font-inter text-near-black/50 text-sm">
+          Ad Altare is built by seminarians and supported by ChiRho Events.{' '}
+          <Link href="/support" className="text-burgundy-800 hover:underline">
+            Help keep it running →
+          </Link>
+        </p>
       </div>
     </section>
   );

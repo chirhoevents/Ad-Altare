@@ -4,6 +4,7 @@ import { priests, events } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { todayForDeadlines } from '@/lib/utils';
+import { isPriestPublic } from '@/lib/visibility';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -11,6 +12,9 @@ export async function GET(req: Request) {
 
   if (!priestId || !z.string().uuid().safeParse(priestId).success) {
     return NextResponse.json({ error: 'Valid priestId required' }, { status: 400 });
+  }
+  if (!(await isPriestPublic(priestId))) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   // Deadline day stays open until midnight Pacific (see todayForDeadlines)

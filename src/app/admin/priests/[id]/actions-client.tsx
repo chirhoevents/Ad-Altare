@@ -228,3 +228,42 @@ export function AdminFeeActions({ priestId, platformFeeOverride }: FeeActionsPro
     </div>
   );
 }
+
+// ─── Registry item moderation ─────────────────────────────────────────────────
+
+export function AdminItemActions({ itemId, isActive }: { itemId: string; isActive: boolean }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+
+  async function toggle() {
+    setBusy(true);
+    const res = await fetch(`/api/admin/registry/${itemId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isActive: !isActive }),
+    });
+    if (!res.ok) alert('Update failed.');
+    router.refresh();
+    setBusy(false);
+  }
+
+  async function remove() {
+    if (!confirm('Delete this registry item? Donations already made are kept.')) return;
+    setBusy(true);
+    const res = await fetch(`/api/admin/registry/${itemId}`, { method: 'DELETE' });
+    if (!res.ok) alert('Delete failed.');
+    router.refresh();
+    setBusy(false);
+  }
+
+  return (
+    <div className="flex gap-3 whitespace-nowrap">
+      <button onClick={toggle} disabled={busy} className="font-inter text-xs text-burgundy-800/70 hover:text-burgundy-800">
+        {isActive ? 'Hide' : 'Show'}
+      </button>
+      <button onClick={remove} disabled={busy} className="font-inter text-xs text-red-500 hover:text-red-700">
+        Delete
+      </button>
+    </div>
+  );
+}

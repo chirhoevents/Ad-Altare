@@ -8,8 +8,8 @@ import { eq } from 'drizzle-orm';
 import { formatCurrency, formatDate, formatPriestName } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Pencil, Eye } from 'lucide-react';
-import { AdminPriestActions, AdminFeeActions } from './actions-client';
+import { ExternalLink, Pencil, Eye, Mail } from 'lucide-react';
+import { AdminPriestActions, AdminFeeActions, AdminItemActions } from './actions-client';
 
 interface Props {
   params: { id: string };
@@ -33,7 +33,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
     }),
   ]);
 
-  const totalRaised = donationRows.reduce((s, d) => s + d.amountGross, 0);
+  const totalRaised = donationRows.reduce((s, d) => s + d.amountGross - d.amountRefunded, 0);
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -48,9 +48,17 @@ export default async function AdminPriestDetailPage({ params }: Props) {
           <h1 className="font-cormorant text-4xl font-light text-burgundy-800">
             {formatPriestName(priest)}
           </h1>
-          <p className="font-inter text-sm text-near-black/50 mt-1">{priest.email}</p>
+          <p className="font-inter text-sm text-near-black/50 mt-1 flex items-center gap-2 flex-wrap">
+            {priest.email}
+            {priest.profileVisible ? <Badge variant="success">Page public</Badge> : <Badge variant="muted">Page hidden</Badge>}
+          </p>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/admin/email?to=${priest.id}`}>
+              <Mail className="w-3.5 h-3.5 mr-1" /> Email
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm">
             <Link href={`/admin/priests/${priest.id}/edit`}>
               <Pencil className="w-3.5 h-3.5 mr-1" /> Edit Profile
@@ -157,7 +165,7 @@ export default async function AdminPriestDetailPage({ params }: Props) {
           <table className="w-full">
             <thead>
               <tr className="border-b border-near-black/10">
-                {['Item', 'Category', 'Raised', 'Goal', 'Status'].map((h) => (
+                {['Item', 'Category', 'Raised', 'Goal', 'Status', ''].map((h) => (
                   <th key={h} className="px-5 py-3 text-left font-inter text-xs uppercase tracking-widest text-near-black/40">{h}</th>
                 ))}
               </tr>
@@ -170,13 +178,18 @@ export default async function AdminPriestDetailPage({ params }: Props) {
                   <td className="px-5 py-3 font-inter text-sm text-burgundy-800">{formatCurrency(item.amountRaised)}</td>
                   <td className="px-5 py-3 font-inter text-sm text-near-black/60">{formatCurrency(item.goalAmount)}</td>
                   <td className="px-5 py-3">
-                    {item.amountRaised >= item.goalAmount ? (
-                      <Badge variant="gold">Funded</Badge>
-                    ) : item.isActive ? (
-                      <Badge variant="success">Active</Badge>
-                    ) : (
+                    {!item.isActive ? (
                       <Badge variant="muted">Hidden</Badge>
+                    ) : item.itemType === 'wishlist' ? (
+                      <Badge variant="outline">{item.isPurchased ? 'Purchased' : 'Wishlist'}</Badge>
+                    ) : item.amountRaised >= item.goalAmount ? (
+                      <Badge variant="gold">Funded</Badge>
+                    ) : (
+                      <Badge variant="success">Active</Badge>
                     )}
+                  </td>
+                  <td className="px-5 py-3">
+                    <AdminItemActions itemId={item.id} isActive={item.isActive} />
                   </td>
                 </tr>
               ))}
@@ -221,6 +234,11 @@ export default async function AdminPriestDetailPage({ params }: Props) {
                     </td>
                     <td className="px-5 py-3 font-inter text-sm font-medium text-burgundy-800">
                       {formatCurrency(d.amountGross)}
+                      {d.amountRefunded > 0 && (
+                        <span className="block text-xs font-normal text-red-600">
+                          {formatCurrency(d.amountRefunded)} refunded
+                        </span>
+                      )}
                     </td>
                     <td className="px-5 py-3 font-inter text-xs text-near-black/40">
                       {formatCurrency(d.platformFee)}

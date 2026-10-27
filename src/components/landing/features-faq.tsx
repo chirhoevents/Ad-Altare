@@ -10,55 +10,79 @@ interface FaqItem {
 
 const forPriests: FaqItem[] = [
   {
-    q: 'How do I create my page?',
-    a: 'Sign up with your email, fill in your profile (diocese, seminary, ordination date, and a short bio), and your personal page is live instantly at adaltare.com/p/your-name. You can share that link with anyone.',
+    q: 'Is Ad Altare free?',
+    a: 'Yes — there is no cost to sign up and no subscription. When you receive a gift, a small 1% platform fee and Stripe\'s standard card processing fee (about 2.9% + 30¢) are deducted automatically; you receive the rest. Ad Altare is built by seminarians and supported by ChiRho Events. If you\'d like to help cover its costs, there is a "Support Ad Altare" link in your dashboard — never required.',
   },
   {
-    q: 'How do I build a registry?',
-    a: 'From your dashboard, go to Registry and add items — chalice, vestments, books, anything you need for your ministry. Set a goal amount for each item. Donors can contribute toward a specific item or give a general fund donation directly to you.',
+    q: 'How do I create my page?',
+    a: 'Sign up, fill in your profile (title, diocese, seminary, ordination date, and a short bio), and add a profile and backdrop photo in Settings. Your page starts out hidden so you can set it up in peace — when you\'re ready, turn on "Make my page public" in Settings. Then copy your link from the dashboard and share it with family and friends.',
+  },
+  {
+    q: 'What is the difference between a gift item and a wishlist item?',
+    a: 'Gift items (like a chalice or vestments) have a goal amount — donors can give any amount toward them or "fully fund" the remainder, and you can watch the progress bar fill. Wishlist items link to a store (Amazon, a church-goods supplier, etc.) so a donor can buy the item directly; you mark it "purchased" once it arrives. You can also add links to registries you keep elsewhere, and donors can always give to your General Fund.',
   },
   {
     q: 'When and how do I receive the money?',
-    a: 'You connect your bank account through Stripe (a secure payment processor) during setup. Donations go directly to your bank account — typically within 1–2 business days. Ad Altare only takes a 1% platform fee; the remainder of Stripe\'s small processing fee (~2.9% + 30¢) comes out of the donation total. You never have to do anything — it\'s automatic.',
+    a: 'You connect your bank account through Stripe, a secure payment processor, from Settings — it takes about five minutes. After Stripe verifies your details, gifts are paid out to your bank automatically every day (your very first payout can take up to about a week while Stripe completes its checks). You never have to request a payout.',
   },
   {
-    q: 'How does RSVP work for priests?',
-    a: 'In your dashboard under RSVP, you upload your guest list (CSV or manually), create your events (Ordination Mass, First Mass Reception, etc.), set an RSVP deadline, and optionally add custom questions (dietary restrictions, shuttle needs, etc.). You can then view who is attending and export the list.',
+    q: 'How do thank-you notes work?',
+    a: 'Every donor receives an automatic receipt by email. From the Donors page you can then send each donor a personal thank-you using your own template (edit it in Settings). Anonymous donors are sent your thank-you note automatically, since you won\'t know who they are. You can export your full donor list as a spreadsheet at any time.',
   },
   {
-    q: 'Can I have multiple events under one RSVP?',
-    a: 'Yes. You can create as many events as you need — for example, your Ordination Mass and a separate First Mass dinner. Guests respond to each event individually in a single RSVP session.',
+    q: 'How is my title shown?',
+    a: 'Choose Seminarian, Transitional Deacon, or Deacon in Settings. In the three months before your ordination date your page shows "Soon-to-be Fr." and thank-you emails are signed "Fr.", and from your ordination day on you are shown as "Fr." everywhere automatically.',
+  },
+  {
+    q: 'How does RSVP work?',
+    a: 'Under RSVP in your dashboard, add your guest list (one by one or by uploading a spreadsheet), then create your events — your Ordination Mass, First Mass, a reception — with optional custom questions such as dietary needs. Guests find their invitation by name on your page. You can set an RSVP deadline (it closes at the end of that day, Pacific time), edit events at any time, and export the responses.',
   },
   {
     q: 'What if a guest is not on my list?',
-    a: 'Guests look themselves up by name. If they are not found, the system tells them to contact you directly. You can then add them manually from the RSVP dashboard and they can try again.',
+    a: 'Guests look themselves up by name. If they are not found, they are asked to contact you directly. Add them from the RSVP dashboard and they can try again right away.',
+  },
+  {
+    q: 'I need help or something isn\'t working.',
+    a: 'Email support@adaltare.com and a real person will get back to you.',
   },
 ];
 
 const forGuests: FaqItem[] = [
   {
     q: 'How do I find a priest\'s page?',
-    a: 'Visit the Find a Priest directory at adaltare.com/directory, or use the direct link the priest shared with you. Each priest has a unique personal page with their story, registry, and RSVP.',
+    a: 'Use the link the priest shared with you, or search the Find a Priest directory. Each page has his story, his registry, and (if he is using it) an RSVP for his ordination events.',
   },
   {
-    q: 'How do I make a donation?',
-    a: 'On the priest\'s page, browse his registry and click "Give" on any item — or choose "General Donation" to give freely. Enter your amount, your name and email (for a receipt), and pay securely with any major credit or debit card. Donations go directly to the priest.',
+    q: 'How do I give a gift?',
+    a: 'Open the Registry tab on his page. You can give any amount toward a specific item, use "Fully Fund" to cover the rest of an item, or give to his General Fund. Wishlist items are bought directly from the store linked on the item. Payment is by card (and other methods Stripe offers) in a secure checkout.',
   },
   {
-    q: 'Can I donate anonymously?',
-    a: 'Yes. Toggle "Donate anonymously" in the donation form. Your name and address will not be shown to the priest — only your email is kept so we can send you a receipt.',
+    q: 'Where does my gift go?',
+    a: 'To the priest\'s own Stripe account and on to his bank — Ad Altare passes each gift straight through to him. A small platform fee and the standard card processing fee are deducted from each gift.',
   },
   {
-    q: 'How do I RSVP to an ordination?',
-    a: 'Go to the priest\'s page and click the RSVP tab. Enter your first and last name exactly as it appears on your invitation. The system will find your invitation and show you the events you\'re invited to. Confirm your attendance, select your party size, and submit — that\'s it.',
+    q: 'Can I give anonymously?',
+    a: 'Yes. Turn on "Donate anonymously" in the gift form. Your name, address, and phone number are not collected or shown to the priest. We keep only your email address to send your receipt and his thank-you note.',
+  },
+  {
+    q: 'Will I get a receipt? Is my gift tax-deductible?',
+    a: 'You will receive an email confirmation right away. Gifts to an individual priest or seminarian are personal gifts and generally are not tax-deductible — please check with your tax advisor if you have questions.',
+  },
+  {
+    q: 'How do I RSVP?',
+    a: 'Open the RSVP tab on the priest\'s page and enter your first and last name as they appear on your invitation. You will see the events you\'re invited to — choose whether you\'re attending, how many in your party, and answer any questions. Need to change your answer? Just RSVP again before the deadline and your new response replaces the old one.',
   },
   {
     q: 'What if my name isn\'t found when I try to RSVP?',
-    a: 'Your name must be on the guest list the priest uploaded. If you receive a "not found" message, contact the priest directly to be added. Once he adds you, you can come back and RSVP normally.',
+    a: 'Your name must be on the guest list the priest uploaded. Try the spelling on your invitation; if it still isn\'t found, contact the priest to be added, then come back and RSVP.',
   },
   {
     q: 'Is my payment information secure?',
-    a: 'Yes. All payments are processed by Stripe, which is the same technology used by Amazon, Google, and millions of other businesses. Ad Altare never sees or stores your card number.',
+    a: 'Yes. All payments are processed by Stripe, which handles payments for millions of businesses worldwide. Ad Altare never sees or stores your card number.',
+  },
+  {
+    q: 'How can I support Ad Altare itself?',
+    a: 'Ad Altare is free for priests and is kept running by ChiRho Technologies and ChiRho Events. If you\'d like to help with server and development costs, visit the "Support Ad Altare" page linked at the bottom of every page — even $5 helps. Thank you!',
   },
 ];
 

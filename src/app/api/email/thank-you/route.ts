@@ -4,7 +4,13 @@ import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendThankYouEmail } from '@/lib/resend';
-import { applyMergeTagsToTemplate, escapeHtml, formatCurrency, formatPriestNameForEmail } from '@/lib/utils';
+import {
+  applyMergeTagsToTemplate,
+  escapeHtml,
+  formatCurrency,
+  formatPriestNameForEmail,
+  FALLBACK_THANK_YOU_TEMPLATE,
+} from '@/lib/utils';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -42,7 +48,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Thank-you already sent' }, { status: 400 });
   }
 
-  const template = priest.thankYouTemplate ?? '';
+  const template = priest.thankYouTemplate?.trim() || FALLBACK_THANK_YOU_TEMPLATE;
   const priestName = formatPriestNameForEmail(priest);
   // Pass just the name (not "Dear Friend") — the template itself contains "Dear {donor_name}"
   const donorName = donation.isAnonymous ? 'Friend' : (donation.donorName ?? 'Friend');

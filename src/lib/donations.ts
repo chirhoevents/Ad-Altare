@@ -8,15 +8,13 @@ import {
   applyMergeTagsToTemplate,
   escapeHtml,
   formatPriestNameForEmail,
+  FALLBACK_THANK_YOU_TEMPLATE,
 } from '@/lib/utils';
 import {
   sendDonorConfirmationEmail,
   sendThankYouEmail,
   sendPriestNotificationEmail,
 } from '@/lib/resend';
-
-const FALLBACK_TEMPLATE =
-  "Dear {donor_name},\n\nThank you for your generous support of {priest_name}'s ordination.\n\nIn Christ,\n{priest_name}";
 
 /**
  * Recompute a registry item's amount_raised from its donations (net of refunds).
@@ -44,6 +42,8 @@ async function recomputeAmountRaised(registryItemId: string) {
  */
 export async function recordSucceededPayment(pi: Stripe.PaymentIntent, logTag: string) {
   const meta = pi.metadata ?? {};
+  // Gifts to Ad Altare itself (/support) — not a priest donation.
+  if (meta.type === 'platform_support') return;
   const priestId = meta.priestId;
   const donorEmail = meta.donorEmail;
 
@@ -118,7 +118,7 @@ export async function recordSucceededPayment(pi: Stripe.PaymentIntent, logTag: s
   } else if (priest) {
     // Anonymous donors can't be thanked by name later, so send the priest's
     // thank-you template right away and mark it sent.
-    const bodyText = applyMergeTagsToTemplate(priest.thankYouTemplate ?? FALLBACK_TEMPLATE, {
+    const bodyText = applyMergeTagsToTemplate(priest.thankYouTemplate?.trim() || FALLBACK_THANK_YOU_TEMPLATE, {
       donor_name: 'Friend',
       item_name: itemName ?? undefined,
       priest_name: priestName,

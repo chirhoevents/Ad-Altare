@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import {
   LayoutDashboard, BookOpen, Users, Settings, ExternalLink,
-  CalendarDays, Search, Menu, X,
+  CalendarDays, Search, Menu, X, Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,6 +66,14 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
           >
             <Search className="w-4 h-4 shrink-0" />
             Find a Priest
+          </Link>
+          <Link
+            href="/support"
+            onClick={close}
+            className="flex items-center gap-3 px-3 py-3 rounded-sm font-inter text-sm text-cream/60 hover:text-cream hover:bg-cream/10 transition-colors"
+          >
+            <Heart className="w-4 h-4 shrink-0" />
+            Support Ad Altare
           </Link>
         </div>
       </>

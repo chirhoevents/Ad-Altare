@@ -1,10 +1,11 @@
 import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
-import { eq, sum, count } from 'drizzle-orm';
+import { sum, sql } from 'drizzle-orm';
 import { formatCurrency, formatDate, formatPriestName } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { Users, TrendingUp, DollarSign, CheckCircle, ExternalLink, AlertTriangle } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, CheckCircle, ExternalLink, AlertTriangle, Mail } from 'lucide-react';
+import { AUDIENCES, matchesAudience, type Audience } from '@/lib/admin-audiences';
 import { getStripe } from '@/lib/stripe';
 
 export const dynamic = 'force-dynamic';
@@ -29,21 +30,25 @@ async function getPlatformStripeStatus() {
   }
 }
 
-export default async function AdminPage() {
+interface Props {
+  searchParams: { q?: string; filter?: string };
+}
+
+export default async function AdminPage({ searchParams }: Props) {
   const [allPriests, donationAggregates, donationTotals, stripeStatus] = await Promise.all([
     db.query.priests.findMany({
       orderBy: (priests, { desc }) => [desc(priests.createdAt)],
     }),
     db
       .select({
-        totalGross: sum(donations.amountGross),
+        totalGross: sql<string>`coalesce(sum(${donations.amountGross} - ${donations.amountRefunded}), 0)`,
         totalFees: sum(donations.platformFee),
       })
       .from(donations),
     db
       .select({
         priestId: donations.priestId,
-        total: sum(donations.amountGross),
+        total: sql<string>`coalesce(sum(${donations.amountGross} - ${donations.amountRefunded}), 0)`,
       })
       .from(donations)
       .groupBy(donations.priestId),
@@ -56,6 +61,24 @@ export default async function AdminPage() {
   const overallTotal = Number(donationAggregates[0]?.totalGross ?? 0);
   const overallFees = Number(donationAggregates[0]?.totalFees ?? 0);
   const activeRegistries = allPriests.filter((p) => p.stripeOnboardingComplete).length;
+
+  // Search + quick filters for the table
+  const q = (searchParams.q ?? '').trim().toLowerCase();
+  const filter = searchParams.filter && searchParams.filter in AUDIENCES ? (searchParams.filter as Audience) : 'all';
+  const shownPriests = allPriests.filter(
+    (p) =>
+      matchesAudience(p, filter) &&
+      (!q ||
+        `${p.firstName} ${p.lastName} ${p.email} ${p.diocese ?? ''} ${p.seminary ?? ''}`.toLowerCase().includes(q))
+  );
+
+  // "Needs attention" — each links to a pre-filled email for that group
+  const attention = [
+    { audience: 'stripe_pending' as const, template: 'stripe', action: 'Send Stripe reminder' },
+    { audience: 'hidden' as const, template: 'hidden', action: 'Send "make it public" reminder' },
+    { audience: 'upcoming' as const, template: 'thanks', action: 'Send a note of support' },
+    { audience: 'recently_ordained' as const, template: 'congrats', action: 'Send congratulations' },
+  ].map((a) => ({ ...a, count: allPriests.filter((p) => matchesAudience(p, a.audience)).length }));
 
   const stats = [
     { label: 'Total Priests', value: allPriests.length.toString(), icon: Users },
@@ -73,12 +96,20 @@ export default async function AdminPage() {
             {allPriests.length} registered priest{allPriests.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Link
-          href="/admin/reports"
-          className="font-inter text-sm text-burgundy-800 border border-burgundy-800/30 rounded-sm px-4 py-2 hover:bg-burgundy-800 hover:text-cream transition-colors"
-        >
-          Reports →
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href="/admin/email"
+            className="flex items-center gap-1.5 font-inter text-sm text-burgundy-800 border border-burgundy-800/30 rounded-sm px-4 py-2 hover:bg-burgundy-800 hover:text-cream transition-colors"
+          >
+            <Mail className="w-3.5 h-3.5" /> Email Priests
+          </Link>
+          <Link
+            href="/admin/reports"
+            className="font-inter text-sm text-burgundy-800 border border-burgundy-800/30 rounded-sm px-4 py-2 hover:bg-burgundy-800 hover:text-cream transition-colors"
+          >
+            Reports →
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}
@@ -92,6 +123,31 @@ export default async function AdminPage() {
               </span>
             </div>
             <p className="font-cormorant text-3xl text-burgundy-800 font-light">{s.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Needs attention */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {attention.map((a) => (
+          <div key={a.audience} className="bg-white border border-near-black/10 rounded-sm p-5 flex flex-col">
+            <p className="font-inter text-xs uppercase tracking-widest text-near-black/40 mb-1">
+              {AUDIENCES[a.audience]}
+            </p>
+            <Link
+              href={`/admin?filter=${a.audience}`}
+              className="font-cormorant text-3xl text-burgundy-800 font-light hover:underline"
+            >
+              {a.count}
+            </Link>
+            {a.count > 0 && (
+              <Link
+                href={`/admin/email?audience=${a.audience}&template=${a.template}`}
+                className="mt-auto pt-2 font-inter text-xs text-burgundy-800/70 hover:text-burgundy-800"
+              >
+                {a.action} →
+              </Link>
+            )}
           </div>
         ))}
       </div>
@@ -172,20 +228,48 @@ export default async function AdminPage() {
 
       {/* Priests Table */}
       <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-near-black/10">
-          <h2 className="font-cormorant text-xl text-burgundy-800">All Priests</h2>
+        <div className="px-5 py-4 border-b border-near-black/10 flex items-center justify-between gap-4 flex-wrap">
+          <h2 className="font-cormorant text-xl text-burgundy-800">
+            {filter === 'all' ? 'All Priests' : AUDIENCES[filter]}{' '}
+            <span className="font-inter text-sm text-near-black/40">({shownPriests.length})</span>
+          </h2>
+          <form method="GET" className="flex gap-2 flex-wrap">
+            <input
+              name="q"
+              defaultValue={searchParams.q ?? ''}
+              placeholder="Search name, email, diocese…"
+              className="border border-near-black/20 rounded-sm px-3 py-1.5 text-sm font-inter bg-white focus:outline-none focus:ring-2 focus:ring-burgundy-800"
+            />
+            <select
+              name="filter"
+              defaultValue={filter}
+              className="border border-near-black/20 rounded-sm px-2 py-1.5 text-sm font-inter bg-white"
+            >
+              {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
+                <option key={a} value={a}>{AUDIENCES[a]}</option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              className="font-inter text-sm bg-burgundy-800 text-cream px-3 py-1.5 rounded-sm hover:bg-burgundy-900"
+            >
+              Filter
+            </button>
+          </form>
         </div>
 
-        {allPriests.length === 0 ? (
+        {shownPriests.length === 0 ? (
           <div className="px-5 py-10 text-center">
-            <p className="font-inter text-sm text-near-black/40">No priests registered yet.</p>
+            <p className="font-inter text-sm text-near-black/40">
+              {allPriests.length === 0 ? 'No priests registered yet.' : 'No priests match.'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-near-black/10">
-                  {['Name', 'Diocese / Seminary', 'Ordination', 'Stripe', 'Fee', 'Total Raised', 'Joined', ''].map((h) => (
+                  {['Name', 'Diocese / Seminary', 'Ordination', 'Page', 'Stripe', 'Fee', 'Total Raised', 'Joined', ''].map((h) => (
                     <th key={h} className="px-5 py-3 text-left font-inter text-xs uppercase tracking-widest text-near-black/40">
                       {h}
                     </th>
@@ -193,7 +277,7 @@ export default async function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {allPriests.map((priest) => (
+                {shownPriests.map((priest) => (
                   <tr key={priest.id} className="border-b border-near-black/5 last:border-0 hover:bg-near-black/2">
                     <td className="px-5 py-4">
                       <Link href={`/admin/priests/${priest.id}`} className="block group">
@@ -209,6 +293,13 @@ export default async function AdminPage() {
                     </td>
                     <td className="px-5 py-4 font-inter text-sm text-near-black/60">
                       {formatDate(priest.ordinationDate)}
+                    </td>
+                    <td className="px-5 py-4">
+                      {priest.profileVisible ? (
+                        <Badge variant="success">Public</Badge>
+                      ) : (
+                        <Badge variant="muted">Hidden</Badge>
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       {priest.stripeOnboardingComplete ? (
@@ -238,7 +329,13 @@ export default async function AdminPage() {
                         month: 'short', day: 'numeric', year: 'numeric',
                       })}
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 whitespace-nowrap">
+                      <Link
+                        href={`/admin/email?to=${priest.id}`}
+                        className="font-inter text-xs text-burgundy-800/60 hover:text-burgundy-800 transition-colors mr-3"
+                      >
+                        Email
+                      </Link>
                       <Link
                         href={`/admin/priests/${priest.id}`}
                         className="font-inter text-xs text-burgundy-800/60 hover:text-burgundy-800 transition-colors"

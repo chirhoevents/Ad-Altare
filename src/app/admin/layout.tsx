@@ -21,7 +21,7 @@ export default async function AdminLayout({
   return (
     <div className="min-h-screen bg-cream">
       <header className="bg-burgundy-900 text-cream px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6 flex-wrap">
           <Link href="/">
             <Image
               src="/images/logo.png"
@@ -39,6 +39,9 @@ export default async function AdminLayout({
           <Link href="/admin/reports" className="font-inter text-sm text-cream/70 hover:text-cream transition-colors">
             Reports
           </Link>
+          <Link href="/admin/email" className="font-inter text-sm text-cream/70 hover:text-cream transition-colors">
+            Email
+          </Link>
         </div>
         <div className="flex items-center gap-4">
           <Link href="/dashboard" className="font-inter text-xs text-cream/40 hover:text-cream transition-colors">
@@ -47,7 +50,7 @@ export default async function AdminLayout({
           <UserButton />
         </div>
       </header>
-      <main className="p-8 max-w-7xl mx-auto">{children}</main>
+      <main className="p-4 sm:p-8 max-w-7xl mx-auto">{children}</main>
     </div>
   );
 }

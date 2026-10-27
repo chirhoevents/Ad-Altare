@@ -378,6 +378,13 @@ export function DonationModal({
               Your donation of {formatCurrency(amount)} has been received.
               A confirmation has been sent to {form.email}.
             </p>
+            <p className="font-inter text-xs text-near-black/40">
+              Ad Altare is free for priests.{' '}
+              <a href="/support" className="underline hover:text-near-black/70">
+                Chip in to help keep it running
+              </a>
+              .
+            </p>
             <Button
               onClick={() => {
                 handleClose();

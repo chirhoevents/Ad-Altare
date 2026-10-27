@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
-import { Plus, Trash2, ChevronDown, ChevronUp, X, Check, Download, Upload } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, X, Check, Download, Upload, Pencil } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +54,15 @@ interface EventSummary {
 }
 
 // ─── CSV helpers ──────────────────────────────────────────────────────────────
+
+/** ISO instant → value for <input type="datetime-local"> in the browser's timezone. */
+function toLocalInputValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const EMPTY_EVENT_FORM = { name: '', date: '', location: '', rsvpEnabled: false, rsvpDeadline: '' };
 
 function escapeCSV(v: string) { return `"${v.replace(/"/g, '""')}"`; }
 
@@ -124,7 +133,8 @@ function EventsSection() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: '', date: '', location: '', rsvpEnabled: false, rsvpDeadline: '' });
+  const [form, setForm] = useState(EMPTY_EVENT_FORM);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [addError, setAddError] = useState('');
 
@@ -140,8 +150,8 @@ function EventsSection() {
     e.preventDefault();
     setSaving(true);
     setAddError('');
-    const res = await fetch('/api/rsvp/events', {
-      method: 'POST',
+    const res = await fetch(editingEventId ? `/api/rsvp/events/${editingEventId}` : '/api/rsvp/events', {
+      method: editingEventId ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
@@ -151,9 +161,30 @@ function EventsSection() {
         rsvpDeadline: form.rsvpDeadline || null,
       }),
     });
-    if (res.ok) { setShowAdd(false); setForm({ name: '', date: '', location: '', rsvpEnabled: false, rsvpDeadline: '' }); load(); }
+    if (res.ok) { closeForm(); load(); }
     else setAddError('Could not save the event. Please check the fields and try again.');
     setSaving(false);
+  }
+
+  function startEdit(ev: EventRow) {
+    setEditingEventId(ev.id);
+    setForm({
+      name: ev.name,
+      date: toLocalInputValue(ev.date),
+      location: ev.location,
+      rsvpEnabled: ev.rsvpEnabled,
+      rsvpDeadline: ev.rsvpDeadline ?? '',
+    });
+    setAddError('');
+    setShowAdd(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function closeForm() {
+    setShowAdd(false);
+    setEditingEventId(null);
+    setForm(EMPTY_EVENT_FORM);
+    setAddError('');
   }
 
   async function toggleRsvp(ev: EventRow) {
@@ -184,7 +215,7 @@ function EventsSection() {
 
       {showAdd && (
         <form onSubmit={handleAdd} className="bg-white border border-near-black/10 rounded-sm p-5 mb-5 space-y-4">
-          <h3 className="font-cormorant text-xl text-burgundy-800">New Event</h3>
+          <h3 className="font-cormorant text-xl text-burgundy-800">{editingEventId ? 'Edit Event' : 'New Event'}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5"><Label>Event Name *</Label>
               <Input value={form.name} onChange={(e) => setForm(p => ({ ...p, name: e.target.value }))} required /></div>
@@ -207,8 +238,10 @@ function EventsSection() {
           </div>
           {addError && <p className="font-inter text-sm text-red-600">{addError}</p>}
           <div className="flex gap-3">
-            <Button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add Event'}</Button>
-            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving…' : editingEventId ? 'Save Changes' : 'Add Event'}
+            </Button>
+            <Button type="button" variant="outline" onClick={closeForm}>Cancel</Button>
           </div>
         </form>
       )}
@@ -242,7 +275,10 @@ function EventsSection() {
                       Questions ({ev.questions.length})
                       {expandedId === ev.id ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => deleteEvent(ev.id)}>
+                    <Button size="icon" variant="ghost" onClick={() => startEdit(ev)} aria-label="Edit event">
+                      <Pencil className="w-3.5 h-3.5 text-near-black/50" />
+                    </Button>
+                    <Button size="icon" variant="ghost" onClick={() => deleteEvent(ev.id)} aria-label="Delete event">
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
                     </Button>
                   </div>

@@ -21,6 +21,8 @@ interface PriestData {
   firstMassDate: string | null;
   bio: string | null;
   currentTitle: string;
+  profileVisible: boolean;
+  thankYouTemplate: string | null;
 }
 
 export default function AdminPriestEditPage() {
@@ -41,6 +43,9 @@ export default function AdminPriestEditPage() {
     firstMassDate: '',
     bio: '',
     currentTitle: 'Seminarian',
+    email: '',
+    profileVisible: false,
+    thankYouTemplate: '',
   });
 
   useEffect(() => {
@@ -63,6 +68,9 @@ export default function AdminPriestEditPage() {
         firstMassDate: data.firstMassDate ?? '',
         bio: data.bio ?? '',
         currentTitle: data.currentTitle ?? 'Seminarian',
+        email: data.email,
+        profileVisible: data.profileVisible,
+        thankYouTemplate: data.thankYouTemplate ?? '',
       });
       setLoading(false);
     }
@@ -88,17 +96,21 @@ export default function AdminPriestEditPage() {
         seminary: form.seminary,
         diocese: form.diocese,
         parish: form.parish,
-        ordinationDate: form.ordinationDate || undefined,
-        firstMassDate: form.firstMassDate || undefined,
+        // '' clears the date (undefined would leave the old one in place)
+        ordinationDate: form.ordinationDate,
+        firstMassDate: form.firstMassDate,
         bio: form.bio,
         currentTitle: form.currentTitle,
+        email: form.email,
+        profileVisible: form.profileVisible,
+        thankYouTemplate: form.thankYouTemplate,
       }),
     });
 
     if (res.ok) {
       router.push(`/admin/priests/${id}`);
     } else {
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setError(data.error ?? 'Failed to save changes.');
       setSaving(false);
     }
@@ -168,9 +180,32 @@ export default function AdminPriestEditPage() {
             <option value="Father">Father</option>
           </select>
           <p className="font-inter text-xs text-near-black/40">
-            Admins can set any title. Title displays as “Fr.” automatically on/after ordination date.
+            Admins can set any title. “Fr.” is shown automatically on/after the ordination date (and in emails from 3 months before).
           </p>
         </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input id="email" name="email" type="email" value={form.email} onChange={handleChange} required />
+          <p className="font-inter text-xs text-near-black/40">
+            Where donation notifications and admin emails are sent. (Their sign-in email is managed in Clerk.)
+          </p>
+        </div>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={form.profileVisible}
+            onChange={(e) => setForm((prev) => ({ ...prev, profileVisible: e.target.checked }))}
+          />
+          <span>
+            <span className="font-inter text-sm font-medium text-near-black block">Page is public</span>
+            <span className="font-inter text-xs text-near-black/40">
+              When off, the page, donations, and RSVPs are hidden from everyone but the priest and admins.
+            </span>
+          </span>
+        </label>
 
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
@@ -250,6 +285,21 @@ export default function AdminPriestEditPage() {
             rows={5}
             placeholder="A brief introduction shown on the public page…"
           />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="thankYouTemplate">Thank-You Email Template</Label>
+          <Textarea
+            id="thankYouTemplate"
+            name="thankYouTemplate"
+            value={form.thankYouTemplate}
+            onChange={handleChange}
+            rows={8}
+            className="font-mono text-sm"
+          />
+          <p className="font-inter text-xs text-near-black/40">
+            Merge tags: {'{donor_name}'}, {'{amount}'}, {'{item_name}'}, {'{priest_name}'} (includes title).
+          </p>
         </div>
 
         {error && <p className="font-inter text-sm text-red-600">{error}</p>}
