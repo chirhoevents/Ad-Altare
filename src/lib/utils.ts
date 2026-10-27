@@ -137,10 +137,6 @@ export function normalizeUrl(value: string): string {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`;
 }
 
-export function computePlatformFee(grossCents: number): number {
-  return Math.floor(grossCents * 0.01);
-}
-
 /** Used when a priest's thank-you template is empty. */
 export const FALLBACK_THANK_YOU_TEMPLATE =
   "Dear {donor_name},\n\nThank you for your generous support of {priest_name}'s ordination. Please know you are remembered in my prayers.\n\nIn Christ,\n{priest_name}";

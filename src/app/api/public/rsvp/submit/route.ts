@@ -4,6 +4,7 @@ import { guestList, events, rsvps } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { todayForDeadlines } from '@/lib/utils';
+import { rateLimit, TOO_MANY } from '@/lib/rate-limit';
 
 const schema = z.object({
   guestId: z.string().uuid(),
@@ -20,6 +21,9 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
+  if (!(await rateLimit(req, 'rsvp-submit', { limit: 20, windowSeconds: 600 }))) {
+    return NextResponse.json(TOO_MANY, { status: 429 });
+  }
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 });

@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { formatCurrency } from '@/lib/utils';
 import type { RegistryItem } from '@/db/schema';
+import { Turnstile, TURNSTILE_ENABLED } from '@/components/turnstile';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -125,6 +126,8 @@ export function DonationModal({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   const [form, setForm] = useState<DonorForm>({
     name: '',
@@ -169,8 +172,11 @@ export function DonationModal({
           donorAddress: form.isAnonymous ? '' : buildAddress(),
           donorPhone: form.isAnonymous ? '' : form.phone,
           isAnonymous: form.isAnonymous,
+          turnstileToken: turnstileToken || undefined,
         }),
       });
+      // Tokens are single-use — get a fresh one for any retry
+      setTurnstileReset((n) => n + 1);
 
       if (!res.ok) {
         const data = await res.json();
@@ -333,7 +339,9 @@ export function DonationModal({
               <p className="text-red-600 text-sm font-inter">{error}</p>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Turnstile onToken={setTurnstileToken} resetKey={turnstileReset} />
+
+            <Button type="submit" className="w-full" disabled={loading || (TURNSTILE_ENABLED && !turnstileToken)}>
               {loading ? 'Preparing payment…' : 'Continue to Payment'}
             </Button>
           </form>

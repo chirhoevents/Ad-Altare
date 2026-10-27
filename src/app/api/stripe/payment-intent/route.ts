@@ -3,7 +3,10 @@ import { db } from '@/db';
 import { priests, registryItems } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { createDonationPaymentIntent } from '@/lib/stripe';
+import { resolvePlatformFee } from '@/lib/fees';
 import { z } from 'zod';
+import { rateLimit, clientIp, TOO_MANY } from '@/lib/rate-limit';
+import { verifyTurnstile, HUMAN_CHECK_FAILED } from '@/lib/turnstile';
 
 const schema = z.object({
   priestId: z.string().uuid(),
@@ -15,11 +18,20 @@ const schema = z.object({
   donorAddress: z.string().max(500).optional().default(''),
   donorPhone: z.string().max(30).optional().default(''),
   isAnonymous: z.boolean().optional().default(false),
+  turnstileToken: z.string().max(4096).optional(),
 });
 
 export async function POST(req: Request) {
   if (!process.env.STRIPE_SECRET_KEY) {
     return NextResponse.json({ error: 'Donations are not available yet.' }, { status: 503 });
+  }
+
+  // Card-testing protection: a handful of attempts per visitor, then slow down.
+  if (
+    !(await rateLimit(req, 'payment-intent', { limit: 8, windowSeconds: 600 })) ||
+    !(await rateLimit(req, 'payment-intent-day', { limit: 30, windowSeconds: 86400 }))
+  ) {
+    return NextResponse.json(TOO_MANY, { status: 429 });
   }
 
   const body = await req.json().catch(() => null);
@@ -33,6 +45,10 @@ export async function POST(req: Request) {
         ? 'Please enter a valid email address.'
         : 'Invalid input';
     return NextResponse.json({ error }, { status: 400 });
+  }
+
+  if (!(await verifyTurnstile(parsed.data.turnstileToken, clientIp(req)))) {
+    return NextResponse.json(HUMAN_CHECK_FAILED, { status: 403 });
   }
 
   const {
@@ -77,18 +93,7 @@ export async function POST(req: Request) {
     itemName = item.name;
   }
 
-  // Resolve fee: null = default 1%, 0 = waived, N = N%
-  const feePercent =
-    priest.platformFeeOverride !== null && priest.platformFeeOverride !== undefined
-      ? priest.platformFeeOverride / 100
-      : 0.01;
-  const feePercentUsed =
-    priest.platformFeeOverride !== null && priest.platformFeeOverride !== undefined
-      ? priest.platformFeeOverride
-      : 1;
-
-  const platformFee = Math.floor(amountCents * feePercent);
-  const amountNet = amountCents - platformFee;
+  const { platformFee, amountNet, feePercentUsed } = resolvePlatformFee(amountCents, priest.platformFeeOverride);
 
   let paymentIntent;
   try {

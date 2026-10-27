@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { DeleteAccountSection } from '@/components/dashboard/delete-account';
 import { ExternalLink, CheckCircle, AlertCircle, Upload, X, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 interface PriestSettings {
@@ -659,6 +660,8 @@ export function SettingsClient() {
           Only applies to gifts made through Stripe: Ad Altare keeps 1% to help cover the cost of running the site, and Stripe keeps its processing fee (~2.9% + 30¢). You receive the rest. Wishlist items and RSVPs never have a fee.
         </p>
       </div>
+
+      <DeleteAccountSection />
     </div>
   );
 }
