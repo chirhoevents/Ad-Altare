@@ -31,7 +31,7 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
   function close() { setMobileOpen(false); }
 
   // Nav links — shared between desktop sidebar and mobile drawer
-  function NavLinks() {
+  function renderNavLinks() {
     return (
       <>
         <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -112,7 +112,7 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
           </a>
         </div>
 
-        <NavLinks />
+        {renderNavLinks()}
 
         {/* User */}
         <div className="px-6 py-5 border-t border-cream/10 flex items-center gap-3">
@@ -192,7 +192,7 @@ export function Sidebar({ priestName, slug }: SidebarProps) {
               </a>
             </div>
 
-            <NavLinks />
+            {renderNavLinks()}
 
             {/* User */}
             <div className="px-6 py-5 border-t border-cream/10 flex items-center gap-3">
