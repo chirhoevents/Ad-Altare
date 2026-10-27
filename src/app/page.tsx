@@ -1,5 +1,6 @@
 import { Hero } from '@/components/landing/hero';
 import { HowItWorks } from '@/components/landing/how-it-works';
+import { TwoWays } from '@/components/landing/two-ways';
 import { WhyAdAltare } from '@/components/landing/why-ad-altare';
 import { Pricing } from '@/components/landing/pricing';
 import { FeaturesFaq } from '@/components/landing/features-faq';
@@ -12,6 +13,7 @@ export default function LandingPage() {
       <LandingNav />
       <Hero />
       <HowItWorks />
+      <TwoWays />
       <WhyAdAltare />
       <Pricing />
       <FeaturesFaq />

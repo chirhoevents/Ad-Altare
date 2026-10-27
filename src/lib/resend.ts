@@ -214,14 +214,15 @@ export async function sendWelcomeEmail({ to, firstName }: { to: string; firstNam
       <p>Welcome to Ad Altare! We're honored to walk with you on the road to the altar. Here's how to get your page ready:</p>
       <ol style="padding-left: 20px; line-height: 1.7;">
         <li><strong>Tell your story</strong> — add a bio and photos in Settings.</li>
-        <li><strong>Build your registry</strong> — add the items you need for your ministry.</li>
-        <li><strong>Connect Stripe</strong> — so gifts go straight to your bank account.</li>
-        <li><strong>Make your page public</strong> — then copy your link from the dashboard and share it.</li>
+        <li><strong>Build your wishlist</strong> — add the items you need, with a link to where they can be bought. Free.</li>
+        <li><strong>Set up RSVPs</strong> (optional) — add your guest list and ordination events. Free.</li>
+        <li><strong>Share your link</strong> — copy it from your dashboard and send it to family and friends.</li>
       </ol>
+      <p><em>Optional:</em> if you'd also like people to be able to give money directly, connect a free Stripe account in Settings. Gifts go straight to your bank account (a small 1% fee helps keep Ad Altare running). You can do this any time — or never.</p>
       <p><a href="${appUrl}/dashboard" style="color: #6B1E2E;">Go to your dashboard →</a></p>
       <p>Questions? Just reply to this email.</p>
       <p style="margin-top: 32px;">In Christ,<br/>The Ad Altare Team</p>
     `),
-    reply_to: 'support@adaltare.com',
+    reply_to: 'support@ad-altare.com',
   });
 }

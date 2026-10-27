@@ -44,6 +44,15 @@ export default function RegistryPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Cash-gift items only work once Stripe is connected
+  const [stripeReady, setStripeReady] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => s && setStripeReady(!!(s.stripeAccountId && s.stripeOnboardingComplete)))
+      .catch(() => {});
+  }, []);
 
   // Registry Links state
   const [links, setLinks] = useState<RegistryLink[]>([]);
@@ -314,17 +323,6 @@ export default function RegistryPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => handleItemTypeChange('campaign')}
-              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
-                form.itemType === 'campaign'
-                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
-                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
-              }`}
-            >
-              Campaign
-            </button>
-            <button
-              type="button"
               onClick={() => handleItemTypeChange('wishlist')}
               className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
                 form.itemType === 'wishlist'
@@ -332,14 +330,31 @@ export default function RegistryPage() {
                   : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
               }`}
             >
-              Wishlist
+              Wishlist <span className="opacity-70">(free)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleItemTypeChange('campaign')}
+              className={`flex-1 py-2 px-4 rounded-sm border text-sm font-inter transition-colors ${
+                form.itemType === 'campaign'
+                  ? 'border-burgundy-800 bg-burgundy-800 text-cream'
+                  : 'border-near-black/20 text-near-black/60 hover:border-near-black/40'
+              }`}
+            >
+              Cash gift <span className="opacity-70">(needs Stripe)</span>
             </button>
           </div>
           <p className="font-inter text-xs text-near-black/40">
             {form.itemType === 'campaign'
-              ? 'Donors contribute funds toward this item through the platform.'
-              : 'Link donors to an external site where they can purchase it directly.'}
+              ? 'Donors give money toward this item through Ad Altare and it goes straight to your bank account. Requires a connected Stripe account; a 1% fee applies.'
+              : 'Donors buy the item themselves from the store you link to (Amazon, a church-goods supplier, etc.) and send it to you. No Stripe needed, no fees.'}
           </p>
+          {form.itemType === 'campaign' && !stripeReady && (
+            <p className="font-inter text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-sm px-3 py-2">
+              You haven&apos;t connected Stripe yet, so donors can&apos;t give toward this item until you do.{' '}
+              <a href="/dashboard/settings" className="underline">Connect Stripe in Settings</a> — or choose Wishlist instead.
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">

@@ -82,10 +82,10 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <a
-                  href="mailto:support@adaltare.com"
+                  href="mailto:support@ad-altare.com"
                   className="font-inter text-sm hover:text-cream transition-colors"
                 >
-                  support@adaltare.com
+                  support@ad-altare.com
                 </a>
               </li>
               <li>

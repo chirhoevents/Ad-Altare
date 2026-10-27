@@ -12,7 +12,6 @@ import { eq, and } from 'drizzle-orm';
 import { formatDate, formatPriestName, getTitleForDisplay } from '@/lib/utils';
 import { PriestPageClient } from '@/components/priest/priest-page-client';
 import { PriestPageNav } from '@/components/priest/priest-page-nav';
-import { canViewHiddenPriestPage } from '@/lib/visibility';
 
 interface Props {
   params: { slug: string };
@@ -27,11 +26,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   });
 
   if (!priest) return { title: 'Not Found' };
-  // Don't leak names/bios of hidden pages through link previews or search engines.
-  if (!priest.profileVisible) return { title: 'Ordination Registry', robots: { index: false } };
 
   return {
     title: `${formatPriestName(priest)} — Ordination Registry`,
+    // Priests not listed in the directory are reachable by link only — keep
+    // them out of search engines too.
+    ...(!priest.profileVisible && { robots: { index: false, follow: false } }),
     description: priest.bio?.slice(0, 160) ?? `Support ${formatPriestName(priest)}'s ordination.`,
     openGraph: {
       images: priest.profilePhotoUrl ? [priest.profilePhotoUrl] : [],
@@ -45,10 +45,6 @@ export default async function PriestPage({ params, searchParams }: Props) {
   });
 
   if (!priest) notFound();
-
-  // Hidden pages 404 for the public; the priest and admins can still preview.
-  const isHidden = !priest.profileVisible;
-  if (isHidden && !(await canViewHiddenPriestPage(priest.clerkUserId))) notFound();
 
   const [items, rsvpEvents, links] = await Promise.all([
     db.query.registryItems.findMany({
@@ -86,17 +82,6 @@ export default async function PriestPage({ params, searchParams }: Props) {
       {/* ── Branded top nav (auth-aware) ── */}
       <PriestPageNav />
 
-      {isHidden && (
-        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-center">
-          <p className="font-inter text-sm text-amber-800">
-            This page is <strong>hidden</strong> — only you and Ad Altare admins can see it.
-            Donations and RSVPs are paused until it&apos;s public.{' '}
-            <Link href="/dashboard/settings" className="underline hover:text-amber-900">
-              Make it public in Settings
-            </Link>
-          </p>
-        </div>
-      )}
 
       {/* ── Backdrop photo ── */}
       <div className="relative h-52 sm:h-64 lg:h-72 bg-burgundy-900 overflow-hidden">

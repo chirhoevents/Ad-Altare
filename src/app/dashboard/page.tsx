@@ -10,7 +10,7 @@ import { formatCurrency, formatDate, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, DollarSign, Gift, Users } from 'lucide-react';
-import { HiddenPageBanner, CopyLinkButton } from '@/components/dashboard/page-status';
+import { CopyLinkButton } from '@/components/dashboard/page-status';
 
 export default async function DashboardPage() {
   const { userId } = await auth();
@@ -101,8 +101,6 @@ export default async function DashboardPage() {
 
       </div>
 
-      {!priest.profileVisible && <HiddenPageBanner />}
-
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         {stats.map((stat) => (
@@ -147,9 +145,11 @@ export default async function DashboardPage() {
             <span>· Ordination: {formatDate(priest.ordinationDate)}</span>
           )}
           {priest.stripeOnboardingComplete ? (
-            <Badge variant="success" className="text-xs">Stripe Connected</Badge>
+            <Badge variant="success" className="text-xs">Direct gifts on (Stripe)</Badge>
           ) : (
-            <Badge variant="muted" className="text-xs">Stripe Pending</Badge>
+            <Link href="/dashboard/settings" className="hover:underline">
+              <Badge variant="muted" className="text-xs">Wishlist only · Stripe optional</Badge>
+            </Link>
           )}
         </div>
       </div>

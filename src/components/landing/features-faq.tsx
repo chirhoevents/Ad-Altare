@@ -10,24 +10,32 @@ interface FaqItem {
 
 const forPriests: FaqItem[] = [
   {
+    q: 'What are the two ways to receive gifts?',
+    a: '1) Wishlist — free, no setup. List what you need (chalice, vestments, books…) with a link to where it can be bought; family and friends purchase it and send it to you, so they know exactly what to give. 2) Direct gifts through Stripe — optional. Connect a Stripe account and people can give money toward specific items or your General Fund, deposited straight into your bank account. Stripe takes a little more setup (ID verification and bank details, about five minutes). You can use either one or both, and add Stripe any time.',
+  },
+  {
     q: 'Is Ad Altare free?',
-    a: 'Yes — there is no cost to sign up and no subscription. When you receive a gift, a small 1% platform fee and Stripe\'s standard card processing fee (about 2.9% + 30¢) are deducted automatically; you receive the rest. Ad Altare is built by seminarians and supported by ChiRho Events. If you\'d like to help cover its costs, there is a "Support Ad Altare" link in your dashboard — never required.',
+    a: 'Yes. Creating your account and page, your wishlist, links to other registries, and RSVPs are all free — no subscription and no credit card. The only fee is on money given through Stripe, if you choose to connect it: 1% to help cover the cost of running Ad Altare, plus Stripe\'s standard card processing fee (about 2.9% + 30¢). Ad Altare is built by seminarians and supported by ChiRho Events.',
+  },
+  {
+    q: 'Do I have to set up Stripe?',
+    a: 'No. Stripe is only needed if you want people to give money through the site. Without it, your page, wishlist, and RSVPs work fully — donors simply buy items from the stores you link to.',
   },
   {
     q: 'How do I create my page?',
-    a: 'Sign up, fill in your profile (title, diocese, seminary, ordination date, and a short bio), and add a profile and backdrop photo in Settings. Your page starts out hidden so you can set it up in peace — when you\'re ready, turn on "Make my page public" in Settings. Then copy your link from the dashboard and share it with family and friends.',
+    a: 'Sign up, fill in your profile (title, diocese, seminary, ordination date, and a short bio), and add photos in Settings. Then add your wishlist items, copy your link from the dashboard, and share it with family and friends.',
   },
   {
-    q: 'What is the difference between a gift item and a wishlist item?',
-    a: 'Gift items (like a chalice or vestments) have a goal amount — donors can give any amount toward them or "fully fund" the remainder, and you can watch the progress bar fill. Wishlist items link to a store (Amazon, a church-goods supplier, etc.) so a donor can buy the item directly; you mark it "purchased" once it arrives. You can also add links to registries you keep elsewhere, and donors can always give to your General Fund.',
+    q: 'Do I have to appear in the Find a Priest directory?',
+    a: 'No. In Settings you choose whether to be listed in the directory. If you stay unlisted, your page still works for everyone you send the link to — they can see your wishlist, give, and RSVP as normal — it just isn\'t listed publicly or shown in search engines.',
   },
   {
-    q: 'When and how do I receive the money?',
-    a: 'You connect your bank account through Stripe, a secure payment processor, from Settings — it takes about five minutes. After Stripe verifies your details, gifts are paid out to your bank automatically every day (your very first payout can take up to about a week while Stripe completes its checks). You never have to request a payout.',
+    q: 'When and how do I receive money given through Stripe?',
+    a: 'Connect your bank account through Stripe from Settings. After Stripe verifies your details, gifts are paid out to your bank automatically every day (your very first payout can take up to about a week while Stripe completes its checks). You never have to request a payout.',
   },
   {
     q: 'How do thank-you notes work?',
-    a: 'Every donor receives an automatic receipt by email. From the Donors page you can then send each donor a personal thank-you using your own template (edit it in Settings). Anonymous donors are sent your thank-you note automatically, since you won\'t know who they are. You can export your full donor list as a spreadsheet at any time.',
+    a: 'Every donor who gives through Stripe receives an automatic receipt by email. From the Donors page you can then send each one a personal thank-you using your own template (edit it in Settings). Anonymous donors are sent your thank-you note automatically, since you won\'t know who they are. You can export your donor list as a spreadsheet at any time.',
   },
   {
     q: 'How is my title shown?',
@@ -35,7 +43,7 @@ const forPriests: FaqItem[] = [
   },
   {
     q: 'How does RSVP work?',
-    a: 'Under RSVP in your dashboard, add your guest list (one by one or by uploading a spreadsheet), then create your events — your Ordination Mass, First Mass, a reception — with optional custom questions such as dietary needs. Guests find their invitation by name on your page. You can set an RSVP deadline (it closes at the end of that day, Pacific time), edit events at any time, and export the responses.',
+    a: 'Under RSVP in your dashboard, add your guest list (one by one or by uploading a spreadsheet), then create your events — your Ordination Mass, First Mass, a reception — with optional custom questions such as dietary needs. Guests find their invitation by name on your page. You can set an RSVP deadline (it closes at the end of that day, Pacific time), edit events at any time, and export the responses. RSVP is free and doesn\'t need Stripe.',
   },
   {
     q: 'What if a guest is not on my list?',
@@ -43,21 +51,21 @@ const forPriests: FaqItem[] = [
   },
   {
     q: 'I need help or something isn\'t working.',
-    a: 'Email support@adaltare.com and a real person will get back to you.',
+    a: 'Email support@ad-altare.com and a real person will get back to you.',
   },
 ];
 
 const forGuests: FaqItem[] = [
   {
     q: 'How do I find a priest\'s page?',
-    a: 'Use the link the priest shared with you, or search the Find a Priest directory. Each page has his story, his registry, and (if he is using it) an RSVP for his ordination events.',
+    a: 'Use the link the priest shared with you, or search the Find a Priest directory (some priests choose not to be listed, so the link they send you is the surest way). Each page has his story, his registry, and (if he is using it) an RSVP for his ordination events.',
   },
   {
     q: 'How do I give a gift?',
-    a: 'Open the Registry tab on his page. You can give any amount toward a specific item, use "Fully Fund" to cover the rest of an item, or give to his General Fund. Wishlist items are bought directly from the store linked on the item. Payment is by card (and other methods Stripe offers) in a secure checkout.',
+    a: 'Open the Registry tab on his page. Wishlist items show what he needs — click "View & Purchase" to buy it from the linked store and send it to him. If he has set up direct gifts, you can also give any amount toward an item, use "Fully Fund" to cover the rest of it, or give to his General Fund, paying securely by card.',
   },
   {
-    q: 'Where does my gift go?',
+    q: 'Where does a money gift go?',
     a: 'To the priest\'s own Stripe account and on to his bank — Ad Altare passes each gift straight through to him. A small platform fee and the standard card processing fee are deducted from each gift.',
   },
   {
@@ -180,9 +188,9 @@ export function FeaturesFaq() {
               {/* Quick feature overview */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
                 {[
-                  { icon: '🎁', label: 'Gift Registry', desc: 'List the sacred items you need for ministry' },
+                  { icon: '🎁', label: 'Free Wishlist', desc: 'Show people exactly what you need for ministry' },
                   { icon: '✉️', label: 'RSVP System', desc: 'Manage your guest list and ordination events' },
-                  { icon: '🏦', label: 'Direct Payouts', desc: 'Donations go straight to your bank account' },
+                  { icon: '🏦', label: 'Direct Gifts (optional)', desc: 'Connect Stripe to receive money straight to your bank' },
                 ].map((f) => (
                   <div key={f.label} className="bg-cream border border-near-black/10 rounded-sm p-4 text-center">
                     <div className="text-2xl mb-2">{f.icon}</div>
@@ -218,8 +226,8 @@ export function FeaturesFaq() {
         <div className="text-center mt-12">
           <p className="font-inter text-sm text-near-black/50">
             Still have questions?{' '}
-            <a href="mailto:support@adaltare.com" className="text-burgundy-800 hover:underline">
-              Email us at support@adaltare.com
+            <a href="mailto:support@ad-altare.com" className="text-burgundy-800 hover:underline">
+              Email us at support@ad-altare.com
             </a>
           </p>
         </div>

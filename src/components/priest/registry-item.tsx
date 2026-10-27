@@ -211,14 +211,9 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
             )}
           </div>
         ) : (
-          <div className="space-y-2">
-            <Button className="w-full" disabled variant="secondary">
-              Registry Coming Soon
-            </Button>
-            <p className="font-inter text-xs text-near-black/40 text-center">
-              This priest is still setting up their registry.
-            </p>
-          </div>
+          <p className="font-inter text-xs text-near-black/40 text-center py-2">
+            Online giving isn&apos;t available for this item yet.
+          </p>
         )}
       </div>
     </div>

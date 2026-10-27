@@ -59,7 +59,7 @@ export function Hero() {
 
         {/* Social proof hint */}
         <p className="mt-10 sm:mt-12 text-cream/40 text-xs sm:text-sm font-inter">
-          Free to create · 1% + processing on donations · No subscription
+          Free page, wishlist &amp; RSVP · Optional direct gifts via Stripe (1% + processing)
         </p>
       </div>
 

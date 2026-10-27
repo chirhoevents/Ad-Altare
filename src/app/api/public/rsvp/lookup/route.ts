@@ -3,7 +3,6 @@ import { db } from '@/db';
 import { priests, guestList } from '@/db/schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { z } from 'zod';
-import { isPriestPublic } from '@/lib/visibility';
 
 const schema = z.object({
   priestId: z.string().uuid(),
@@ -17,9 +16,6 @@ export async function POST(req: Request) {
   if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
 
   const { priestId, firstName, lastName } = parsed.data;
-  if (!(await isPriestPublic(priestId))) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
 
   // Case-insensitive name match
   const guest = await db.query.guestList.findFirst({

@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { registryItems, priests } from '@/db/schema';
-import { isAdminUser } from '@/lib/visibility';
+import { isAdminUser } from '@/lib/admin';
 
 const patchSchema = z.object({ isActive: z.boolean() });
 

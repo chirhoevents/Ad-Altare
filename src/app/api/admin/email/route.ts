@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { inArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { priests } from '@/db/schema';
-import { isAdminUser } from '@/lib/visibility';
+import { isAdminUser } from '@/lib/admin';
 import { AUDIENCES, matchesAudience, type Audience } from '@/lib/admin-audiences';
 import { formatPriestNameForEmail } from '@/lib/utils';
 import { sendAdminEmails, textToHtmlParagraphs } from '@/lib/resend';
