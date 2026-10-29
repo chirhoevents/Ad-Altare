@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { inArray } from 'drizzle-orm';
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
   }
   const { audience, priestIds, emails, subject, message } = parsed.data;
 
-  // Replies go to the admin who sent the message.
+  // The sending admin, for "Send test to myself". Replies go to the team inbox (see resend.ts).
   const client = await clerkClient();
   const admin = await client.users.getUser(userId!);
   const adminEmail = admin.primaryEmailAddress?.emailAddress;
@@ -83,20 +83,11 @@ export async function POST(req: Request) {
   }
 
   const { sent, failed } = await sendAdminEmails(
-    recipients.map((p) => {
-      const vars = { firstName: p.firstName, slug: p.slug, name: formatPriestNameForEmail(p) };
-      return {
-        to: p.email,
-        subject: personalize(subject, vars),
-        bodyHtml: textToHtmlParagraphs(personalize(message, vars)),
-      };
-    }),
     recipients.map((r) => ({
       to: r.email,
       subject: personalizeAdminText(subject, r),
       bodyHtml: textToHtmlParagraphs(personalizeAdminText(message, r)),
     })),
-    adminEmail,
   );
 
   if (sent === 0) {

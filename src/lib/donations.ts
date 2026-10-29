@@ -13,8 +13,8 @@ import {
   sendDonorConfirmationEmail,
   sendThankYouEmail,
   sendPriestNotificationEmail,
-  textToHtmlParagraphs,
 } from '@/lib/resend';
+import { textToHtmlParagraphs } from '@/lib/email-layout';
 
 /**
  * Recompute a registry item's amount_raised from its donations (net of refunds).

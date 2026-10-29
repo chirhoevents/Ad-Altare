@@ -28,9 +28,9 @@ describe('titles', () => {
     expect(formatPriestNameForEmail(p)).toBe('Fr. John Smith');
   });
 
-  it('uses Dcn. / bare name further out', () => {
-    expect(formatPriestNameForEmail({ ...base, currentTitle: 'Deacon', ordinationDate: '2027-10-01' })).toBe('Dcn. John Smith');
-    expect(formatPriestNameForEmail({ ...base, currentTitle: 'Seminarian', ordinationDate: '2028-05-01' })).toBe('John Smith');
+  it('uses Deacon / Mr. further out', () => {
+    expect(formatPriestNameForEmail({ ...base, currentTitle: 'Deacon', ordinationDate: '2027-10-01' })).toBe('Deacon John Smith');
+    expect(formatPriestNameForEmail({ ...base, currentTitle: 'Seminarian', ordinationDate: '2028-05-01' })).toBe('Mr. John Smith');
   });
 
   it('honours an admin-set Father title without a date', () => {

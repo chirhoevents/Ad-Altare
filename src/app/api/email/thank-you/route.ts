@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { sendThankYouEmail, textToHtmlParagraphs } from '@/lib/resend';
+import { sendThankYouEmail } from '@/lib/resend';
+import { textToHtmlParagraphs } from '@/lib/email-layout';
 import {
   applyMergeTagsToTemplate,
   formatCurrency,
@@ -74,12 +75,7 @@ export async function POST(req: Request) {
   }
 
   // Convert newlines to HTML paragraphs
-  const bodyHtml = textToHtmlParagraphs(body_text);
-  const bodyHtml = (parsed.data.message ?? draft.message)
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
-    .join('');
+  const bodyHtml = textToHtmlParagraphs(parsed.data.message ?? draft.message);
 
   try {
     await sendThankYouEmail({
