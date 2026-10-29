@@ -89,7 +89,7 @@ export async function PATCH(req: Request) {
 /**
  * Self-service account deletion. Removes the priest's page and all their data
  * (registry, guests, RSVPs, donation records) and their sign-in. Their Stripe
- * Express account is intentionally left alone so pending payouts still reach
+ * account is intentionally left alone so pending payouts still reach
  * their bank and they keep access to Stripe tax documents.
  */
 export async function DELETE(req: Request) {
