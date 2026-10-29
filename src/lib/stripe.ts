@@ -24,7 +24,15 @@ export async function createStripeExpressAccount(
   profileUrl?: string,
 ): Promise<Stripe.Account> {
   return getStripe().accounts.create({
-    type: 'express',
+    // Stripe no longer accepts the legacy `type: 'express'` with the platform as
+    // losses collector. These controller properties give the same Express
+    // experience, with Stripe owning negative-balance liability.
+    controller: {
+      stripe_dashboard: { type: 'express' },
+      fees: { payer: 'application' },
+      losses: { payments: 'stripe' },
+      requirement_collection: 'stripe',
+    },
     country: 'US',
     email,
     business_type: 'individual',
