@@ -11,8 +11,15 @@ describe('admin email helpers', () => {
   });
 
   it('escapes text and drops blank lines', () => {
-    expect(textToHtmlParagraphs('Hello <b>\n\nBye')).toBe(
-      '<p style="margin-bottom:12px;">Hello &lt;b&gt;</p><p style="margin-bottom:12px;">Bye</p>'
+    const html = textToHtmlParagraphs('Hello <b>\n\nBye');
+    expect(html.match(/<p /g)).toHaveLength(2);
+    expect(html).toContain('>Hello &lt;b&gt;</p>');
+    expect(html).toContain('>Bye</p>');
+  });
+
+  it('links bare URLs, leaving trailing punctuation outside the link', () => {
+    expect(textToHtmlParagraphs('See https://ad-altare.com/#faq.')).toContain(
+      '<a href="https://ad-altare.com/#faq" style="color: #6B1E2E;">https://ad-altare.com/#faq</a>.'
     );
   });
 });

@@ -4,9 +4,9 @@ import { db } from '@/db';
 import { priests, donations } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { sendThankYouEmail } from '@/lib/resend';
+import { textToHtmlParagraphs } from '@/lib/email-layout';
 import {
   applyMergeTagsToTemplate,
-  escapeHtml,
   formatCurrency,
   formatPriestNameForEmail,
   FALLBACK_THANK_YOU_TEMPLATE,
@@ -74,11 +74,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Thank-you already sent' }, { status: 400 });
   }
 
-  const bodyHtml = (parsed.data.message ?? draft.message)
-    .split('\n')
-    .filter((line) => line.trim())
-    .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
-    .join('');
+  // Convert newlines to HTML paragraphs
+  const bodyHtml = textToHtmlParagraphs(parsed.data.message ?? draft.message);
 
   try {
     await sendThankYouEmail({

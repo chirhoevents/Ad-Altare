@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AUDIENCES, type Audience } from '@/lib/admin-audiences';
-import { brandedLayout, personalizeAdminText, textToHtmlParagraphs } from '@/lib/email-layout';
+import { ADMIN_FOOTER_NOTE, brandedLayout, personalizeAdminText, textToHtmlParagraphs } from '@/lib/email-layout';
 import { CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 
 export interface ComposerPriest {
@@ -126,9 +126,9 @@ export function EmailComposer({
 
   const previewHtml = useMemo(
     () =>
-      `<!doctype html><html><body style="margin:0;padding:16px;background:#eee;">${brandedLayout(
-        textToHtmlParagraphs(personalizeAdminText(message, previewRecipient))
-      )}</body></html>`,
+      brandedLayout(textToHtmlParagraphs(personalizeAdminText(message, previewRecipient)), {
+        footerNote: ADMIN_FOOTER_NOTE,
+      }),
     [message, previewRecipient]
   );
 

@@ -3,6 +3,7 @@ import { todayForDeadlines } from '@/lib/utils';
 
 export const AUDIENCES = {
   all: 'All priests',
+  not_yet_ordained: 'Not yet ordained',
   stripe_pending: 'Not using Stripe (wishlist only)',
   hidden: 'Unlisted (link only)',
   upcoming: 'Ordination in the next 60 days',
@@ -17,13 +18,16 @@ function addDays(isoDate: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-type AudiencePriest = Pick<Priest, 'stripeOnboardingComplete' | 'profileVisible' | 'ordinationDate'>;
+type AudiencePriest = Pick<Priest, 'stripeOnboardingComplete' | 'profileVisible' | 'ordinationDate' | 'currentTitle'>;
 
 export function matchesAudience(priest: AudiencePriest, audience: Audience): boolean {
   const today = todayForDeadlines();
   switch (audience) {
     case 'all':
       return true;
+    case 'not_yet_ordained':
+      // Ordained from their ordination day on (matches getTitleForDisplay); no date counts as not yet.
+      return priest.currentTitle !== 'Father' && !(priest.ordinationDate && priest.ordinationDate <= today);
     case 'stripe_pending':
       return !priest.stripeOnboardingComplete;
     case 'hidden':

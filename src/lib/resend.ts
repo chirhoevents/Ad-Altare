@@ -1,6 +1,19 @@
 import { Resend } from 'resend';
 import { escapeHtml } from './utils';
-import { brandedLayout } from './email-layout';
+import {
+  BURGUNDY,
+  GOLD,
+  INK,
+  MUTED,
+  SERIF,
+  ADMIN_FOOTER_NOTE,
+  appUrl,
+  button,
+  detailsCard,
+  p,
+  render,
+  signature,
+} from './email-layout';
 
 export { textToHtmlParagraphs } from './email-layout';
 
@@ -15,14 +28,18 @@ function getResend(): Resend {
 }
 
 const FROM_ADDRESS = 'Ad Altare <noreply@ad-altare.com>';
+/** Every email's replies go to the team inbox. */
+const REPLY_TO = 'chirhoevents@gmail.com';
 
 async function send(payload: Parameters<Resend['emails']['send']>[0]): Promise<void> {
-  const { data, error } = await getResend().emails.send(payload);
+  const { data, error } = await getResend().emails.send({ reply_to: REPLY_TO, ...payload });
   if (error) {
     throw new Error(`Resend error: ${error.message} (name: ${error.name})`);
   }
   console.log(`[resend] sent email id=${data?.id} to=${payload.to}`);
 }
+
+// ─── Emails ──────────────────────────────────────────────────────────────────
 
 export async function sendDonorConfirmationEmail({
   donorEmail,
@@ -41,36 +58,32 @@ export async function sendDonorConfirmationEmail({
 }) {
   const displayName = escapeHtml(isAnonymous ? 'Friend' : (donorName ?? 'Friend'));
   const safePriestName = escapeHtml(priestName);
-  const itemLine = itemName
-    ? `<p>Your donation has been directed toward: <strong>${escapeHtml(itemName)}</strong></p>`
-    : '';
   const anonymousLine = isAnonymous
-    ? `<p><em>Your donation has been recorded anonymously. ${safePriestName} will know only that a generous donor has contributed.</em></p>`
+    ? p(`<em>Your gift has been recorded anonymously. ${safePriestName} will know only that a generous friend has contributed.</em>`)
     : '';
 
   await send({
     from: FROM_ADDRESS,
     to: donorEmail,
     subject: `Thank you for supporting ${priestName}'s ordination`,
-    html: `
-      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1C1E;">
-        <div style="background-color: #6B1E2E; padding: 32px; text-align: center;">
-          <h1 style="color: #FAF7F2; font-size: 28px; margin: 0;">Ad Altare</h1>
-          <p style="color: #B8960C; margin: 8px 0 0; font-style: italic;">To the Altar</p>
-        </div>
-        <div style="padding: 32px; background-color: #FAF7F2;">
-          <p>Dear ${displayName},</p>
-          <p>Your generous gift of <strong>${amountFormatted}</strong> in support of ${safePriestName}'s ordination has been received.</p>
-          ${itemLine}
-          ${anonymousLine}
-          <p>Your support helps make possible what God has called ${safePriestName} to — a life of sacred service at the altar.</p>
-          <p style="margin-top: 32px;">With gratitude,<br/>The Ad Altare Team</p>
-        </div>
-        <div style="background-color: #1C1C1E; padding: 16px; text-align: center;">
-          <p style="color: #FAF7F2; font-size: 12px; margin: 0;">Ad Altare · Serving the Church with dignity</p>
-        </div>
-      </div>
+    ...render(
+      `
+      ${p(`Dear ${displayName},`)}
+      ${p(`Thank you. Your generous gift in support of ${safePriestName}'s ordination has been received.`)}
+      ${detailsCard([
+        ['Gift', `<strong>${escapeHtml(amountFormatted)}</strong>`],
+        ['For', safePriestName],
+        ['Toward', itemName ? escapeHtml(itemName) : 'General Fund'],
+      ])}
+      ${anonymousLine}
+      ${p(`Your support helps make possible what God has called ${safePriestName} to — a life of sacred service at the altar.`)}
+      ${signature('With gratitude,')}
     `,
+        {
+          preheader: `Your gift of ${amountFormatted} for ${priestName} has been received.`,
+          footerNote: `You're receiving this receipt because you made a gift through Ad Altare.`,
+        },
+      ),
   });
 }
 
@@ -87,33 +100,28 @@ export async function sendPriestNotificationEmail({
   donorDisplayName: string;
   itemName?: string | null;
 }) {
-  const itemLine = itemName
-    ? `<p><strong>Item:</strong> ${escapeHtml(itemName)}</p>`
-    : `<p><strong>Item:</strong> General Fund</p>`;
-
   await send({
     from: FROM_ADDRESS,
     to: priestEmail,
     subject: `New donation received for your registry`,
-    html: `
-      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1C1E;">
-        <div style="background-color: #6B1E2E; padding: 32px; text-align: center;">
-          <h1 style="color: #FAF7F2; font-size: 28px; margin: 0;">Ad Altare</h1>
-          <p style="color: #B8960C; margin: 8px 0 0; font-style: italic;">To the Altar</p>
-        </div>
-        <div style="padding: 32px; background-color: #FAF7F2;">
-          <p>Dear ${escapeHtml(priestName)},</p>
-          <p>You have received a new donation for your ordination registry.</p>
-          <div style="background: white; border-left: 4px solid #B8960C; padding: 16px; margin: 24px 0;">
-            <p><strong>Amount:</strong> ${amountFormatted}</p>
-            <p><strong>From:</strong> ${escapeHtml(donorDisplayName)}</p>
-            ${itemLine}
-          </div>
-          <p>You can view all donations and send thank-you notes from your <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/donors" style="color: #6B1E2E;">donor dashboard</a>.</p>
-          <p style="margin-top: 32px;">Ad Altare</p>
-        </div>
-      </div>
+    ...render(
+      `
+      ${p(`Dear ${escapeHtml(priestName)},`)}
+      ${p(`Good news — someone has just given toward your ordination registry.`)}
+      ${detailsCard([
+        ['Amount', `<strong>${escapeHtml(amountFormatted)}</strong>`],
+        ['From', escapeHtml(donorDisplayName)],
+        ['Toward', itemName ? escapeHtml(itemName) : 'General Fund'],
+      ])}
+      ${p(`You can see every gift and send a personal thank-you note from your donor dashboard.`)}
+      ${button(`${appUrl()}/dashboard/donors`, 'View your donors')}
+      ${signature('In Christ,')}
     `,
+        {
+          preheader: `${donorDisplayName} gave ${amountFormatted} toward your registry.`,
+          footerNote: `You're receiving this because you have a registry on Ad Altare.`,
+        },
+      ),
   });
 }
 
@@ -130,31 +138,19 @@ export async function sendThankYouEmail({
     from: FROM_ADDRESS,
     to: donorEmail,
     subject,
-    html: `
-      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1C1E;">
-        <div style="background-color: #6B1E2E; padding: 32px; text-align: center;">
-          <h1 style="color: #FAF7F2; font-size: 28px; margin: 0;">Ad Altare</h1>
-          <p style="color: #B8960C; margin: 8px 0 0; font-style: italic;">To the Altar</p>
-        </div>
-        <div style="padding: 32px; background-color: #FAF7F2;">
-          ${bodyHtml}
-        </div>
-        <div style="background-color: #1C1C1E; padding: 16px; text-align: center;">
-          <p style="color: #FAF7F2; font-size: 12px; margin: 0;">Ad Altare · Serving the Church with dignity</p>
-        </div>
-      </div>
-    `,
+    ...render(bodyHtml, {
+      preheader: subject,
+      footerNote: `Sent on behalf of a priest you supported through Ad Altare.`,
+    }),
   });
 }
 
 /**
  * Admin → priest emails. Sent through Resend's batch API (max 100 per call) so a
- * message to every priest doesn't trip the per-second rate limit. Replies go to
- * the admin who sent it.
+ * message to every priest doesn't trip the per-second rate limit.
  */
 export async function sendAdminEmails(
   messages: { to: string; subject: string; bodyHtml: string }[],
-  replyTo?: string,
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -165,8 +161,8 @@ export async function sendAdminEmails(
         from: FROM_ADDRESS,
         to: m.to,
         subject: m.subject,
-        html: brandedLayout(m.bodyHtml),
-        ...(replyTo ? { reply_to: replyTo } : {}),
+        ...render(m.bodyHtml, { footerNote: ADMIN_FOOTER_NOTE }),
+        reply_to: REPLY_TO,
       })),
     );
     if (error) {
@@ -181,25 +177,39 @@ export async function sendAdminEmails(
 
 /** Sent once after onboarding: what to do next. */
 export async function sendWelcomeEmail({ to, firstName }: { to: string; firstName: string }) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  const step = (n: number, title: string, text: string) => `
+    <tr>
+      <td valign="top" style="width: 34px; padding: 0 0 18px;">
+        <div style="width: 26px; height: 26px; border: 1px solid ${GOLD}; border-radius: 13px; text-align: center; font-family: ${SERIF}; font-size: 13px; line-height: 26px; color: ${BURGUNDY};">${n}</div>
+      </td>
+      <td valign="top" style="padding: 2px 0 18px 10px; font-family: ${SERIF}; font-size: 16px; line-height: 1.6; color: ${INK};">
+        <strong>${title}</strong><br /><span style="color: ${MUTED};">${text}</span>
+      </td>
+    </tr>`;
+
   await send({
     from: FROM_ADDRESS,
     to,
     subject: 'Welcome to Ad Altare',
-    html: brandedLayout(`
-      <p>Dear ${escapeHtml(firstName)},</p>
-      <p>Welcome to Ad Altare! We're honored to walk with you on the road to the altar. Here's how to get your page ready:</p>
-      <ol style="padding-left: 20px; line-height: 1.7;">
-        <li><strong>Tell your story</strong> — add a bio and photos in Settings.</li>
-        <li><strong>Build your wishlist</strong> — add the items you need, with a link to where they can be bought. Free.</li>
-        <li><strong>Set up RSVPs</strong> (optional) — add your guest list and ordination events. Free.</li>
-        <li><strong>Share your link</strong> — copy it from your dashboard and send it to family and friends.</li>
-      </ol>
-      <p><em>Optional:</em> if you'd also like people to be able to give money directly, connect a free Stripe account in Settings. Gifts go straight to your bank account (a small 1% fee helps keep Ad Altare running). You can do this any time — or never.</p>
-      <p><a href="${appUrl}/dashboard" style="color: #6B1E2E;">Go to your dashboard →</a></p>
-      <p>Questions? Just reply to this email.</p>
-      <p style="margin-top: 32px;">In Christ,<br/>The Ad Altare Team</p>
-    `),
-    reply_to: 'support@ad-altare.com',
+    ...render(
+      `
+      ${p(`Dear ${escapeHtml(firstName)},`)}
+      ${p(`Welcome to Ad Altare! We're honored to walk with you on the road to the altar. Here's how to get your page ready:`)}
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 8px 0 10px;">
+        ${step(1, 'Tell your story', 'Add a bio and photos in Settings.')}
+        ${step(2, 'Build your wishlist', 'Add the items you need, with a link to where they can be bought. Free.')}
+        ${step(3, 'Set up RSVPs', 'Optional — add your guest list and ordination events. Free.')}
+        ${step(4, 'Share your link', 'Copy it from your dashboard and send it to family and friends.')}
+      </table>
+      ${p(`<em>Optional:</em> if you'd also like people to be able to give money directly, connect a free Stripe account in Settings. Gifts go straight to your bank account (a small 1% fee helps keep Ad Altare running). You can do this any time — or never.`)}
+      ${button(`${appUrl()}/dashboard`, 'Go to your dashboard')}
+      ${p(`<span style="color: ${MUTED};">Questions? Just reply to this email.</span>`)}
+      ${signature('In Christ,')}
+    `,
+        {
+          preheader: `Four simple steps to get your ordination page ready.`,
+          footerNote: `You're receiving this because you just created an Ad Altare account.`,
+        },
+      ),
   });
 }

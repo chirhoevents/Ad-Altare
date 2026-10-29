@@ -40,8 +40,8 @@ export function generateBaseSlug(firstName: string, lastName: string): string {
  *
  * - On/after ordination date → 'Fr.'
  * - Within 3 months before ordination → 'Soon-to-be Fr.'
- * - Earlier, title=Transitional Deacon or Deacon → 'Dcn.'
- * - Earlier, title=Seminarian → '' (no prefix)
+ * - Earlier, title=Transitional Deacon or Deacon → 'Deacon'
+ * - Earlier, title=Seminarian → 'Mr.'
  */
 export function getTitleForDisplay(priest: {
   currentTitle?: string | null;
@@ -65,9 +65,9 @@ export function getTitleForDisplay(priest: {
       return 'Fr.'; // admin-set; no ordination date required
     case 'Transitional Deacon':
     case 'Deacon':
-      return 'Dcn.';
+      return 'Deacon';
     default:
-      return ''; // Seminarian or unknown — no prefix
+      return 'Mr.'; // Seminarian (the default title)
   }
 }
 
@@ -76,7 +76,7 @@ export function getTitleForDisplay(priest: {
  * Uses "Fr." once ordained AND during the run-up to ordination (the same 3-month
  * window the public page shows as "Soon-to-be Fr."), since ordinands typically
  * collect gifts and send thank-yous in the weeks before their ordination.
- * Earlier than that: "Dcn." for deacons, bare name for seminarians.
+ * Earlier than that: "Deacon" for deacons, "Mr." for seminarians.
  */
 export function formatPriestNameForEmail(priest: {
   firstName: string;
@@ -107,7 +107,7 @@ export function todayForDeadlines(): string {
   }).format(new Date());
 }
 
-/** Full formatted name: "Fr. John Smith", "Dcn. John Smith", "John Smith", etc. */
+/** Full formatted name: "Fr. John Smith", "Deacon John Smith", "Mr. John Smith". */
 export function formatPriestName(priest: {
   firstName: string;
   lastName: string;
