@@ -4,7 +4,7 @@ import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import {
-  createStripeExpressAccount,
+  createStripeConnectAccount,
   createAccountLink,
   getConnectedAccount,
 } from '@/lib/stripe';
@@ -39,7 +39,7 @@ export async function POST() {
     // Create Stripe account if none exists
     if (!accountId) {
       const profileUrl = `${APP_URL}/p/${priest.slug}`;
-      const account = await createStripeExpressAccount(priest.email, profileUrl);
+      const account = await createStripeConnectAccount(priest.email, profileUrl);
       accountId = account.id;
 
       await db

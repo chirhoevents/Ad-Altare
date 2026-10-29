@@ -19,17 +19,17 @@ export const stripe = new Proxy({} as Stripe, {
   },
 });
 
-export async function createStripeExpressAccount(
+export async function createStripeConnectAccount(
   email: string,
   profileUrl?: string,
 ): Promise<Stripe.Account> {
   return getStripe().accounts.create({
-    // Stripe no longer accepts the legacy `type: 'express'` with the platform as
-    // losses collector. These controller properties give the same Express
-    // experience, with Stripe owning negative-balance liability.
+    // Stripe requires itself as losses collector for this platform, and it only
+    // allows that with the full Stripe Dashboard (an Express dashboard requires
+    // the platform to own losses). So priests get a Standard-style account.
     controller: {
-      stripe_dashboard: { type: 'express' },
-      fees: { payer: 'application' },
+      stripe_dashboard: { type: 'full' },
+      fees: { payer: 'account' },
       losses: { payments: 'stripe' },
       requirement_collection: 'stripe',
     },
@@ -41,18 +41,11 @@ export async function createStripeExpressAccount(
       transfers: { requested: true },
     },
     // Pre-fill business profile so the priest doesn't have to figure it out.
-    // Stripe Express still shows the step but the fields arrive pre-populated.
+    // Stripe still shows the step but the fields arrive pre-populated.
     business_profile: {
       url: profileUrl,
       product_description:
         'Catholic priest receiving ordination gifts and donations through the Ad Altare registry platform.',
-    },
-    settings: {
-      payouts: {
-        schedule: {
-          interval: 'daily',
-        },
-      },
     },
   });
 }

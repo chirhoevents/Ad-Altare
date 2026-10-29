@@ -6,27 +6,28 @@ vi.mock('stripe', () => ({
   default: vi.fn(() => ({ accounts: { create: accountsCreate } })),
 }));
 
-import { createStripeExpressAccount } from '@/lib/stripe';
+import { createStripeConnectAccount } from '@/lib/stripe';
 
-describe('createStripeExpressAccount', () => {
+describe('createStripeConnectAccount', () => {
   beforeEach(() => accountsCreate.mockClear());
 
   it('uses controller properties with Stripe as losses collector, not the legacy type field', async () => {
-    await createStripeExpressAccount('priest@example.com', 'https://adaltare.com/p/fr-test');
+    await createStripeConnectAccount('priest@example.com', 'https://adaltare.com/p/fr-test');
 
     const params = accountsCreate.mock.calls[0][0];
-    // Stripe rejects `type` when the platform would be the losses collector.
+    // Stripe rejects `type` when the platform would be the losses collector, and
+    // rejects an Express dashboard unless the platform owns losses.
     expect(params).not.toHaveProperty('type');
     expect(params.controller).toEqual({
-      stripe_dashboard: { type: 'express' },
-      fees: { payer: 'application' },
+      stripe_dashboard: { type: 'full' },
+      fees: { payer: 'account' },
       losses: { payments: 'stripe' },
       requirement_collection: 'stripe',
     });
   });
 
   it('pre-fills the priest profile URL and email', async () => {
-    await createStripeExpressAccount('priest@example.com', 'https://adaltare.com/p/fr-test');
+    await createStripeConnectAccount('priest@example.com', 'https://adaltare.com/p/fr-test');
 
     const params = accountsCreate.mock.calls[0][0];
     expect(params.email).toBe('priest@example.com');
