@@ -1,22 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 
-const isPublicRoute = createRouteMatcher([
-  '/',
-  '/p/(.*)',
-  '/directory(.*)',
-  '/support(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/public/(.*)',
-  '/api/webhooks/(.*)',
-]);
-
-const isAdminRoute = createRouteMatcher(['/admin(.*)']);
+// Everything not listed here is public (landing, /p/*, /directory, /support,
+// public APIs, webhooks). Admin authorization happens in the admin layout/APIs.
 const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/admin(.*)', '/onboarding(.*)']);
 
 export default clerkMiddleware(async (auth, req) => {
-  const { userId, sessionClaims } = await auth();
+  const { userId } = await auth();
 
   // Redirect authenticated users away from auth pages (but NOT the landing page)
   if (userId && (req.nextUrl.pathname.startsWith('/sign-in') || req.nextUrl.pathname.startsWith('/sign-up'))) {

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Turnstile, TURNSTILE_ENABLED } from '@/components/turnstile';
 
 const PRESETS = [5, 10, 25, 50];
 
@@ -10,6 +11,8 @@ export function SupportForm() {
   const [custom, setCustom] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileReset, setTurnstileReset] = useState(0);
 
   const amountCents = selected !== null ? selected * 100 : Math.round(parseFloat(custom || '0') * 100);
 
@@ -23,8 +26,9 @@ export function SupportForm() {
     const res = await fetch('/api/support/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amountCents }),
+      body: JSON.stringify({ amountCents, turnstileToken: turnstileToken || undefined }),
     });
+    setTurnstileReset((n) => n + 1);
     const data = await res.json().catch(() => ({}));
     if (res.ok && data.url) {
       window.location.href = data.url;
@@ -64,7 +68,8 @@ export function SupportForm() {
         />
       </div>
       {error && <p className="font-inter text-sm text-red-600">{error}</p>}
-      <Button onClick={give} disabled={loading} size="lg" className="w-full">
+      <Turnstile onToken={setTurnstileToken} resetKey={turnstileReset} />
+      <Button onClick={give} disabled={loading || (TURNSTILE_ENABLED && !turnstileToken)} size="lg" className="w-full">
         {loading ? 'Opening secure checkout…' : `Give${amountCents >= 100 ? ` $${(amountCents / 100).toFixed(amountCents % 100 ? 2 : 0)}` : ''}`}
       </Button>
       <p className="font-inter text-xs text-near-black/40 text-center">Secure payment by Stripe.</p>

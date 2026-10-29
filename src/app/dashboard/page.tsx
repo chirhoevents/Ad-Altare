@@ -4,12 +4,12 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 import { db } from '@/db';
-import { priests, registryItems, donations } from '@/db/schema';
+import { priests, registryItems, donations, registryLinks, events } from '@/db/schema';
 import { eq, count, sql } from 'drizzle-orm';
 import { formatCurrency, formatDate, getTitleForDisplay } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, DollarSign, Gift, Users } from 'lucide-react';
+import { ExternalLink, DollarSign, Gift, Users, CheckCircle2, Circle } from 'lucide-react';
 import { CopyLinkButton } from '@/components/dashboard/page-status';
 
 export default async function DashboardPage() {
@@ -38,6 +38,11 @@ export default async function DashboardPage() {
     .from(registryItems)
     .where(eq(registryItems.priestId, priest.id));
 
+  const [[linkCountResult], [eventCountResult]] = await Promise.all([
+    db.select({ count: count() }).from(registryLinks).where(eq(registryLinks.priestId, priest.id)),
+    db.select({ count: count() }).from(events).where(eq(events.priestId, priest.id)),
+  ]);
+
   const recentDonations = await db.query.donations.findMany({
     where: eq(donations.priestId, priest.id),
     with: { registryItem: true },
@@ -49,6 +54,35 @@ export default async function DashboardPage() {
   const donationCount = Number(donationCountResult?.count ?? 0);
   const itemCount = Number(itemCountResult?.count ?? 0);
   const publicUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/p/${priest.slug}`;
+
+  // Getting-started checklist — shown until the essentials are done
+  const checklist = [
+    {
+      done: !!(priest.bio && priest.profilePhotoUrl),
+      label: 'Add your photo and a short bio',
+      href: '/dashboard/settings',
+      optional: false,
+    },
+    {
+      done: itemCount > 0 || Number(linkCountResult?.count ?? 0) > 0,
+      label: 'Add items to your wishlist (or link a registry you already have)',
+      href: '/dashboard/registry',
+      optional: false,
+    },
+    {
+      done: Number(eventCountResult?.count ?? 0) > 0,
+      label: 'Set up RSVPs for your ordination events',
+      href: '/dashboard/rsvp',
+      optional: true,
+    },
+    {
+      done: priest.stripeOnboardingComplete,
+      label: 'Connect Stripe to receive money gifts directly',
+      href: '/dashboard/settings',
+      optional: true,
+    },
+  ];
+  const showChecklist = checklist.some((c) => !c.optional && !c.done);
 
   const stats = [
     {
@@ -100,6 +134,37 @@ export default async function DashboardPage() {
         </div>
 
       </div>
+
+      {showChecklist && (
+        <div className="bg-white border border-gold-200 rounded-sm p-5 mb-8">
+          <h2 className="font-cormorant text-2xl text-burgundy-800 mb-1">Getting started</h2>
+          <p className="font-inter text-sm text-near-black/50 mb-4">
+            A few quick steps, then share your link with family and friends.
+          </p>
+          <ul className="space-y-2.5">
+            {checklist.map((c) => (
+              <li key={c.label}>
+                <Link href={c.href} className="flex items-start gap-3 group">
+                  {c.done ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-near-black/25 shrink-0" />
+                  )}
+                  <span
+                    className={`font-inter text-sm ${
+                      c.done ? 'text-near-black/40 line-through' : 'text-near-black group-hover:text-burgundy-800'
+                    }`}
+                  >
+                    {c.label}
+                    {c.optional && <span className="text-near-black/40 no-underline"> (optional)</span>}
+                    {!c.done && <span className="text-burgundy-800/60"> →</span>}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

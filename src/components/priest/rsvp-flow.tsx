@@ -76,6 +76,10 @@ export function RsvpFlow({ priestId, priestName }: Props) {
         }),
         fetch(`/api/public/rsvp/events?priestId=${priestId}`),
       ]);
+      if (lookupRes.status === 429) {
+        setLookupError('Too many attempts. Please wait a few minutes and try again.');
+        return;
+      }
       if (!lookupRes.ok || !eventsRes.ok) throw new Error('lookup failed');
       lookupData = await lookupRes.json();
       eventsData = await eventsRes.json();

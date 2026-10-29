@@ -58,6 +58,15 @@ export async function GET(req: Request) {
     .where(eq(guestList.priestId, priest.id));
 
   const totalGuests = Number(totalGuestsResult?.count ?? 0);
+
+  // Who hasn't answered yet — so the priest knows whom to follow up with
+  const respondedIds = new Set(responses.map((r) => r.guestId));
+  const allGuests = await db.query.guestList.findMany({
+    where: eq(guestList.priestId, priest.id),
+    columns: { id: true, firstName: true, lastName: true, phone: true },
+    orderBy: (g, { asc }) => [asc(g.lastName), asc(g.firstName)],
+  });
+  const notResponded = allGuests.filter((g) => !respondedIds.has(g.id));
   const rsvpdYes = responses.filter((r) => r.attending).length;
   const rsvpdNo = responses.filter((r) => !r.attending).length;
   const awaiting = totalGuests - rsvpdYes - rsvpdNo;
@@ -70,6 +79,7 @@ export async function GET(req: Request) {
     event,
     questions,
     responses,
+    notResponded,
     summary: {
       totalGuests,
       rsvpdYes,

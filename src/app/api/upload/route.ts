@@ -2,7 +2,15 @@ import { auth } from '@clerk/nextjs/server';
 import { put } from '@vercel/blob';
 import { NextResponse } from 'next/server';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+// Extension comes from the validated MIME type, never the user's filename
+// (a file named "x.html" must not be stored and served as a web page).
+const EXT_BY_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
+const ALLOWED_TYPES = Object.keys(EXT_BY_TYPE);
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
 export async function POST(req: Request) {
@@ -24,10 +32,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'File must be under 8 MB' }, { status: 400 });
   }
 
-  const ext = file.name.split('.').pop() ?? 'jpg';
-  const filename = `priests/${userId}/${Date.now()}.${ext}`;
+  const filename = `priests/${userId}/${Date.now()}.${EXT_BY_TYPE[file.type]}`;
 
-  const blob = await put(filename, file, { access: 'public' });
+  const blob = await put(filename, file, { access: 'public', contentType: file.type });
 
   return NextResponse.json({ url: blob.url });
 }

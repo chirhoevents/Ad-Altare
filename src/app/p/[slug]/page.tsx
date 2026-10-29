@@ -33,9 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // them out of search engines too.
     ...(!priest.profileVisible && { robots: { index: false, follow: false } }),
     description: priest.bio?.slice(0, 160) ?? `Support ${formatPriestName(priest)}'s ordination.`,
-    openGraph: {
-      images: priest.profilePhotoUrl ? [priest.profilePhotoUrl] : [],
-    },
+    // Without a photo, the site-wide share image is used
+    ...(priest.profilePhotoUrl && { openGraph: { images: [priest.profilePhotoUrl] } }),
   };
 }
 

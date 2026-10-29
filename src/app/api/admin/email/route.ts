@@ -7,23 +7,23 @@ import { priests } from '@/db/schema';
 import { isAdminUser } from '@/lib/admin';
 import { AUDIENCES, matchesAudience, type Audience } from '@/lib/admin-audiences';
 import { formatPriestNameForEmail } from '@/lib/utils';
-import { sendAdminEmails, textToHtmlParagraphs } from '@/lib/resend';
+import { sendAdminEmails } from '@/lib/resend';
+import { personalizeAdminText, textToHtmlParagraphs } from '@/lib/email-layout';
 
 const schema = z.object({
-  audience: z.enum([...(Object.keys(AUDIENCES) as [Audience, ...Audience[]]), 'selected']),
+  audience: z.enum([
+    ...(Object.keys(AUDIENCES) as [Audience, ...Audience[]]),
+    'selected', // specific priests
+    'custom', // any typed-in email addresses
+    'test', // just the sending admin
+  ]),
   priestIds: z.array(z.string().uuid()).max(1000).optional(),
+  emails: z.array(z.string().trim().email()).max(100).optional(),
   subject: z.string().min(1).max(200),
   message: z.string().min(1).max(10000),
 });
 
-/** {first_name}, {name} (with title) and {page_link} are filled in per priest. */
-function personalize(text: string, priest: { firstName: string; slug: string; name: string }) {
-  const pageLink = `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/p/${priest.slug}`;
-  return text
-    .replace(/\{first_name\}/g, priest.firstName)
-    .replace(/\{name\}/g, priest.name)
-    .replace(/\{page_link\}/g, pageLink);
-}
+type Recipient = { email: string; firstName?: string; name?: string; pageLink?: string };
 
 export async function POST(req: Request) {
   const { userId } = await auth();
@@ -36,40 +36,59 @@ export async function POST(req: Request) {
 
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Please fill in the subject and message.' }, { status: 400 });
+    const badEmail = parsed.error.issues.some((i) => i.path[0] === 'emails');
+    return NextResponse.json(
+      { error: badEmail ? 'One of the email addresses looks wrong — please check it.' : 'Please fill in the subject and message.' },
+      { status: 400 }
+    );
   }
-  const { audience, priestIds, subject, message } = parsed.data;
-
-  let recipients;
-  if (audience === 'selected') {
-    if (!priestIds?.length) {
-      return NextResponse.json({ error: 'Pick at least one priest.' }, { status: 400 });
-    }
-    recipients = await db.query.priests.findMany({ where: inArray(priests.id, priestIds) });
-  } else {
-    const all = await db.query.priests.findMany();
-    recipients = all.filter((p) => matchesAudience(p, audience));
-  }
-  recipients = recipients.filter((p) => p.email);
-  if (recipients.length === 0) {
-    return NextResponse.json({ error: 'No priests match that audience.' }, { status: 400 });
-  }
+  const { audience, priestIds, emails, subject, message } = parsed.data;
 
   // Replies go to the admin who sent the message.
   const client = await clerkClient();
   const admin = await client.users.getUser(userId!);
-  const replyTo = admin.primaryEmailAddress?.emailAddress ?? undefined;
+  const adminEmail = admin.primaryEmailAddress?.emailAddress;
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? '';
+  const fromPriest = (p: typeof priests.$inferSelect): Recipient => ({
+    email: p.email,
+    firstName: p.firstName,
+    name: formatPriestNameForEmail(p),
+    pageLink: `${appUrl}/p/${p.slug}`,
+  });
+
+  let recipients: Recipient[];
+  if (audience === 'test') {
+    if (!adminEmail) return NextResponse.json({ error: 'Your account has no email address.' }, { status: 400 });
+    recipients = [{ email: adminEmail, firstName: admin.firstName ?? undefined, name: admin.fullName ?? undefined }];
+  } else if (audience === 'custom') {
+    const unique = Array.from(new Set((emails ?? []).map((e) => e.toLowerCase())));
+    if (unique.length === 0) return NextResponse.json({ error: 'Type at least one email address.' }, { status: 400 });
+    // If a typed address belongs to a priest, personalize it for them.
+    const known = await db.query.priests.findMany({ where: inArray(priests.email, unique) });
+    recipients = unique.map((email) => {
+      const p = known.find((k) => k.email.toLowerCase() === email);
+      return p ? fromPriest(p) : { email };
+    });
+  } else if (audience === 'selected') {
+    if (!priestIds?.length) return NextResponse.json({ error: 'Pick at least one priest.' }, { status: 400 });
+    recipients = (await db.query.priests.findMany({ where: inArray(priests.id, priestIds) })).map(fromPriest);
+  } else {
+    const all = await db.query.priests.findMany();
+    recipients = all.filter((p) => matchesAudience(p, audience)).map(fromPriest);
+  }
+  recipients = recipients.filter((r) => r.email);
+  if (recipients.length === 0) {
+    return NextResponse.json({ error: 'No one matches that audience.' }, { status: 400 });
+  }
 
   const { sent, failed } = await sendAdminEmails(
-    recipients.map((p) => {
-      const vars = { firstName: p.firstName, slug: p.slug, name: formatPriestNameForEmail(p) };
-      return {
-        to: p.email,
-        subject: personalize(subject, vars),
-        bodyHtml: textToHtmlParagraphs(personalize(message, vars)),
-      };
-    }),
-    replyTo,
+    recipients.map((r) => ({
+      to: r.email,
+      subject: personalizeAdminText(subject, r),
+      bodyHtml: textToHtmlParagraphs(personalizeAdminText(message, r)),
+    })),
+    adminEmail,
   );
 
   if (sent === 0) {

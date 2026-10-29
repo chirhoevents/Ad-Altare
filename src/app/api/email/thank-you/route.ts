@@ -15,54 +15,66 @@ import { z } from 'zod';
 
 const schema = z.object({
   donationId: z.string().uuid(),
+  // Optional edited text from the preview dialog; defaults to the priest's template
+  message: z.string().trim().min(1).max(5000).optional(),
+  subject: z.string().trim().min(1).max(200).optional(),
 });
 
-export async function POST(req: Request) {
+/** Load the signed-in priest's donation and the note their template produces. */
+async function loadDraft(donationId: string) {
   const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!userId) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
 
-  const priest = await db.query.priests.findFirst({
-    where: eq(priests.clerkUserId, userId),
+  const priest = await db.query.priests.findFirst({ where: eq(priests.clerkUserId, userId) });
+  if (!priest) return { error: NextResponse.json({ error: 'Priest not found' }, { status: 404 }) };
+
+  const donation = await db.query.donations.findFirst({
+    where: and(eq(donations.id, donationId), eq(donations.priestId, priest.id)),
+    with: { registryItem: { columns: { name: true } } },
   });
-  if (!priest) return NextResponse.json({ error: 'Priest not found' }, { status: 404 });
+  if (!donation) return { error: NextResponse.json({ error: 'Donation not found' }, { status: 404 }) };
 
-  const body = await req.json();
-  const parsed = schema.safeParse(body);
+  const priestName = formatPriestNameForEmail(priest);
+  const message = applyMergeTagsToTemplate(priest.thankYouTemplate?.trim() || FALLBACK_THANK_YOU_TEMPLATE, {
+    // The template itself contains "Dear {donor_name}"
+    donor_name: donation.isAnonymous ? 'Friend' : (donation.donorName ?? 'Friend'),
+    item_name: donation.registryItem?.name || undefined,
+    priest_name: priestName,
+    amount: formatCurrency(donation.amountGross),
+  });
+
+  return {
+    donation,
+    draft: { subject: `A personal note from ${priestName}`, message },
+  };
+}
+
+/** Preview: the note that would be sent, so the priest can read and edit it first. */
+export async function GET(req: Request) {
+  const donationId = new URL(req.url).searchParams.get('donationId') ?? '';
+  if (!z.string().uuid().safeParse(donationId).success) {
+    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+  }
+  const result = await loadDraft(donationId);
+  if ('error' in result) return result.error;
+  return NextResponse.json(result.draft);
+}
+
+export async function POST(req: Request) {
+  const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
 
-  const donation = await db.query.donations.findFirst({
-    where: and(
-      eq(donations.id, parsed.data.donationId),
-      eq(donations.priestId, priest.id)
-    ),
-    with: { registryItem: { columns: { name: true } } },
-  });
-
-  if (!donation) {
-    return NextResponse.json({ error: 'Donation not found' }, { status: 404 });
-  }
+  const result = await loadDraft(parsed.data.donationId);
+  if ('error' in result) return result.error;
+  const { donation, draft } = result;
 
   if (donation.thankYouSent) {
     return NextResponse.json({ error: 'Thank-you already sent' }, { status: 400 });
   }
 
-  const template = priest.thankYouTemplate?.trim() || FALLBACK_THANK_YOU_TEMPLATE;
-  const priestName = formatPriestNameForEmail(priest);
-  // Pass just the name (not "Dear Friend") — the template itself contains "Dear {donor_name}"
-  const donorName = donation.isAnonymous ? 'Friend' : (donation.donorName ?? 'Friend');
-  const itemName = donation.registryItem?.name ?? '';
-
-  const body_text = applyMergeTagsToTemplate(template, {
-    donor_name: donorName,
-    item_name: itemName || undefined,
-    priest_name: priestName,
-    amount: formatCurrency(donation.amountGross),
-  });
-
-  // Convert newlines to HTML paragraphs
-  const bodyHtml = body_text
+  const bodyHtml = (parsed.data.message ?? draft.message)
     .split('\n')
     .filter((line) => line.trim())
     .map((line) => `<p style="margin-bottom:12px;">${escapeHtml(line)}</p>`)
@@ -71,7 +83,7 @@ export async function POST(req: Request) {
   try {
     await sendThankYouEmail({
       donorEmail: donation.donorEmail,
-      subject: `A personal note from ${priestName}`,
+      subject: parsed.data.subject ?? draft.subject,
       bodyHtml,
     });
   } catch (err) {
@@ -81,10 +93,7 @@ export async function POST(req: Request) {
   }
 
   // Mark as sent only after confirmed delivery to Resend
-  await db
-    .update(donations)
-    .set({ thankYouSent: true })
-    .where(eq(donations.id, donation.id));
+  await db.update(donations).set({ thankYouSent: true }).where(eq(donations.id, donation.id));
 
   return NextResponse.json({ success: true });
 }

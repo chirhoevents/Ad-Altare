@@ -130,8 +130,11 @@ export function escapeHtml(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-export function computePlatformFee(grossCents: number): number {
-  return Math.floor(grossCents * 0.01);
+/** "amazon.com/x" → "https://amazon.com/x" so people needn't type the scheme. */
+export function normalizeUrl(value: string): string {
+  const v = value.trim();
+  if (!v) return '';
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
 }
 
 /** Used when a priest's thank-you template is empty. */

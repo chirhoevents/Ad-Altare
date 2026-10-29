@@ -9,6 +9,7 @@ import {
   jsonb,
   uniqueIndex,
   doublePrecision,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -144,6 +145,15 @@ export const rsvps = pgTable('rsvps', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 }, (table) => ({
   uniqueGuestEvent: uniqueIndex('unique_guest_event_idx').on(table.guestId, table.eventId),
+}));
+
+// Request counters for abuse protection on public endpoints (see lib/rate-limit.ts)
+export const rateLimits = pgTable('rate_limits', {
+  key: text('key').notNull(),
+  windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+  count: integer('count').default(0).notNull(),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.key, table.windowStart] }),
 }));
 
 // ─── Relations ───────────────────────────────────────────────────────────────
