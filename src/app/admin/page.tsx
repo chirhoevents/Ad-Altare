@@ -101,7 +101,7 @@ export default async function AdminPage({ searchParams }: Props) {
             href="/admin/email"
             className="flex items-center gap-1.5 font-inter text-sm text-burgundy-800 border border-burgundy-800/30 rounded-sm px-4 py-2 hover:bg-burgundy-800 hover:text-cream transition-colors"
           >
-            <Mail className="w-3.5 h-3.5" /> Email Priests
+            <Mail className="w-3.5 h-3.5" /> Send an Email
           </Link>
           <Link
             href="/admin/reports"

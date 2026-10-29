@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/db';
@@ -84,4 +84,36 @@ export async function PATCH(req: Request) {
   revalidatePath('/directory');
 
   return NextResponse.json(updated);
+}
+
+/**
+ * Self-service account deletion. Removes the priest's page and all their data
+ * (registry, guests, RSVPs, donation records) and their sign-in. Their Stripe
+ * Express account is intentionally left alone so pending payouts still reach
+ * their bank and they keep access to Stripe tax documents.
+ */
+export async function DELETE(req: Request) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const body = await req.json().catch(() => null);
+  if (body?.confirm !== 'DELETE') {
+    return NextResponse.json({ error: 'Type DELETE to confirm.' }, { status: 400 });
+  }
+
+  const [deleted] = await db.delete(priests).where(eq(priests.clerkUserId, userId)).returning();
+  if (deleted) {
+    revalidatePath(`/p/${deleted.slug}`);
+    revalidatePath('/directory');
+  }
+
+  try {
+    const client = await clerkClient();
+    await client.users.deleteUser(userId);
+  } catch (err) {
+    // Data is already gone; a lingering login just lands on onboarding again.
+    console.error('[settings DELETE] could not delete Clerk user:', err);
+  }
+
+  return NextResponse.json({ success: true });
 }

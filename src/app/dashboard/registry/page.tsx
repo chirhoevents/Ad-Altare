@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency } from '@/lib/utils';
-import { Plus, Pencil, Trash2, X, Check, Upload, ShoppingBag, Link as LinkIcon } from 'lucide-react';
+import { formatCurrency, normalizeUrl } from '@/lib/utils';
+import { Plus, Pencil, Trash2, X, Check, Upload, ShoppingBag, Eye, EyeOff, Link as LinkIcon } from 'lucide-react';
 import type { RegistryItem, RegistryLink } from '@/db/schema';
 
 interface ItemForm {
@@ -161,7 +161,7 @@ export default function RegistryPage() {
         imageUrl: form.imageUrl || null,
         goalAmount: goalCents,
         itemType: form.itemType,
-        externalUrl: form.externalUrl || null,
+        externalUrl: normalizeUrl(form.externalUrl) || null,
       }),
     });
 
@@ -197,7 +197,7 @@ export default function RegistryPage() {
         imageUrl: form.imageUrl || null,
         goalAmount: goalCents,
         itemType: form.itemType,
-        externalUrl: form.externalUrl || null,
+        externalUrl: normalizeUrl(form.externalUrl) || null,
       }),
     });
 
@@ -243,7 +243,7 @@ export default function RegistryPage() {
     const res = await fetch('/api/registry-links', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ label: linkLabel, url: linkUrl }),
+      body: JSON.stringify({ label: linkLabel, url: normalizeUrl(linkUrl) }),
     });
     if (res.ok) {
       setLinkLabel('');
@@ -262,8 +262,11 @@ export default function RegistryPage() {
     if (res.ok) await fetchLinks();
   }
 
+  // Render helpers (called as functions, NOT used as <Components/>): a component
+  // defined inside this one would be a new type every render, remounting the
+  // inputs and dropping focus after each keystroke.
   // Shared image upload field used in both add and edit forms
-  function ImageUploadField() {
+  function renderImageUploadField() {
     return (
       <div className="space-y-2">
         <Label>Item Photo <span className="text-near-black/30 font-normal">(optional)</span></Label>
@@ -314,7 +317,7 @@ export default function RegistryPage() {
   }
 
   // Shared form fields for both Add and Edit
-  function FormFields() {
+  function renderFormFields() {
     return (
       <>
         {/* Item type selector */}
@@ -392,7 +395,7 @@ export default function RegistryPage() {
             rows={3}
           />
         </div>
-        <ImageUploadField />
+        {renderImageUploadField()}
 
         {form.itemType === 'campaign' ? (
           <div className="space-y-2">
@@ -428,7 +431,8 @@ export default function RegistryPage() {
               <Input
                 id="externalUrl"
                 name="externalUrl"
-                type="url"
+                type="text"
+                inputMode="url"
                 value={form.externalUrl}
                 onChange={handleChange}
                 placeholder="https://www.amazon.com/dp/..."
@@ -467,7 +471,7 @@ export default function RegistryPage() {
             </button>
           </div>
           <form onSubmit={handleAdd} className="space-y-4">
-            <FormFields />
+            {renderFormFields()}
             {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
             <div className="flex gap-3">
               <Button type="submit" disabled={saving || uploading}>
@@ -500,14 +504,14 @@ export default function RegistryPage() {
         <div className="space-y-4">
           {items.map((item) => {
             const isWishlist = item.itemType === 'wishlist';
-            const pct = isWishlist ? 0 : Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100));
+            const pct = isWishlist || item.goalAmount <= 0 ? 0 : Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100));
             const isEditing = editingId === item.id;
 
             if (isEditing) {
               return (
                 <div key={item.id} className="bg-white border border-burgundy-200 rounded-sm p-6">
                   <form onSubmit={handleUpdate} className="space-y-4">
-                    <FormFields />
+                    {renderFormFields()}
                     {error && <p className="text-red-600 text-sm font-inter">{error}</p>}
                     <div className="flex gap-3">
                       <Button type="submit" size="sm" disabled={saving || uploading}>
@@ -526,7 +530,8 @@ export default function RegistryPage() {
                 key={item.id}
                 className={`bg-white border rounded-sm p-5 ${item.isActive ? 'border-near-black/10' : 'border-near-black/5 opacity-60'}`}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                  <div className="flex items-start gap-4 flex-1 min-w-0">
                   {/* Item photo thumbnail */}
                   {item.imageUrl && (
                     <div className="w-16 h-16 rounded-sm border border-near-black/10 overflow-hidden shrink-0">
@@ -543,7 +548,7 @@ export default function RegistryPage() {
                         </Badge>
                       )}
                       {item.category && <Badge variant="muted">{item.category}</Badge>}
-                      {!item.isActive && <Badge variant="muted">Hidden</Badge>}
+                      {!item.isActive && <Badge variant="muted">Hidden from page</Badge>}
                       {!isWishlist && item.amountRaised >= item.goalAmount && <Badge variant="gold">Funded</Badge>}
                       {isWishlist && item.isPurchased && <Badge variant="gold">Purchased</Badge>}
                     </div>
@@ -579,26 +584,34 @@ export default function RegistryPage() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  </div>
+                  {/* Actions — labelled, and wrap under the item on phones */}
+                  <div className="flex items-center gap-1 flex-wrap shrink-0 sm:justify-end">
                     {isWishlist && (
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant={item.isPurchased ? 'ghost' : 'outline'}
                         onClick={() => handleTogglePurchased(item)}
-                        title={item.isPurchased ? 'Mark as not purchased' : 'Mark as purchased'}
                         className="text-xs"
                       >
-                        {item.isPurchased ? 'Unmark' : 'Purchased'}
+                        {item.isPurchased ? 'Mark not purchased' : 'Mark purchased'}
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" onClick={() => startEdit(item)} title="Edit">
-                      <Pencil className="w-3.5 h-3.5" />
+                    <Button size="sm" variant="ghost" onClick={() => startEdit(item)} className="text-xs">
+                      <Pencil className="w-3.5 h-3.5 mr-1" /> Edit
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleToggle(item)} title={item.isActive ? 'Hide' : 'Show'}>
-                      {item.isActive ? <X className="w-3.5 h-3.5 text-near-black/40" /> : <Check className="w-3.5 h-3.5 text-green-600" />}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleToggle(item)}
+                      className="text-xs"
+                      title={item.isActive ? 'Hide from your public page' : 'Show on your public page'}
+                    >
+                      {item.isActive ? <EyeOff className="w-3.5 h-3.5 mr-1" /> : <Eye className="w-3.5 h-3.5 mr-1" />}
+                      {item.isActive ? 'Hide' : 'Show'}
                     </Button>
-                    <Button size="icon" variant="ghost" onClick={() => handleDelete(item.id)} title="Delete">
-                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(item.id)} className="text-xs text-red-600">
+                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
                     </Button>
                   </div>
                 </div>
@@ -634,7 +647,8 @@ export default function RegistryPage() {
               <Label htmlFor="linkUrl" className="text-xs">URL</Label>
               <Input
                 id="linkUrl"
-                type="url"
+                type="text"
+                inputMode="url"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 placeholder="https://www.amazon.com/hz/wishlist/..."

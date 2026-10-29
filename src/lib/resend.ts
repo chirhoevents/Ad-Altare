@@ -1,5 +1,8 @@
 import { Resend } from 'resend';
 import { escapeHtml } from './utils';
+import { brandedLayout } from './email-layout';
+
+export { textToHtmlParagraphs } from './email-layout';
 
 let _resend: Resend | null = null;
 

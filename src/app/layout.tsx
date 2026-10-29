@@ -3,6 +3,8 @@ import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 export const metadata: Metadata = {
+  // Lets Next build absolute URLs for the share image (app/opengraph-image.png)
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://ad-altare.com'),
   title: {
     default: 'Ad Altare — Ordination Registry for Catholic Priests',
     template: '%s | Ad Altare',
@@ -16,6 +18,7 @@ export const metadata: Metadata = {
     url: process.env.NEXT_PUBLIC_APP_URL,
     siteName: 'Ad Altare',
   },
+  twitter: { card: 'summary_large_image' },
 };
 
 export default function RootLayout({

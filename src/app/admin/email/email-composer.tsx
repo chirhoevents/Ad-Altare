@@ -1,20 +1,35 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AUDIENCES, type Audience } from '@/lib/admin-audiences';
-import { CheckCircle, AlertCircle } from 'lucide-react';
+import { brandedLayout, personalizeAdminText, textToHtmlParagraphs } from '@/lib/email-layout';
+import { CheckCircle, AlertCircle, Trash2 } from 'lucide-react';
 
 export interface ComposerPriest {
   id: string;
-  name: string;
+  name: string; // display name with title
+  firstName: string;
   email: string;
+  pageLink: string;
 }
 
-const TEMPLATES: Record<string, { label: string; subject: string; message: string }> = {
+interface Template {
+  label: string;
+  subject: string;
+  message: string;
+}
+
+const BUILT_IN: Record<string, Template> = {
+  note: {
+    label: 'Quick note',
+    subject: 'Thank you for using Ad Altare',
+    message:
+      'Hi {first_name},\n\nThank you so much for using Ad Altare! Let me know if you have any questions — just reply to this email.\n\nGod bless,\nThe Ad Altare Team',
+  },
   thanks: {
     label: 'Thank you',
     subject: 'Thank you, {first_name}!',
@@ -35,78 +50,181 @@ const TEMPLATES: Record<string, { label: string; subject: string; message: strin
   },
 };
 
+const SAVED_KEY = 'adaltare.admin.emailTemplates';
+
+function loadSaved(): Template[] {
+  try {
+    return JSON.parse(localStorage.getItem(SAVED_KEY) ?? '[]');
+  } catch {
+    return [];
+  }
+}
+
+function storeSaved(list: Template[]) {
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+  } catch {
+    /* storage unavailable — templates just won't persist */
+  }
+}
+
+/** "a@x.com, b@y.com\nc@z.com" → ['a@x.com', ...] */
+function parseEmails(text: string): string[] {
+  return text.split(/[\s,;]+/).map((e) => e.trim()).filter(Boolean);
+}
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type Mode = Audience | 'selected' | 'custom';
+
 interface Props {
   priests: ComposerPriest[];
   audienceCounts: Record<Audience, number>;
-  initialAudience: Audience | 'selected';
+  initialAudience: Mode;
   initialSelected: string[];
+  initialEmails: string;
   initialTemplate: string | null;
 }
 
-export function EmailComposer({ priests, audienceCounts, initialAudience, initialSelected, initialTemplate }: Props) {
-  const start = initialTemplate ? TEMPLATES[initialTemplate] : undefined;
-  const [audience, setAudience] = useState<Audience | 'selected'>(initialAudience);
+export function EmailComposer({
+  priests,
+  audienceCounts,
+  initialAudience,
+  initialSelected,
+  initialEmails,
+  initialTemplate,
+}: Props) {
+  const start = BUILT_IN[initialTemplate ?? ''] ?? BUILT_IN.note;
+  const [mode, setMode] = useState<Mode>(initialAudience);
   const [selected, setSelected] = useState<string[]>(initialSelected);
+  const [emailText, setEmailText] = useState(initialEmails);
   const [filter, setFilter] = useState('');
-  const [subject, setSubject] = useState(start?.subject ?? '');
-  const [message, setMessage] = useState(start?.message ?? '');
-  const [sending, setSending] = useState(false);
+  const [subject, setSubject] = useState(start.subject);
+  const [message, setMessage] = useState(start.message);
+  const [saved, setSaved] = useState<Template[]>([]);
+  const [sending, setSending] = useState<'send' | 'test' | null>(null);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const recipientCount = audience === 'selected' ? selected.length : audienceCounts[audience];
+  useEffect(() => setSaved(loadSaved()), []);
+
+  const typedEmails = useMemo(() => parseEmails(emailText), [emailText]);
+  const badEmails = typedEmails.filter((e) => !EMAIL_RE.test(e));
+
+  const recipientCount =
+    mode === 'selected' ? selected.length : mode === 'custom' ? typedEmails.length : audienceCounts[mode];
+
   const visiblePriests = useMemo(() => {
     const q = filter.trim().toLowerCase();
     return q ? priests.filter((p) => `${p.name} ${p.email}`.toLowerCase().includes(q)) : priests;
   }, [priests, filter]);
 
-  function toggle(id: string) {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  // Preview personalized for the first recipient we can identify
+  const previewRecipient = useMemo(() => {
+    if (mode === 'selected') return priests.find((p) => p.id === selected[0]) ?? null;
+    if (mode === 'custom') return priests.find((p) => p.email.toLowerCase() === typedEmails[0]?.toLowerCase()) ?? null;
+    return priests[0] ?? null;
+  }, [mode, selected, typedEmails, priests]);
+
+  const previewHtml = useMemo(
+    () =>
+      `<!doctype html><html><body style="margin:0;padding:16px;background:#eee;">${brandedLayout(
+        textToHtmlParagraphs(personalizeAdminText(message, previewRecipient))
+      )}</body></html>`,
+    [message, previewRecipient]
+  );
+
+  function applyTemplate(t: Template) {
+    setSubject(t.subject);
+    setMessage(t.message);
   }
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    if (!confirm(`Send this email to ${recipientCount} priest${recipientCount === 1 ? '' : 's'}?`)) return;
-    setSending(true);
+  function saveTemplate() {
+    const label = window.prompt('Name this template:', subject.slice(0, 40));
+    if (!label) return;
+    const next = [...saved.filter((t) => t.label !== label), { label, subject, message }];
+    setSaved(next);
+    storeSaved(next);
+  }
+
+  function deleteTemplate(label: string) {
+    if (!confirm(`Delete the "${label}" template?`)) return;
+    const next = saved.filter((t) => t.label !== label);
+    setSaved(next);
+    storeSaved(next);
+  }
+
+  async function send(kind: 'send' | 'test') {
+    if (kind === 'send') {
+      if (mode === 'custom' && badEmails.length) {
+        setResult({ ok: false, text: `Check these addresses: ${badEmails.join(', ')}` });
+        return;
+      }
+      if (!confirm(`Send this email to ${recipientCount} ${recipientCount === 1 ? 'person' : 'people'}?`)) return;
+    }
+    setSending(kind);
     setResult(null);
     const res = await fetch('/api/admin/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audience, priestIds: audience === 'selected' ? selected : undefined, subject, message }),
+      body: JSON.stringify({
+        audience: kind === 'test' ? 'test' : mode,
+        priestIds: kind === 'send' && mode === 'selected' ? selected : undefined,
+        emails: kind === 'send' && mode === 'custom' ? typedEmails : undefined,
+        subject,
+        message,
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) {
       setResult({
         ok: true,
-        text: data.failed
-          ? `Sent to ${data.sent}; ${data.failed} failed (see server logs).`
-          : `Sent to ${data.sent} priest${data.sent === 1 ? '' : 's'}.`,
+        text:
+          kind === 'test'
+            ? 'Test sent to your email.'
+            : data.failed
+              ? `Sent to ${data.sent}; ${data.failed} failed.`
+              : `Sent to ${data.sent} ${data.sent === 1 ? 'person' : 'people'}.`,
       });
     } else {
       setResult({ ok: false, text: data.error ?? 'Sending failed.' });
     }
-    setSending(false);
+    setSending(null);
   }
 
+  function toggle(id: string) {
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  }
+
+  const radio = (value: Mode, label: React.ReactNode) => (
+    <label className="flex items-center gap-3 font-inter text-sm text-near-black cursor-pointer">
+      <input type="radio" name="audience" checked={mode === value} onChange={() => setMode(value)} />
+      {label}
+    </label>
+  );
+
   return (
-    <form onSubmit={send} className="space-y-6">
+    <div className="space-y-6">
       {/* Recipients */}
       <section className="bg-white border border-near-black/10 rounded-sm p-6 space-y-3">
         <h2 className="font-cormorant text-2xl text-burgundy-800">To</h2>
-        {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
-          <label key={a} className="flex items-center gap-3 font-inter text-sm text-near-black cursor-pointer">
-            <input type="radio" name="audience" checked={audience === a} onChange={() => setAudience(a)} />
-            {AUDIENCES[a]}
-            <span className="text-near-black/40">({audienceCounts[a]})</span>
-          </label>
-        ))}
-        <label className="flex items-center gap-3 font-inter text-sm text-near-black cursor-pointer">
-          <input type="radio" name="audience" checked={audience === 'selected'} onChange={() => setAudience('selected')} />
-          Specific priests
-          <span className="text-near-black/40">({selected.length} selected)</span>
-        </label>
-
-        {audience === 'selected' && (
-          <div className="border border-near-black/10 rounded-sm">
+        {radio('custom', <>Type email addresses <span className="text-near-black/40">— anyone</span></>)}
+        {mode === 'custom' && (
+          <div className="pl-7 space-y-1">
+            <Textarea
+              value={emailText}
+              onChange={(e) => setEmailText(e.target.value)}
+              rows={2}
+              placeholder="name@example.com, another@example.com"
+            />
+            <p className="font-inter text-xs text-near-black/40">
+              Separate with commas or new lines.{' '}
+              {typedEmails.length > 0 && `${typedEmails.length} address${typedEmails.length === 1 ? '' : 'es'}.`}
+              {badEmails.length > 0 && <span className="text-red-600"> Check: {badEmails.join(', ')}</span>}
+            </p>
+          </div>
+        )}
+        {radio('selected', <>Specific priests <span className="text-near-black/40">({selected.length} selected)</span></>)}
+        {mode === 'selected' && (
+          <div className="ml-7 border border-near-black/10 rounded-sm">
             <div className="p-2 border-b border-near-black/10">
               <Input placeholder="Search by name or email…" value={filter} onChange={(e) => setFilter(e.target.value)} />
             </div>
@@ -118,49 +236,107 @@ export function EmailComposer({ priests, audienceCounts, initialAudience, initia
                   <span className="font-inter text-xs text-near-black/40 truncate">{p.email}</span>
                 </label>
               ))}
-              {visiblePriests.length === 0 && (
-                <p className="px-3 py-4 font-inter text-sm text-near-black/40">No matches.</p>
-              )}
+              {visiblePriests.length === 0 && <p className="px-3 py-4 font-inter text-sm text-near-black/40">No matches.</p>}
             </div>
           </div>
         )}
+        <p className="font-inter text-xs uppercase tracking-widest text-near-black/30 pt-2">Or a group of priests</p>
+        {(Object.keys(AUDIENCES) as Audience[]).map((a) => (
+          <div key={a}>{radio(a, <>{AUDIENCES[a]} <span className="text-near-black/40">({audienceCounts[a]})</span></>)}</div>
+        ))}
       </section>
 
-      {/* Message */}
+      {/* Message + preview */}
       <section className="bg-white border border-near-black/10 rounded-sm p-6 space-y-4">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h2 className="font-cormorant text-2xl text-burgundy-800">Message</h2>
+        <h2 className="font-cormorant text-2xl text-burgundy-800">Message</h2>
+
+        <div className="space-y-2">
+          <p className="font-inter text-xs uppercase tracking-widest text-near-black/40">Start from</p>
           <div className="flex gap-2 flex-wrap">
-            {Object.entries(TEMPLATES).map(([key, t]) => (
-              <Button
-                key={key}
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => { setSubject(t.subject); setMessage(t.message); }}
-              >
+            {Object.entries(BUILT_IN).map(([key, t]) => (
+              <Button key={key} type="button" size="sm" variant="outline" onClick={() => applyTemplate(t)}>
                 {t.label}
               </Button>
             ))}
+            <Button type="button" size="sm" variant="outline" onClick={() => applyTemplate({ label: '', subject: '', message: '' })}>
+              Blank
+            </Button>
           </div>
+          {saved.length > 0 && (
+            <div className="flex gap-2 flex-wrap pt-1">
+              {saved.map((t) => (
+                <span key={t.label} className="inline-flex items-center border border-gold-200 bg-gold-50 rounded-sm">
+                  <button type="button" onClick={() => applyTemplate(t)} className="px-3 py-1.5 font-inter text-xs text-near-black">
+                    {t.label}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteTemplate(t.label)}
+                    className="px-2 py-1.5 text-near-black/30 hover:text-red-600"
+                    aria-label={`Delete ${t.label}`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="subject">Subject</Label>
-          <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} required maxLength={200} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="message">Message</Label>
-          <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} rows={12} required />
-          <p className="font-inter text-xs text-near-black/40">
-            Personalize with <code>{'{first_name}'}</code>, <code>{'{name}'}</code> (with title, e.g. &ldquo;Fr. John
-            Smith&rdquo;) and <code>{'{page_link}'}</code>.
-          </p>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="subject">Subject</Label>
+              <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="message">Message</Label>
+              <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} rows={14} />
+              <p className="font-inter text-xs text-near-black/40">
+                Just type normally. Optional placeholders: <code>{'{first_name}'}</code>, <code>{'{name}'}</code>{' '}
+                (with title, e.g. &ldquo;Fr. John Smith&rdquo;), <code>{'{page_link}'}</code>. For people who
+                aren&apos;t priests, names become &ldquo;friend&rdquo;.
+              </p>
+            </div>
+            <Button type="button" size="sm" variant="outline" onClick={saveTemplate} disabled={!message.trim()}>
+              Save as my template
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <p className="font-inter text-xs uppercase tracking-widest text-near-black/40">
+              Preview{previewRecipient ? ` — as ${previewRecipient.name}` : ''}
+            </p>
+            <p className="font-inter text-sm text-near-black">
+              <span className="text-near-black/40">Subject:</span> {personalizeAdminText(subject, previewRecipient)}
+            </p>
+            <iframe
+              title="Email preview"
+              srcDoc={previewHtml}
+              sandbox=""
+              className="w-full h-[460px] border border-near-black/10 rounded-sm bg-white"
+            />
+          </div>
         </div>
       </section>
 
-      <div className="flex items-center gap-4 flex-wrap">
-        <Button type="submit" size="lg" disabled={sending || recipientCount === 0}>
-          {sending ? 'Sending…' : `Send to ${recipientCount} priest${recipientCount === 1 ? '' : 's'}`}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Button
+          type="button"
+          size="lg"
+          onClick={() => send('send')}
+          disabled={!!sending || recipientCount === 0 || !subject.trim() || !message.trim()}
+        >
+          {sending === 'send' ? 'Sending…' : `Send to ${recipientCount} ${recipientCount === 1 ? 'person' : 'people'}`}
+        </Button>
+        <Button
+          type="button"
+          size="lg"
+          variant="outline"
+          onClick={() => send('test')}
+          disabled={!!sending || !subject.trim() || !message.trim()}
+        >
+          {sending === 'test' ? 'Sending…' : 'Send test to myself'}
         </Button>
         {result && (
           <span className={`flex items-center gap-2 font-inter text-sm ${result.ok ? 'text-green-600' : 'text-red-600'}`}>
@@ -169,6 +345,6 @@ export function EmailComposer({ priests, audienceCounts, initialAudience, initia
           </span>
         )}
       </div>
-    </form>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { DeleteAccountSection } from '@/components/dashboard/delete-account';
 import { ExternalLink, CheckCircle, AlertCircle, Upload, X, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 
 interface PriestSettings {
@@ -97,8 +98,22 @@ export function SettingsClient() {
     setUploading(false);
   }
 
-  function handleToggleVisible() {
-    setSettings((prev) => prev ? { ...prev, profileVisible: !prev.profileVisible } : prev);
+  // Saves immediately — a switch that waits for the Save button is easy to miss.
+  async function handleToggleVisible() {
+    if (!settings) return;
+    const next = !settings.profileVisible;
+    setSettings((prev) => (prev ? { ...prev, profileVisible: next } : prev));
+    const res = await fetch('/api/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profileVisible: next }),
+    });
+    if (res.ok) {
+      setSaveMessage({ ok: true, text: next ? 'You are now listed in the directory.' : 'You are now unlisted.' });
+    } else {
+      setSettings((prev) => (prev ? { ...prev, profileVisible: !next } : prev));
+      setSaveMessage({ ok: false, text: 'Could not update. Please try again.' });
+    }
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -443,8 +458,8 @@ export function SettingsClient() {
           </div>
         </section>
 
-        {/* Save */}
-        <div className="flex items-center gap-4">
+        {/* Save — pinned to the bottom of the screen so it's always in reach */}
+        <div className="sticky bottom-0 z-10 -mx-4 sm:mx-0 px-4 sm:px-6 py-4 bg-cream/95 backdrop-blur border-t border-near-black/10 sm:rounded-sm flex items-center gap-4 flex-wrap">
           <Button type="submit" size="lg" disabled={saving}>
             {saving ? 'Saving…' : 'Save Settings'}
           </Button>
@@ -645,6 +660,8 @@ export function SettingsClient() {
           Only applies to gifts made through Stripe: Ad Altare keeps 1% to help cover the cost of running the site, and Stripe keeps its processing fee (~2.9% + 30¢). You receive the rest. Wishlist items and RSVPs never have a fee.
         </p>
       </div>
+
+      <DeleteAccountSection />
     </div>
   );
 }

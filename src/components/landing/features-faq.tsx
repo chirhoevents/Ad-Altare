@@ -50,6 +50,10 @@ const forPriests: FaqItem[] = [
     a: 'Guests look themselves up by name. If they are not found, they are asked to contact you directly. Add them from the RSVP dashboard and they can try again right away.',
   },
   {
+    q: 'Can I delete my account?',
+    a: 'Yes — at the bottom of Settings choose "Delete my account". It permanently removes your page, wishlist, guest list, RSVPs, and sign-in. If you connected Stripe, your Stripe account stays open so any money on its way still reaches you.',
+  },
+  {
     q: 'I need help or something isn\'t working.',
     a: 'Email support@ad-altare.com and a real person will get back to you.',
   },

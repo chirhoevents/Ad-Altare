@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
+import { parseGuestCSV as parseCSV } from '@/lib/guest-csv';
 import { Plus, Trash2, ChevronDown, ChevronUp, X, Check, Download, Upload, Pencil } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -62,69 +63,12 @@ function toLocalInputValue(iso: string): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-const EMPTY_EVENT_FORM = { name: '', date: '', location: '', rsvpEnabled: false, rsvpDeadline: '' };
+const EMPTY_GUEST_FORM = { firstName: '', lastName: '', inviteCount: '1', address: '', phone: '' };
+
+// RSVP on by default — an event with RSVP off is invisible to guests, which is easy to miss
+const EMPTY_EVENT_FORM = { name: '', date: '', location: '', rsvpEnabled: true, rsvpDeadline: '' };
 
 function escapeCSV(v: string) { return `"${v.replace(/"/g, '""')}"`; }
-
-/** Split CSV text into rows of fields, honouring quotes ("123 Main St, Boston"). */
-function splitCSV(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [];
-  let field = '';
-  let inQuotes = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') inQuotes = false;
-      else field += c;
-    } else if (c === '"') inQuotes = true;
-    else if (c === ',') { row.push(field); field = ''; }
-    else if (c === '\n' || c === '\r') {
-      if (c === '\r' && text[i + 1] === '\n') i++;
-      row.push(field); field = '';
-      if (row.some((f) => f.trim())) rows.push(row);
-      row = [];
-    } else field += c;
-  }
-  row.push(field);
-  if (row.some((f) => f.trim())) rows.push(row);
-  return rows;
-}
-
-const MAX_GUESTS_PER_IMPORT = 500;
-
-function parseCSV(text: string): { rows: Partial<Guest>[]; errors: string[] } {
-  const lines = splitCSV(text.replace(/^\uFEFF/, '')); // strip Excel BOM
-  if (lines.length < 2) return { rows: [], errors: ['File is empty or has no data rows.'] };
-  // skip header
-  const rows: Partial<Guest>[] = [];
-  const errors: string[] = [];
-  for (let i = 1; i < lines.length; i++) {
-    const [firstName, lastName, inviteCountRaw, address, phone] = lines[i].map((p) => p.trim());
-    if (!firstName || !lastName) {
-      errors.push(`Row ${i + 1}: missing first_name or last_name`);
-      continue;
-    }
-    if (firstName.length > 100 || lastName.length > 100 || (address?.length ?? 0) > 500 || (phone?.length ?? 0) > 30) {
-      errors.push(`Row ${i + 1}: a field is too long (names ≤ 100, address ≤ 500, phone ≤ 30 characters)`);
-      continue;
-    }
-    const inviteCount = parseInt(inviteCountRaw || '1', 10);
-    rows.push({
-      firstName,
-      lastName,
-      inviteCount: isNaN(inviteCount) || inviteCount < 1 ? 1 : Math.min(inviteCount, 50),
-      address: address || null,
-      phone: phone || null,
-    });
-  }
-  if (rows.length > MAX_GUESTS_PER_IMPORT) {
-    errors.push(`Only ${MAX_GUESTS_PER_IMPORT} guests can be imported at once — split the file and upload the rest separately.`);
-    rows.length = MAX_GUESTS_PER_IMPORT;
-  }
-  return { rows, errors };
-}
 
 // ─── Section: Events ──────────────────────────────────────────────────────────
 
@@ -259,7 +203,7 @@ function EventsSection() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-cormorant text-lg text-burgundy-800">{ev.name}</h3>
-                      {ev.rsvpEnabled ? <Badge variant="success">RSVP On</Badge> : <Badge variant="muted">RSVP Off</Badge>}
+                      {ev.rsvpEnabled ? <Badge variant="success">RSVP open</Badge> : <Badge variant="muted">RSVP off — guests can&apos;t respond</Badge>}
                       {ev.rsvpDeadline && <span className="font-inter text-xs text-near-black/40">Deadline: {formatDate(ev.rsvpDeadline)} (end of day, Pacific)</span>}
                     </div>
                     <p className="font-inter text-sm text-near-black/50 mt-0.5">
@@ -267,7 +211,9 @@ function EventsSection() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button onClick={() => toggleRsvp(ev)}
+                    <button onClick={() => toggleRsvp(ev)} role="switch" aria-checked={ev.rsvpEnabled}
+                      aria-label={ev.rsvpEnabled ? 'Turn RSVP off' : 'Turn RSVP on'}
+                      title={ev.rsvpEnabled ? 'Guests can RSVP — click to turn off' : 'Guests cannot RSVP yet — click to turn on'}
                       className={`relative inline-flex h-5 w-9 rounded-full border-2 border-transparent transition-colors ${ev.rsvpEnabled ? 'bg-burgundy-800' : 'bg-near-black/20'}`}>
                       <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${ev.rsvpEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
                     </button>
@@ -433,7 +379,10 @@ function GuestsSection() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
-  const [form, setForm] = useState({ firstName: '', lastName: '', inviteCount: '1', address: '', phone: '' });
+  const [form, setForm] = useState(EMPTY_GUEST_FORM);
+  const [editingGuestId, setEditingGuestId] = useState<string | null>(null);
+  const [guestError, setGuestError] = useState('');
+  const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [bulkPreview, setBulkPreview] = useState<Partial<Guest>[] | null>(null);
   const [bulkErrors, setBulkErrors] = useState<string[]>([]);
@@ -451,16 +400,53 @@ function GuestsSection() {
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    await fetch('/api/rsvp/guests', {
-      method: 'POST',
+    setGuestError('');
+    const res = await fetch(editingGuestId ? `/api/rsvp/guests/${editingGuestId}` : '/api/rsvp/guests', {
+      method: editingGuestId ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, inviteCount: parseInt(form.inviteCount) || 1 }),
+      body: JSON.stringify({
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        inviteCount: Math.min(50, Math.max(1, parseInt(form.inviteCount) || 1)),
+        address: form.address.trim() || null,
+        phone: form.phone.trim() || null,
+      }),
     });
-    setForm({ firstName: '', lastName: '', inviteCount: '1', address: '', phone: '' });
-    setShowAdd(false);
-    load();
+    if (res.ok) {
+      closeGuestForm();
+      load();
+    } else {
+      setGuestError('Could not save this guest. Please check the fields (phone ≤ 30 characters).');
+    }
     setSaving(false);
   }
+
+  function startEditGuest(g: Guest) {
+    setEditingGuestId(g.id);
+    setForm({
+      firstName: g.firstName,
+      lastName: g.lastName,
+      inviteCount: String(g.inviteCount),
+      address: g.address ?? '',
+      phone: g.phone ?? '',
+    });
+    setGuestError('');
+    setShowBulk(false);
+    setShowAdd(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function closeGuestForm() {
+    setShowAdd(false);
+    setEditingGuestId(null);
+    setForm(EMPTY_GUEST_FORM);
+    setGuestError('');
+  }
+
+  const q = search.trim().toLowerCase();
+  const shownGuests = q
+    ? guests.filter((g) => `${g.firstName} ${g.lastName} ${g.address ?? ''} ${g.phone ?? ''}`.toLowerCase().includes(q))
+    : guests;
 
   async function deleteGuest(id: string) {
     if (!confirm('Remove this guest and their RSVPs?')) return;
@@ -512,13 +498,13 @@ function GuestsSection() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-5">
         <h2 className="font-cormorant text-2xl text-burgundy-800">Guest List ({guests.length})</h2>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => { setShowBulk(!showBulk); setShowAdd(false); }}>
+          <Button size="sm" variant="outline" onClick={() => { setShowBulk(!showBulk); closeGuestForm(); }}>
             <Upload className="w-3.5 h-3.5 mr-1" /> Bulk Upload
           </Button>
-          <Button size="sm" onClick={() => { setShowAdd(!showAdd); setShowBulk(false); }}>
+          <Button size="sm" onClick={() => { if (showAdd) closeGuestForm(); else setShowAdd(true); setShowBulk(false); }}>
             <Plus className="w-4 h-4 mr-1" /> Add Guest
           </Button>
         </div>
@@ -526,7 +512,10 @@ function GuestsSection() {
 
       {showAdd && (
         <form onSubmit={handleAdd} className="bg-white border border-near-black/10 rounded-sm p-5 mb-5 space-y-4">
-          <h3 className="font-cormorant text-xl text-burgundy-800">Add Guest</h3>
+          <h3 className="font-cormorant text-xl text-burgundy-800">{editingGuestId ? 'Edit Guest' : 'Add Guest'}</h3>
+          <p className="font-inter text-xs text-near-black/40 -mt-2">
+            Guests find their invitation by typing this exact first and last name.
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5"><Label>First Name *</Label>
               <Input value={form.firstName} onChange={(e) => setForm(p => ({ ...p, firstName: e.target.value }))} required /></div>
@@ -542,9 +531,10 @@ function GuestsSection() {
               <Input value={form.phone} onChange={(e) => setForm(p => ({ ...p, phone: e.target.value }))} /></div>
           </div>
           <div className="flex gap-3">
-            <Button type="submit" disabled={saving}>{saving ? 'Adding…' : 'Add Guest'}</Button>
-            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancel</Button>
+            <Button type="submit" disabled={saving}>{saving ? 'Saving…' : editingGuestId ? 'Save Changes' : 'Add Guest'}</Button>
+            <Button type="button" variant="outline" onClick={closeGuestForm}>Cancel</Button>
           </div>
+          {guestError && <p className="font-inter text-sm text-red-600">{guestError}</p>}
         </form>
       )}
 
@@ -602,6 +592,15 @@ function GuestsSection() {
             <p className="font-inter text-sm text-near-black/40">No guests added yet.</p>
           </div>
         ) : (
+          <>
+          {guests.length > 8 && (
+            <Input
+              className="mb-3 max-w-xs"
+              placeholder="Search guests…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          )}
           <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -611,23 +610,30 @@ function GuestsSection() {
                   ))}
                 </tr></thead>
                 <tbody>
-                  {guests.map((g) => (
+                  {shownGuests.map((g) => (
                     <tr key={g.id} className="border-b border-near-black/5 last:border-0">
                       <td className="px-5 py-3 font-inter text-sm text-near-black">{g.firstName} {g.lastName}</td>
                       <td className="px-5 py-3 font-inter text-sm text-near-black/60">{g.inviteCount}</td>
                       <td className="px-5 py-3 font-inter text-sm text-near-black/50">{g.address ?? '—'}</td>
                       <td className="px-5 py-3 font-inter text-sm text-near-black/50">{g.phone ?? '—'}</td>
-                      <td className="px-5 py-3">
-                        <Button size="icon" variant="ghost" onClick={() => deleteGuest(g.id)}>
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <Button size="icon" variant="ghost" onClick={() => startEditGuest(g)} aria-label="Edit guest" title="Edit">
+                          <Pencil className="w-3.5 h-3.5 text-near-black/50" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => deleteGuest(g.id)} aria-label="Remove guest" title="Remove">
                           <Trash2 className="w-3.5 h-3.5 text-red-400" />
                         </Button>
                       </td>
                     </tr>
                   ))}
+                  {shownGuests.length === 0 && (
+                    <tr><td colSpan={5} className="px-5 py-6 text-center font-inter text-sm text-near-black/40">No guests match.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
+          </>
         )}
     </div>
   );
@@ -638,7 +644,8 @@ function GuestsSection() {
 function ResponsesSection() {
   const [events, setEvents] = useState<EventSummary[]>([]);
   const [selectedEventId, setSelectedEventId] = useState('');
-  const [data, setData] = useState<{ event: EventSummary; questions: Question[]; responses: RsvpResponse[]; summary: { totalGuests: number; rsvpdYes: number; rsvpdNo: number; awaiting: number; totalAttending: number } } | null>(null);
+  const [showAwaiting, setShowAwaiting] = useState(false);
+  const [data, setData] = useState<{ event: EventSummary; questions: Question[]; responses: RsvpResponse[]; notResponded?: { id: string; firstName: string; lastName: string; phone: string | null }[]; summary: { totalGuests: number; rsvpdYes: number; rsvpdNo: number; awaiting: number; totalAttending: number } } | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -660,11 +667,13 @@ function ResponsesSection() {
   function exportCSV() {
     if (!data) return;
     const qHeaders = data.questions.map(q => q.questionText);
-    const headers = ['Guest Name', 'Attending', 'Party Size', 'RSVP Date', ...qHeaders];
+    const headers = ['Guest Name', 'Attending', 'Party Size', 'Address', 'Phone', 'RSVP Date', ...qHeaders];
     const lines = data.responses.map(r => [
       `${r.guest.firstName} ${r.guest.lastName}`,
       r.attending ? 'Yes' : 'No',
       r.partySize.toString(),
+      r.guest.address ?? '',
+      r.guest.phone ?? '',
       new Date(r.createdAt).toLocaleDateString('en-US'),
       ...data.questions.map(q => r.questionResponses?.[q.id] ?? ''),
     ].map(escapeCSV).join(','));
@@ -717,6 +726,28 @@ function ResponsesSection() {
                   </div>
                 ))}
               </div>
+
+              {(data.notResponded?.length ?? 0) > 0 && (
+                <div className="mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowAwaiting((v) => !v)}
+                    className="font-inter text-sm text-burgundy-800 hover:underline"
+                  >
+                    {showAwaiting ? 'Hide' : 'Show'} the {data.notResponded!.length} guest{data.notResponded!.length === 1 ? '' : 's'} who haven&apos;t responded
+                  </button>
+                  {showAwaiting && (
+                    <ul className="mt-2 bg-white border border-near-black/10 rounded-sm divide-y divide-near-black/5">
+                      {data.notResponded!.map((g) => (
+                        <li key={g.id} className="px-4 py-2 font-inter text-sm text-near-black flex justify-between gap-4">
+                          <span>{g.firstName} {g.lastName}</span>
+                          {g.phone && <span className="text-near-black/40">{g.phone}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               {data.responses.length === 0 ? (
                 <div className="text-center py-10 bg-white border border-near-black/10 rounded-sm">
@@ -776,16 +807,21 @@ export function RsvpClient() {
       <div className="mb-8">
         <h1 className="font-cormorant text-4xl font-light text-burgundy-800">RSVP Management</h1>
         <p className="font-inter text-sm text-near-black/50 mt-1">Manage events, guest lists, and RSVP responses.</p>
+        <ol className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 font-inter text-xs text-near-black/60">
+          <li className="bg-white border border-near-black/10 rounded-sm px-3 py-2"><strong className="text-burgundy-800">1.</strong> Add your events (Ordination Mass, First Mass, reception…)</li>
+          <li className="bg-white border border-near-black/10 rounded-sm px-3 py-2"><strong className="text-burgundy-800">2.</strong> Add your guests — they find their invitation by name</li>
+          <li className="bg-white border border-near-black/10 rounded-sm px-3 py-2"><strong className="text-burgundy-800">3.</strong> Share your page link; guests use the RSVP tab</li>
+        </ol>
       </div>
 
       <div className="border-b border-near-black/10 mb-8">
-        <div className="flex gap-0">
+        <div className="flex gap-0 overflow-x-auto">
           {(['events', 'guests', 'responses'] as Tab[]).map((t) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`px-6 py-3 font-inter text-sm capitalize transition-colors border-b-2 -mb-px ${
+              className={`px-4 sm:px-6 py-3 font-inter text-sm whitespace-nowrap transition-colors border-b-2 -mb-px ${
                 tab === t ? 'border-burgundy-800 text-burgundy-800 font-medium' : 'border-transparent text-near-black/50 hover:text-near-black'
               }`}>
-              {t === 'responses' ? 'RSVP Responses' : t.charAt(0).toUpperCase() + t.slice(1)}
+              {t === 'responses' ? 'Responses' : t === 'guests' ? 'Guest List' : 'Events'}
             </button>
           ))}
         </div>
