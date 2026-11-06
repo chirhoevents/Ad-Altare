@@ -137,6 +137,16 @@ export function normalizeUrl(value: string): string {
   return /^https?:\/\//i.test(v) ? v : `https://${v}`;
 }
 
+/**
+ * Returns the URL only if it is an http(s) link, otherwise null. Guards hrefs
+ * rendered from stored data so a `javascript:` link can never be clicked.
+ */
+export function safeHref(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = value.trim();
+  return /^https?:\/\//i.test(v) ? v : null;
+}
+
 /** Used when a priest's thank-you template is empty. */
 export const FALLBACK_THANK_YOU_TEMPLATE =
   "Dear {donor_name},\n\nThank you for your generous support of {priest_name}'s ordination. Please know you are remembered in my prayers.\n\nIn Christ,\n{priest_name}";

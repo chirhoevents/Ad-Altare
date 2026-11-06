@@ -4,15 +4,16 @@ import { db } from '@/db';
 import { priests, registryItems } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { webUrl, httpsImageUrl, optionalOrEmpty, registryItemInputError } from '@/lib/validation';
 
 const createSchema = z.object({
   name: z.string().min(1).max(200),
   category: z.string().max(100).optional().default(''),
   description: z.string().max(1000).optional().default(''),
-  imageUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  imageUrl: optionalOrEmpty(httpsImageUrl),
   goalAmount: z.number().int().min(0),
   itemType: z.enum(['campaign', 'wishlist']).default('campaign'),
-  externalUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  externalUrl: optionalOrEmpty(webUrl),
 });
 
 export async function GET() {
@@ -41,10 +42,10 @@ export async function POST(req: Request) {
   });
   if (!priest) return NextResponse.json({ error: 'Priest not found' }, { status: 404 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    return NextResponse.json({ error: registryItemInputError(parsed.error.issues) }, { status: 400 });
   }
   if (parsed.data.itemType === 'campaign' && parsed.data.goalAmount < 100) {
     return NextResponse.json({ error: 'Goal amount must be at least $1' }, { status: 400 });

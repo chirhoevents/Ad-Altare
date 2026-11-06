@@ -55,7 +55,7 @@ function PaymentStep({
   amount,
 }: {
   clientSecret: string;
-  onSuccess: () => void;
+  onSuccess: (status: 'succeeded' | 'processing') => void;
   onBack: () => void;
   amount: number;
 }) {
@@ -71,10 +71,11 @@ function PaymentStep({
     setLoading(true);
     setError(null);
 
-    const { error: stripeError } = await stripe.confirmPayment({
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}${window.location.pathname}?payment=success`,
+        // Stripe appends redirect_status, which the priest page turns into a banner.
+        return_url: `${window.location.origin}${window.location.pathname}`,
       },
       redirect: 'if_required',
     });
@@ -82,8 +83,11 @@ function PaymentStep({
     if (stripeError) {
       setError(stripeError.message ?? 'Payment failed. Please try again.');
       setLoading(false);
+    } else if (paymentIntent?.status === 'succeeded' || paymentIntent?.status === 'processing') {
+      onSuccess(paymentIntent.status);
     } else {
-      onSuccess();
+      setError('Your payment was not completed and you have not been charged. Please try again.');
+      setLoading(false);
     }
   }
 
@@ -123,6 +127,7 @@ export function DonationModal({
   amount,
 }: DonationModalProps) {
   const [step, setStep] = useState<Step>('form');
+  const [paymentStatus, setPaymentStatus] = useState<'succeeded' | 'processing'>('succeeded');
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,6 +199,9 @@ export function DonationModal({
   }
 
   function handleClose() {
+    // However the success screen is dismissed (button, X, Esc, backdrop),
+    // refresh the page so the progress bar reflects the new gift.
+    if (step === 'success') onPaymentComplete?.();
     setStep('form');
     setClientSecret(null);
     setError(null);
@@ -366,7 +374,10 @@ export function DonationModal({
             <PaymentStep
               clientSecret={clientSecret}
               amount={amount}
-              onSuccess={() => setStep('success')}
+              onSuccess={(status) => {
+                setPaymentStatus(status);
+                setStep('success');
+              }}
               onBack={() => setStep('form')}
             />
           </Elements>
@@ -383,8 +394,9 @@ export function DonationModal({
               God bless your generosity
             </h3>
             <p className="font-inter text-sm text-near-black/60 leading-relaxed">
-              Your donation of {formatCurrency(amount)} has been received.
-              A confirmation has been sent to {form.email}.
+              {paymentStatus === 'processing'
+                ? <>Your donation of {formatCurrency(amount)} is processing. You&apos;ll get an email at {form.email} once it completes.</>
+                : <>Your donation of {formatCurrency(amount)} has been received. A confirmation has been sent to {form.email}.</>}
             </p>
             <p className="font-inter text-xs text-near-black/40">
               Ad Altare is free for priests.{' '}
@@ -394,10 +406,7 @@ export function DonationModal({
               .
             </p>
             <Button
-              onClick={() => {
-                handleClose();
-                onPaymentComplete?.();
-              }}
+              onClick={handleClose}
               variant="secondary"
               className="mt-2"
             >
