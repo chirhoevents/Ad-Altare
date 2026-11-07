@@ -14,10 +14,15 @@ interface GeneralDonationProps {
 export function GeneralDonation({ onDonate, stripeReady, priestName }: GeneralDonationProps) {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState('');
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   function handleDonate() {
-    const amount = selectedAmount ?? (customAmount ? Math.round(parseFloat(customAmount) * 100) : null);
-    if (!amount || amount < 100) return;
+    const amount = selectedAmount ?? (customAmount ? Math.round(parseFloat(customAmount) * 100) : NaN);
+    if (!Number.isFinite(amount) || amount < 100) {
+      setAmountError('Please enter an amount of at least $1.');
+      return;
+    }
+    setAmountError(null);
     onDonate(amount);
   }
 
@@ -45,9 +50,11 @@ export function GeneralDonation({ onDonate, stripeReady, priestName }: GeneralDo
             {PRESET_AMOUNTS.map((amt) => (
               <button
                 key={amt}
+                type="button"
                 onClick={() => {
                   setSelectedAmount(amt * 100);
                   setCustomAmount('');
+                  setAmountError(null);
                 }}
                 className={`py-2 text-sm font-inter rounded-sm border transition-colors ${
                   selectedAmount === amt * 100
@@ -66,13 +73,18 @@ export function GeneralDonation({ onDonate, stripeReady, priestName }: GeneralDo
               placeholder="Custom amount"
               value={customAmount}
               min="1"
+              step="0.01"
               onChange={(e) => {
                 setCustomAmount(e.target.value);
                 setSelectedAmount(null);
+                setAmountError(null);
               }}
               className="w-full pl-7 pr-3 py-2 border border-near-black/20 rounded-sm text-sm font-inter focus:outline-none focus:ring-2 focus:ring-burgundy-800"
             />
           </div>
+          {amountError && (
+            <p className="text-red-600 text-xs font-inter">{amountError}</p>
+          )}
           <Button
             onClick={handleDonate}
             className="w-full"

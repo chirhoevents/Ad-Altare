@@ -4,10 +4,11 @@ import { db } from '@/db';
 import { priests, registryLinks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { webUrl } from '@/lib/validation';
 
 const createSchema = z.object({
   label: z.string().min(1).max(100),
-  url: z.string().url(),
+  url: webUrl,
 });
 
 export async function GET() {
@@ -27,9 +28,14 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const priest = await db.query.priests.findFirst({ where: eq(priests.clerkUserId, userId) });
   if (!priest) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = createSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+  if (!parsed.success) {
+    const error = parsed.error.issues[0]?.path[0] === 'url'
+      ? 'Please enter a valid link starting with https://'
+      : 'Please enter a label and a link.';
+    return NextResponse.json({ error }, { status: 400 });
+  }
   const [link] = await db.insert(registryLinks).values({
     priestId: priest.id,
     label: parsed.data.label,

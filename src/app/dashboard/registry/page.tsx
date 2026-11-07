@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { formatCurrency, normalizeUrl } from '@/lib/utils';
+import { formatCurrency, normalizeUrl, safeHref } from '@/lib/utils';
 import { Plus, Pencil, Trash2, X, Check, Upload, ShoppingBag, Eye, EyeOff, Link as LinkIcon } from 'lucide-react';
 import type { RegistryItem, RegistryLink } from '@/db/schema';
 
@@ -564,7 +564,7 @@ export default function RegistryPage() {
                         )}
                         {item.externalUrl && (
                           <a
-                            href={item.externalUrl}
+                            href={safeHref(item.externalUrl) ?? undefined}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="font-inter text-xs text-burgundy-800 hover:underline flex items-center gap-1"
@@ -678,7 +678,7 @@ export default function RegistryPage() {
                   <div className="min-w-0">
                     <p className="font-inter text-sm font-medium text-near-black">{link.label}</p>
                     <a
-                      href={link.url}
+                      href={safeHref(link.url) ?? undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-inter text-xs text-near-black/40 hover:text-burgundy-800 truncate block max-w-xs"

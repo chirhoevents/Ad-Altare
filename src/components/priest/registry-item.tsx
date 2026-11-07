@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, safeHref } from '@/lib/utils';
 import type { RegistryItem } from '@/db/schema';
 
 interface RegistryItemCardProps {
@@ -17,9 +17,11 @@ interface RegistryItemCardProps {
 
 export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady }: RegistryItemCardProps) {
   const [customAmount, setCustomAmount] = useState('');
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   // ── Wishlist item rendering ──────────────────────────────────────────────
   if (item.itemType === 'wishlist') {
+    const purchaseUrl = safeHref(item.externalUrl);
     return (
       <div className="bg-white border border-near-black/10 rounded-sm overflow-hidden">
         {item.imageUrl && (
@@ -70,9 +72,9 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
             <Button className="w-full" disabled variant="secondary">
               Already Purchased
             </Button>
-          ) : item.externalUrl ? (
+          ) : purchaseUrl ? (
             <Button asChild className="w-full">
-              <a href={item.externalUrl} target="_blank" rel="noopener noreferrer">
+              <a href={purchaseUrl} target="_blank" rel="noopener noreferrer">
                 View &amp; Purchase →
               </a>
             </Button>
@@ -87,8 +89,11 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
   }
 
   // ── Campaign item rendering ──────────────────────────────────────────────
-  const pct = Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100));
-  const isFunded = item.amountRaised >= item.goalAmount;
+  // Guard against a zero goal (older rows) so the bar never shows NaN%.
+  const pct = item.goalAmount > 0
+    ? Math.min(100, Math.round((item.amountRaised / item.goalAmount) * 100))
+    : 0;
+  const isFunded = item.goalAmount > 0 && item.amountRaised >= item.goalAmount;
   const remaining = item.goalAmount - item.amountRaised;
   // Stripe/our minimum is $1, so a sliver under $1 left is rounded up to $1.
   const fullyFundAmount = Math.max(remaining, 100);
@@ -100,8 +105,12 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
   }
 
   function handleCustomDonate() {
-    const amount = customAmount ? Math.round(parseFloat(customAmount) * 100) : null;
-    if (!amount || amount < 100) return;
+    const amount = customAmount ? Math.round(parseFloat(customAmount) * 100) : NaN;
+    if (!Number.isFinite(amount) || amount < 100) {
+      setAmountError('Please enter an amount of at least $1.');
+      return;
+    }
+    setAmountError(null);
     onDonate(item, amount);
   }
 
@@ -195,10 +204,17 @@ export function RegistryItemCard({ item, priestFirstName, onDonate, stripeReady 
                     placeholder="Or enter a custom amount"
                     value={customAmount}
                     min="1"
-                    onChange={(e) => setCustomAmount(e.target.value)}
+                    step="0.01"
+                    onChange={(e) => {
+                      setCustomAmount(e.target.value);
+                      setAmountError(null);
+                    }}
                     className="w-full pl-7 pr-3 py-2 border border-near-black/20 rounded-sm text-sm font-inter focus:outline-none focus:ring-2 focus:ring-burgundy-800"
                   />
                 </div>
+                {amountError && (
+                  <p className="text-red-600 text-xs font-inter">{amountError}</p>
+                )}
                 <Button
                   onClick={handleCustomDonate}
                   className="w-full"
