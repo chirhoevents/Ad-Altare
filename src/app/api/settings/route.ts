@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { priests } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { httpsImageUrl, optionalOrEmpty } from '@/lib/validation';
 
 const SELF_SELECTABLE_TITLES = ['Seminarian', 'Transitional Deacon', 'Deacon'] as const;
 
@@ -20,8 +21,8 @@ const patchSchema = z.object({
   ordinationDate: z.union([z.string().date(), z.literal('')]).nullish(),
   firstMassDate: z.union([z.string().date(), z.literal('')]).nullish(),
   bio: z.string().max(5000).nullish(),
-  profilePhotoUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
-  backgroundPhotoUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  profilePhotoUrl: optionalOrEmpty(httpsImageUrl),
+  backgroundPhotoUrl: optionalOrEmpty(httpsImageUrl),
   thankYouTemplate: z.string().max(3000).nullish(),
   profileVisible: z.boolean().optional(),
 });

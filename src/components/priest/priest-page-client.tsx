@@ -7,6 +7,7 @@ import { GeneralDonation } from './general-donation';
 import { DonationModal } from './donation-modal';
 import { RsvpFlow } from './rsvp-flow';
 import type { RegistryItem, RegistryLink } from '@/db/schema';
+import { safeHref } from '@/lib/utils';
 
 // Only the fields the public page actually needs — sensitive fields (email, phone,
 // stripeAccountId, clerkUserId, platformFeeOverride, etc.) are stripped server-side
@@ -44,8 +45,21 @@ export function PriestPageClient({
 
   // Strip Stripe's return params so a refresh doesn't re-show the banner.
   useEffect(() => {
-    if (paymentReturnStatus) router.replace(pathname, { scroll: false });
+    if (!paymentReturnStatus) return;
+    router.replace(pathname, { scroll: false });
+    // The donation is recorded by Stripe's webhook, which can land a moment
+    // after the donor is redirected back — refresh again so the total shows it.
+    if (paymentReturnStatus === 'succeeded') {
+      const t = setTimeout(() => router.refresh(), 4000);
+      return () => clearTimeout(t);
+    }
   }, [paymentReturnStatus, pathname, router]);
+
+  // Refresh now and once more after the webhook has had time to record the gift.
+  function refreshAfterPayment() {
+    router.refresh();
+    setTimeout(() => router.refresh(), 4000);
+  }
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<RegistryItem | null>(null);
   const [donationAmount, setDonationAmount] = useState(0);
@@ -136,17 +150,20 @@ export function PriestPageClient({
             {/* External registry links (Amazon, Target, …) show even with no items */}
             {registryLinks.length > 0 && (
               <div className="flex flex-wrap gap-3 mb-6">
-                {registryLinks.map((link) => (
+                {registryLinks.map((link) => {
+                  const href = safeHref(link.url);
+                  return href && (
                   <a
                     key={link.id}
-                    href={link.url}
+                    href={href}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 font-inter text-sm border border-burgundy-800/30 text-burgundy-800 px-4 py-2 rounded-sm hover:bg-burgundy-800 hover:text-cream transition-colors"
                   >
                     {link.label} →
                   </a>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -199,7 +216,7 @@ export function PriestPageClient({
       <DonationModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        onPaymentComplete={() => router.refresh()}
+        onPaymentComplete={refreshAfterPayment}
         priestId={priest.id}
         priestName={priestName}
         item={selectedItem}

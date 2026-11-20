@@ -4,16 +4,17 @@ import { db } from '@/db';
 import { priests, registryItems } from '@/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { webUrl, httpsImageUrl, optionalOrEmpty, registryItemInputError } from '@/lib/validation';
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
   category: z.string().max(100).optional(),
   description: z.string().max(1000).optional(),
-  imageUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  imageUrl: optionalOrEmpty(httpsImageUrl),
   goalAmount: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
   itemType: z.enum(['campaign', 'wishlist']).optional(),
-  externalUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  externalUrl: optionalOrEmpty(webUrl),
   isPurchased: z.boolean().optional(),
 });
 
@@ -39,10 +40,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const item = await getPriestItem(userId, params.id);
   if (!item) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   const parsed = patchSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    return NextResponse.json({ error: registryItemInputError(parsed.error.issues) }, { status: 400 });
   }
   const nextType = parsed.data.itemType ?? item.itemType;
   const nextGoal = parsed.data.goalAmount ?? item.goalAmount;
